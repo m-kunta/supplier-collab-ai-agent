@@ -18,25 +18,36 @@ The **Supplier Collaboration Briefing Agent** is an in-progress intelligence too
 
 We are following a phased integration plan to move from structural scaffold to a full MVP.
 
-### Phase 1: Foundation (Current)
-- [x] Establish CLI contract and project scaffold.
-- [x] Define data schemas and integration standards (see Scope & Data Integration Spec docs).
-- [x] Build provider-agnostic LLM interface wrapper.
-- [ ] Transition data loader to robust YAML parsing and a DataFrame engine (Pandas/Polars).
+### Phase 1: Foundation (Scaffold)
+- [x] Establish CLI contract and project scaffold (`cli.py`, module structure).
+- [x] Define data schemas and integration standards (Scope & Data Integration Spec).
+- [x] Build provider-agnostic LLM interface wrapper (`src/llm_providers.py`).
+- [x] Setup `README.md` and github repository (`supplier-collab-ai-agent`).
+- [x] Transition `manifest.yaml` data loader to robust YAML parsing mechanism (e.g., `PyYAML`).
+- [ ] Harden manifest YAML loading by rejecting empty or non-mapping documents with clear errors, and add tests for native YAML plus invalid manifest shapes.
+- [ ] Establish foundational data manipulation engine (Pandas/Polars) in requirements.
 
 ### Phase 2: Data Validation & Ingestion Layer
-- [ ] Implement strong data contract validation via Pydantic.
+- [ ] Implement `pydantic` models for strict data contract validation.
+- [ ] Refactor `src/data_validator.py` to use Pydantic models for incoming CSV schema checks.
 - [ ] Build graceful degradation logic for missing optional domain files.
-- [ ] Set up comprehensive logging framework for reporting missing schemas and mapping validation failures.
+- [ ] Set up a comprehensive Python logging framework (`logging`) replacing `print()` statements.
+- [ ] Generate comprehensive Data Validation Reports via CLI output.
 
-### Phase 3: Intelligence & Synthesis Pipelines
-- [ ] Implement `scorecard_engine.py` resolving 4-week, 13-week moving averages and trends.
-- [ ] Stitch cross-domain analysis points (e.g., PO × Promo Readiness, Safety Stock issues).
-- [ ] Establish gap-to-best-in-class metrics within the benchmarking module.
+### Phase 3: Intelligence & Synthesis Pipelines (Engine Layer)
+- [ ] Implement `src/scorecard_engine.py` (calc 4-week, 13-week moving averages and trends).
+- [ ] Implement `src/benchmark_engine.py` (determine category peer and gap-to-best-in-class metrics).
+- [ ] Implement `src/po_risk_engine.py` (pipeline risk and late-PO classifications).
+- [ ] Implement `src/promo_readiness.py` (promotional impacts and inventory supply cross-referencing).
+- [ ] Implement `src/oos_attribution.py` (OOS event analysis and root-cause handling).
 
-### Phase 4: Output Rendering & Orchestration
-- [ ] Finalize role-specific prompt engineering (Buyer and Planner focus modes).
-- [ ] Output the final synthesized briefing agent document into Markdown and DOCX.
+### Phase 4: AI Differentiation & Output Orchestration
+- [ ] Finalize role-specific system prompts for Claude/OpenAI in `prompts/`.
+- [ ] Integrate cross-domain analytical points into the generative prompt context.
+- [ ] Orchestrate text generation pipeline inside `src/agent.py`.
+- [ ] Render the LLM generated output to `md` output format.
+- [ ] Render the LLM generated output to `docx` format.
+- [ ] Hook up end-to-end integration test confirming `cli.py` prints the final briefing document.
 
 ## 🛠️ Planned Modules
 
