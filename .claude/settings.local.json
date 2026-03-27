@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -d /Users/MKunta/CODE/supplier_collab_ai/*/)"
+    ]
+  }
+}

@@ -1,0 +1,2 @@
+vendor_id,week_ending,metric_code,metric_value,metric_uom,denominator,numerator
+V1001,2026-03-21,FILL_RATE,0.918,pct,1000,918

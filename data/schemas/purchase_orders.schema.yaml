@@ -1,0 +1,20 @@
+{
+  "name": "purchase_orders",
+  "primary_key": ["po_number", "po_line"],
+  "required_columns": [
+    "po_number",
+    "po_line",
+    "vendor_id",
+    "sku",
+    "qty_ordered",
+    "requested_delivery_date"
+  ],
+  "column_types": {
+    "po_number": "string",
+    "po_line": "integer",
+    "vendor_id": "string",
+    "sku": "string",
+    "qty_ordered": "numeric",
+    "requested_delivery_date": "date"
+  }
+}
