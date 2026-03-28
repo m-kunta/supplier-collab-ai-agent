@@ -10,3 +10,4 @@ anthropic>=0.34.0
 
 # Data Loading
 PyYAML>=6.0.1
+pandas>=2.0.0
