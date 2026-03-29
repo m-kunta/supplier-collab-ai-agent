@@ -1,0 +1,53 @@
+name: chargebacks
+primary_key:
+  - chargeback_id
+
+required_columns:
+  - chargeback_id
+  - vendor_id
+  - issue_date
+  - chargeback_type
+  - chargeback_amount
+
+optional_columns:
+  - po_number
+  - sku
+  - dispute_status
+  - resolution_date
+  - dispute_reason
+
+column_types:
+  chargeback_id: string
+  vendor_id: string
+  issue_date: date
+  chargeback_type: string
+  chargeback_amount: numeric
+  po_number: string
+  sku: string
+  dispute_status: string
+  resolution_date: date
+  dispute_reason: string
+
+nullable:
+  po_number: true
+  sku: true
+  dispute_status: true       # null = no dispute filed
+  resolution_date: true      # null = not yet resolved
+  dispute_reason: true
+
+enum_values:
+  chargeback_type:
+    - compliance      # labelling, pallet, or EDI non-compliance
+    - shortage        # invoice quantity dispute
+    - pricing         # cost discrepancy
+    - damage          # damaged goods
+    - other
+  dispute_status:
+    - open
+    - disputed
+    - resolved
+    - waived
+
+constraints:
+  chargeback_amount:
+    min: 0

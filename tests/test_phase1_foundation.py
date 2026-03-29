@@ -79,6 +79,10 @@ class DataFixtureIntegrityTests(unittest.TestCase):
         for schema_path in sorted(SCHEMA_DIR.glob("*.yaml")):
             schema = yaml.safe_load(schema_path.read_text(encoding="utf-8"))
             csv_path = MOCK_DATA_DIR / f"{schema['name']}.csv"
+            if not csv_path.exists():
+                # Optional-file schemas (oos_events, promo_calendar, etc.) do not
+                # need mock CSVs in data/inbound/mock/ — skip them gracefully.
+                continue
             with csv_path.open(newline="", encoding="utf-8") as handle:
                 headers = csv.DictReader(handle).fieldnames or []
             missing = [column for column in schema["required_columns"] if column not in headers]

@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls -d /Users/MKunta/CODE/supplier_collab_ai/*/)"
+      "Bash(ls -d /Users/MKunta/CODE/supplier_collab_ai/*/)",
+      "Bash(python3 -c \"import yaml; m = yaml.safe_load\\(open\\(''data/inbound/mock/manifest.yaml''\\)\\); print\\(type\\(m\\), m.get\\(''version''\\)\\)\")",
+      "Bash(source .venv/bin/activate)",
+      "Bash(pytest tests/ -v --tb=short)"
     ]
   }
 }

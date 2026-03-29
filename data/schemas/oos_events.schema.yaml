@@ -1,0 +1,45 @@
+name: oos_events
+primary_key:
+  - vendor_id
+  - sku
+  - oos_start_date
+
+required_columns:
+  - vendor_id
+  - sku
+  - oos_start_date
+
+optional_columns:
+  - oos_end_date
+  - oos_units_lost
+  - dc_location
+  - root_cause_code
+
+column_types:
+  vendor_id: string
+  sku: string
+  oos_start_date: date
+  oos_end_date: date
+  oos_units_lost: numeric
+  dc_location: string
+  root_cause_code: string
+
+nullable:
+  oos_end_date: true       # null = OOS event still active
+  oos_units_lost: true
+  dc_location: true
+  root_cause_code: true
+
+enum_values:
+  # Codes align with OOS attribution engine classification (scope doc §6.5)
+  root_cause_code:
+    - late_shipment      # vendor-controllable: PO arrived after need date
+    - short_fill         # vendor-controllable: qty received < qty ordered
+    - cancelled_po       # vendor-controllable: PO cancelled by vendor
+    - demand_spike       # demand-driven: demand exceeded forecast
+    - forecast_error     # demand-driven: forecast significantly under-called
+    - unattributed       # insufficient signal to classify
+
+constraints:
+  oos_units_lost:
+    min: 0

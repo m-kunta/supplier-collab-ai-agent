@@ -1,0 +1,7 @@
+po_number,po_line,vendor_id,sku,sku_description,uom,qty_ordered,po_create_date,requested_delivery_date,po_status,ship_to_dc,unit_cost,extended_cost
+8800123,10,V1001,4421,Frosted Flakes 18oz,EA,1000,2026-03-18,2026-04-02,open,DC01,3.50,3500.00
+8800123,20,V1001,4422,Frosted Flakes 12oz,EA,500,2026-03-18,2026-04-02,open,DC01,2.10,1050.00
+8800124,10,V1001,4421,Frosted Flakes 18oz,EA,2000,2026-03-10,2026-03-25,received,DC02,3.50,7000.00
+8800201,10,V1002,5510,Cheerios Original 18oz,EA,1500,2026-03-15,2026-04-01,open,DC01,3.75,5625.00
+8800202,10,V1002,5511,Honey Nut Cheerios 18oz,EA,800,2026-03-20,2026-04-05,confirmed,DC03,4.10,3280.00
+8800301,10,V1003,6620,Quaker Oats Old Fashioned,EA,600,2026-03-12,2026-03-28,on_hold,DC01,2.80,1680.00

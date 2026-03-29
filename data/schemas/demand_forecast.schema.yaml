@@ -1,0 +1,46 @@
+name: demand_forecast
+primary_key:
+  - sku
+  - forecast_week
+  - forecast_version
+
+required_columns:
+  - sku
+  - forecast_week
+  - forecast_units
+
+optional_columns:
+  - vendor_id
+  - forecast_version
+  - prior_year_units
+  - promo_lift_units
+  - baseline_units
+
+column_types:
+  sku: string
+  forecast_week: date
+  forecast_units: numeric
+  vendor_id: string
+  forecast_version: string
+  prior_year_units: numeric
+  promo_lift_units: numeric
+  baseline_units: numeric
+
+nullable:
+  vendor_id: true          # SKU-level forecasts may not be vendor-attributed
+  forecast_version: true
+  prior_year_units: true
+  promo_lift_units: true
+  baseline_units: true
+
+enum_values: {}
+
+constraints:
+  forecast_units:
+    min: 0
+  prior_year_units:
+    min: 0
+  promo_lift_units:
+    min: 0
+  baseline_units:
+    min: 0

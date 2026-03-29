@@ -1,0 +1,45 @@
+name: inventory_position
+primary_key:
+  - vendor_id
+  - sku
+  - snapshot_date
+
+required_columns:
+  - vendor_id
+  - sku
+  - snapshot_date
+  - on_hand_units
+  - on_order_units
+
+optional_columns:
+  - days_of_supply
+  - reorder_point
+  - safety_stock_units
+  - dc_location
+
+column_types:
+  vendor_id: string
+  sku: string
+  snapshot_date: date
+  on_hand_units: numeric
+  on_order_units: numeric
+  days_of_supply: numeric
+  reorder_point: numeric
+  safety_stock_units: numeric
+  dc_location: string
+
+nullable:
+  days_of_supply: true
+  reorder_point: true
+  safety_stock_units: true
+  dc_location: true
+
+enum_values: {}
+
+constraints:
+  on_hand_units:
+    min: 0
+  on_order_units:
+    min: 0
+  days_of_supply:
+    min: 0

@@ -1,0 +1,57 @@
+name: promo_calendar
+primary_key:
+  - promo_id
+  - sku
+
+required_columns:
+  - promo_id
+  - event_name
+  - vendor_id
+  - sku
+  - start_date
+  - end_date
+  - promoted_volume
+
+optional_columns:
+  - promo_type
+  - promo_discount_pct
+  - feature_flag
+  - display_flag
+
+column_types:
+  promo_id: string
+  event_name: string
+  vendor_id: string
+  sku: string
+  start_date: date
+  end_date: date
+  promoted_volume: numeric
+  promo_type: string
+  promo_discount_pct: numeric
+  feature_flag: string
+  display_flag: string
+
+nullable:
+  promo_type: true
+  promo_discount_pct: true
+  feature_flag: true
+  display_flag: true
+
+enum_values:
+  promo_type:
+    - tpr            # temporary price reduction
+    - feature        # ad feature (circular, digital)
+    - display        # in-store display
+    - feature_display  # combined feature + display
+    - coupon         # manufacturer coupon
+    - digital_coupon # digital/loyalty coupon
+    - bogo           # buy one get one
+    - endcap         # endcap placement
+    - other
+
+constraints:
+  promoted_volume:
+    min: 0
+  promo_discount_pct:
+    min: 0
+    max: 1
