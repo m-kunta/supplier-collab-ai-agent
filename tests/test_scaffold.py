@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -50,6 +51,21 @@ class ScaffoldTests(unittest.TestCase):
         config = load_config()
         self.assertEqual(config["defaults"]["lookback_weeks"], 13)
         self.assertEqual(config["llm"]["default_provider"], "anthropic")
+
+    def test_config_loads_native_yaml(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            config_path = Path(tmp) / "agent_config.yaml"
+            config_path.write_text(
+                "defaults:\n"
+                "  lookback_weeks: 8\n"
+                "llm:\n"
+                "  default_provider: openai\n"
+                "  default_model: gpt-4.1-mini\n",
+                encoding="utf-8",
+            )
+            config = load_config(config_path)
+        self.assertEqual(config["defaults"]["lookback_weeks"], 8)
+        self.assertEqual(config["llm"]["default_provider"], "openai")
 
     def test_manifest_path_resolution(self):
         data_dir = PROJECT_ROOT / "data" / "inbound" / "mock"

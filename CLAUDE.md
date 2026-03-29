@@ -67,8 +67,8 @@ data_validator  benchmark_engine       ↓
 |---|---|---|
 | `cli.py` | CLI entry point. Parses `--vendor`, `--date`, `--data-dir`, `--lookback-weeks`, `--persona-emphasis`, `--include-benchmarks`, `--output-format`, `--category-filter`. | Working |
 | `src/agent.py` | Orchestrator. Calls config, data loader, validator, provider resolver, returns scaffold summary. Will become the full pipeline coordinator. | Scaffold stub |
-| `src/config.py` | Loads `config/agent_config.yaml` (JSON format despite `.yaml` extension). Returns dict. | Working |
-| `src/data_loader.py` | `resolve_data_dir()` and `load_manifest()` — reads manifest.yaml (JSON format) from the data landing zone. | Working |
+| `src/config.py` | Loads `config/agent_config.yaml` with YAML parsing and validates that the top-level document is a mapping. Returns dict. | Working |
+| `src/data_loader.py` | `resolve_data_dir()` and `load_manifest()` — reads `manifest.yaml` from the data landing zone with strict YAML mapping validation. | Working |
 | `src/data_validator.py` | `validate_manifest_shape()` — checks required top-level manifest keys. Will expand to full schema validation. | Minimal stub |
 | `src/scorecard_engine.py` | Scorecard metric computation: current value, 4w/13w trends, trend classification. | Placeholder |
 | `src/benchmark_engine.py` | Peer avg, BIC, gap-to-BIC, dollar-impact translation. | Placeholder |
@@ -79,7 +79,7 @@ data_validator  benchmark_engine       ↓
 
 ### Key implementation details
 
-- **Config and manifest files are JSON despite `.yaml` extensions.** Both `config/agent_config.yaml` and `data/inbound/mock/manifest.yaml` are parsed with `json.load()`, not a YAML parser. If you add a YAML dependency later, update `src/config.py` and `src/data_loader.py` together.
+- **`.yaml` files now use real YAML parsing.** `src/config.py` and `src/data_loader.py` both use `yaml.safe_load()` and reject empty or non-mapping top-level documents with clear errors. Schema files under `data/schemas/` are also authored as native YAML.
 
 - **Linkage computation is pre-computed, not in-context.** The design decision (scope doc §14) is that cross-domain analysis (PO×Promo, OOS attribution, benchmark gaps) is computed deterministically in the engine modules before being injected into the LLM prompt. Claude narrates; it doesn't compute. This keeps results reproducible and reduces token cost.
 
@@ -97,7 +97,7 @@ Each landing zone contains:
 - `manifest.yaml` — declares available files, freshness, row counts, environment
 - CSV files per the 10-file schema inventory (3 required, 7 optional)
 
-**Schemas:** `data/schemas/*.schema.yaml` — JSON-format schema definitions with `primary_key`, `required_columns`, and `column_types`.
+**Schemas:** `data/schemas/*.schema.yaml` — YAML schema definitions with `primary_key`, `required_columns`, and `column_types`.
 
 **Mock data:** Single-row CSVs in `data/inbound/mock/` for the 3 required files. MVP will expand these to multi-vendor, multi-week realistic data.
 
@@ -121,7 +121,7 @@ All are placeholders. Production prompts will inject pre-computed structured dat
 
 ## Configuration
 
-**`config/agent_config.yaml`** (JSON format):
+**`config/agent_config.yaml`** (YAML format):
 - `defaults`: lookback_weeks, persona_emphasis, include_benchmarks, output_format, data_dir
 - `llm`: default_provider, default_model, temperature
 - `thresholds`: po_risk_days_late_red/yellow, promo_readiness_red/yellow_threshold
@@ -149,12 +149,13 @@ All are placeholders. Production prompts will inject pre-computed structured dat
 
 Tests use `unittest` (not pytest fixtures). `tests/conftest.py` adds the project root to `sys.path`.
 
-Current test coverage (5 tests in `tests/test_scaffold.py`):
+Current test coverage:
 - Required scaffold paths exist
 - CLI `--help` exposes all expected arguments
-- Config loads with correct defaults
+- Config loads with correct defaults and native YAML syntax
 - Manifest path resolution works against mock data
 - Provider selection resolves anthropic without a live API call
+- Manifest/config edge-case handling and mock fixture integrity live in the Phase 1 foundation tests
 
 ---
 

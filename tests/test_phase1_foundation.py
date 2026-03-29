@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import csv
-import json
 import os
 import unittest
 from pathlib import Path
@@ -78,12 +77,17 @@ class DataFixtureIntegrityTests(unittest.TestCase):
 
     def test_schema_required_columns_exist_in_mock_csvs(self):
         for schema_path in sorted(SCHEMA_DIR.glob("*.yaml")):
-            schema = json.loads(schema_path.read_text(encoding="utf-8"))
+            schema = yaml.safe_load(schema_path.read_text(encoding="utf-8"))
             csv_path = MOCK_DATA_DIR / f"{schema['name']}.csv"
             with csv_path.open(newline="", encoding="utf-8") as handle:
                 headers = csv.DictReader(handle).fieldnames or []
             missing = [column for column in schema["required_columns"] if column not in headers]
             self.assertEqual([], missing, f"Missing required columns for {schema['name']}")
+
+    def test_config_supports_native_yaml_features(self):
+        config = yaml.safe_load((PROJECT_ROOT / "config" / "agent_config.yaml").read_text(encoding="utf-8"))
+        self.assertIsInstance(config, dict)
+        self.assertEqual("anthropic", config["llm"]["default_provider"])
 
     def test_pandas_foundation_dependency_is_importable(self):
         frame = pd.DataFrame(
