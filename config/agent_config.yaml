@@ -1,20 +1,17 @@
-{
-  "defaults": {
-    "lookback_weeks": 13,
-    "persona_emphasis": "both",
-    "include_benchmarks": true,
-    "output_format": "md",
-    "data_dir": "data/inbound/mock"
-  },
-  "llm": {
-    "default_provider": "anthropic",
-    "default_model": "claude-3-5-sonnet-latest",
-    "temperature": 0.2
-  },
-  "thresholds": {
-    "po_risk_days_late_red": 3,
-    "po_risk_days_late_yellow": 1,
-    "promo_readiness_red_threshold": 0.8,
-    "promo_readiness_yellow_threshold": 0.95
-  }
-}
+defaults:
+  lookback_weeks: 13
+  persona_emphasis: both
+  include_benchmarks: true
+  output_format: md
+  data_dir: data/inbound/mock
+
+llm:
+  default_provider: anthropic
+  default_model: claude-3-5-sonnet-latest
+  temperature: 0.2
+
+thresholds:
+  po_risk_days_late_red: 3
+  po_risk_days_late_yellow: 1
+  promo_readiness_red_threshold: 0.8
+  promo_readiness_yellow_threshold: 0.95

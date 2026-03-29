@@ -1,18 +1,17 @@
-{
-  "name": "vendor_performance",
-  "primary_key": ["vendor_id", "week_ending", "metric_code"],
-  "required_columns": [
-    "vendor_id",
-    "week_ending",
-    "metric_code",
-    "metric_value",
-    "metric_uom"
-  ],
-  "column_types": {
-    "vendor_id": "string",
-    "week_ending": "date",
-    "metric_code": "string",
-    "metric_value": "numeric",
-    "metric_uom": "string"
-  }
-}
+name: vendor_performance
+primary_key:
+  - vendor_id
+  - week_ending
+  - metric_code
+required_columns:
+  - vendor_id
+  - week_ending
+  - metric_code
+  - metric_value
+  - metric_uom
+column_types:
+  vendor_id: string
+  week_ending: date
+  metric_code: string
+  metric_value: numeric
+  metric_uom: string

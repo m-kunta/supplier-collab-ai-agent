@@ -1,11 +1,13 @@
-{
-  "name": "vendor_master",
-  "primary_key": ["vendor_id"],
-  "required_columns": ["vendor_id", "vendor_name", "vendor_status", "primary_category"],
-  "column_types": {
-    "vendor_id": "string",
-    "vendor_name": "string",
-    "vendor_status": "string",
-    "primary_category": "string"
-  }
-}
+name: vendor_master
+primary_key:
+  - vendor_id
+required_columns:
+  - vendor_id
+  - vendor_name
+  - vendor_status
+  - primary_category
+column_types:
+  vendor_id: string
+  vendor_name: string
+  vendor_status: string
+  primary_category: string
