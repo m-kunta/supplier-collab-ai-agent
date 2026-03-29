@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from src.config import load_config
-from src.data_loader import load_manifest
+from src.data_loader import load_dataset, load_manifest, load_vendor_data, resolve_vendor_id
 from src.data_validator import ValidationResult, validate_manifest_shape
 from src.llm_providers import ProviderSelection, resolve_provider
 
@@ -104,6 +104,27 @@ def _stage_resolve_provider(ctx: BriefingContext) -> BriefingContext:
     return ctx
 
 
+def _stage_resolve_vendor_id(ctx: BriefingContext) -> BriefingContext:
+    vendor_master_df = load_dataset(ctx.manifest, "vendor_master")
+    ctx.vendor_id = resolve_vendor_id(ctx.vendor_input, vendor_master_df)
+    logger.info(
+        "Resolved vendor input '%s' to vendor_id '%s'.",
+        ctx.vendor_input,
+        ctx.vendor_id,
+    )
+    return ctx
+
+
+def _stage_load_vendor_data(ctx: BriefingContext) -> BriefingContext:
+    if not ctx.vendor_id:
+        raise ValueError("Vendor ID must be resolved before loading vendor data.")
+    ctx.vendor_data = load_vendor_data(ctx.manifest, ctx.vendor_id)
+    ctx.add_note(
+        f"Loaded {len(ctx.vendor_data)} dataset(s) for vendor_id '{ctx.vendor_id}'."
+    )
+    return ctx
+
+
 def run_pipeline(ctx: BriefingContext) -> BriefingContext:
     """Execute the briefing pipeline in stage order.
 
@@ -116,10 +137,10 @@ def run_pipeline(ctx: BriefingContext) -> BriefingContext:
       2. Load manifest
       3. Validate manifest (fatal gate)
       4. Resolve LLM provider
+      5. Resolve vendor ID (name → canonical ID)
+      6. Load vendor-scoped DataFrames
 
     Phase 3 will add:
-      5. Load vendor data (CSV layer)
-      6. Resolve vendor ID (name → canonical ID)
       7. Compute scorecard
       8. Compute benchmarks (if enabled)
       9. Compute PO risk
@@ -139,6 +160,8 @@ def run_pipeline(ctx: BriefingContext) -> BriefingContext:
     ctx = _stage_load_manifest(ctx)
     ctx = _stage_validate_manifest(ctx)
     ctx = _stage_resolve_provider(ctx)
+    ctx = _stage_resolve_vendor_id(ctx)
+    ctx = _stage_load_vendor_data(ctx)
 
     ctx.add_note("Scaffold: briefing generation not yet implemented (Phase 4).")
     logger.info("Pipeline complete. Notes: %d", len(ctx.pipeline_notes))
@@ -198,8 +221,10 @@ def summarize_request(
             "provider": ctx.provider.provider if ctx.provider else None,
             "model": ctx.provider.model if ctx.provider else None,
         },
+        "vendor_id": ctx.vendor_id,
         "manifest_path": ctx.manifest.get("_manifest_path"),
         "available_file_keys": sorted(ctx.manifest.get("files", {}).keys()),
+        "loaded_datasets": sorted(ctx.vendor_data.keys()),
         "validation_warnings": ctx.validation_result.warnings if ctx.validation_result else [],
         "pipeline_notes": ctx.pipeline_notes,
     }

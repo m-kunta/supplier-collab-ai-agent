@@ -13,6 +13,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.agent import summarize_request
 from src.config import load_config
 from src.data_loader import (
     load_dataset,
@@ -270,6 +271,69 @@ class ResolveVendorIdTests(unittest.TestCase):
         vendor_master_df = load_dataset(manifest, "vendor_master")
         resolved = resolve_vendor_id("Kelloggs", vendor_master_df)
         self.assertEqual(resolved, "V1001")
+
+
+# ---------------------------------------------------------------------------
+# Pipeline integration
+# ---------------------------------------------------------------------------
+
+class PipelineIntegrationTests(unittest.TestCase):
+    def test_summarize_request_resolves_vendor_name_and_loads_vendor_data(self):
+        summary = summarize_request(
+            vendor="Kelloggs",
+            meeting_date="2026-04-03",
+            data_dir=MOCK_DATA_DIR,
+            lookback_weeks=13,
+            persona_emphasis="both",
+            include_benchmarks=True,
+            output_format="md",
+            category_filter=None,
+        )
+        self.assertEqual(summary["vendor_id"], "V1001")
+        self.assertEqual(
+            summary["loaded_datasets"],
+            ["purchase_orders", "vendor_master", "vendor_performance"],
+        )
+        self.assertEqual(summary["validation_warnings"], [])
+        self.assertTrue(
+            any("Loaded 3 dataset(s) for vendor_id 'V1001'." in note for note in summary["pipeline_notes"])
+        )
+
+    def test_summarize_request_rejects_unknown_vendor(self):
+        with self.assertRaisesRegex(ValueError, "Vendor 'UnknownCo' not found"):
+            summarize_request(
+                vendor="UnknownCo",
+                meeting_date="2026-04-03",
+                data_dir=MOCK_DATA_DIR,
+                lookback_weeks=13,
+                persona_emphasis="both",
+                include_benchmarks=True,
+                output_format="md",
+                category_filter=None,
+            )
+
+    def test_summarize_request_fails_when_vendor_master_missing_from_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            (tmp_path / "manifest.yaml").write_text(
+                "version: '1.0'\n"
+                "environment: test\n"
+                "files:\n"
+                "  purchase_orders:\n"
+                "    filename: purchase_orders.csv\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(KeyError, "vendor_master"):
+                summarize_request(
+                    vendor="Kelloggs",
+                    meeting_date="2026-04-03",
+                    data_dir=tmp_path,
+                    lookback_weeks=13,
+                    persona_emphasis="both",
+                    include_benchmarks=True,
+                    output_format="md",
+                    category_filter=None,
+                )
 
 
 if __name__ == "__main__":
