@@ -1,13 +1,34 @@
 name: vendor_master
 primary_key:
   - vendor_id
+
 required_columns:
   - vendor_id
   - vendor_name
   - vendor_status
   - primary_category
+
+optional_columns:
+  - buyer_name
+  - planner_name
+
 column_types:
   vendor_id: string
   vendor_name: string
   vendor_status: string
   primary_category: string
+  buyer_name: string
+  planner_name: string
+
+nullable:
+  buyer_name: true
+  planner_name: true
+
+enum_values:
+  vendor_status:
+    - active
+    - inactive
+    - on_hold
+    - new
+
+constraints: {}

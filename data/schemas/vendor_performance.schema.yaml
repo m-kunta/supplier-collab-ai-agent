@@ -3,15 +3,58 @@ primary_key:
   - vendor_id
   - week_ending
   - metric_code
+
 required_columns:
   - vendor_id
   - week_ending
   - metric_code
   - metric_value
   - metric_uom
+
+optional_columns:
+  - denominator
+  - numerator
+
 column_types:
   vendor_id: string
   week_ending: date
   metric_code: string
   metric_value: numeric
   metric_uom: string
+  denominator: numeric
+  numerator: numeric
+
+nullable:
+  denominator: true
+  numerator: true
+
+enum_values:
+  # 15 metric codes across 4 tiers (Delivery & Fulfillment, Compliance & Quality,
+  # Commercial & Cost, Order Behavior) — as defined in scope doc §6.3
+  metric_code:
+    - FILL_RATE         # Delivery & Fulfillment
+    - OTIF              # Delivery & Fulfillment
+    - ON_TIME_DELIVERY  # Delivery & Fulfillment
+    - IN_FULL_DELIVERY  # Delivery & Fulfillment
+    - CASE_FILL_RATE    # Delivery & Fulfillment
+    - LINE_FILL_RATE    # Delivery & Fulfillment
+    - LEAD_TIME_COMPLIANCE   # Compliance & Quality
+    - INVOICE_ACCURACY       # Compliance & Quality
+    - LABEL_COMPLIANCE       # Compliance & Quality
+    - DAMAGE_RATE            # Compliance & Quality
+    - RETURN_RATE            # Compliance & Quality
+    - DC_COMPLIANCE          # Compliance & Quality
+    - FORECAST_ACCURACY      # Commercial & Cost
+    - PROMO_FILL_RATE        # Commercial & Cost
+    - VENDOR_COMPLIANCE      # Order Behavior
+  metric_uom:
+    - pct    # 0.0–1.0 ratio expressed as a proportion
+    - days   # lead time, lateness
+    - count  # discrete event counts
+    - ratio  # dimensionless ratio
+
+constraints:
+  # pct-typed metrics should be 0.0–1.0; enforced at Pydantic layer using metric_uom.
+  # Days and count metrics have no upper bound.
+  metric_value:
+    min: 0.0

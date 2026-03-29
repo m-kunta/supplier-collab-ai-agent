@@ -2,6 +2,7 @@ name: purchase_orders
 primary_key:
   - po_number
   - po_line
+
 required_columns:
   - po_number
   - po_line
@@ -9,10 +10,54 @@ required_columns:
   - sku
   - qty_ordered
   - requested_delivery_date
+
+optional_columns:
+  - sku_description
+  - uom
+  - po_create_date
+  - po_status
+  - ship_to_dc
+  - unit_cost
+  - extended_cost
+
 column_types:
   po_number: string
   po_line: integer
   vendor_id: string
   sku: string
+  sku_description: string
+  uom: string
   qty_ordered: numeric
+  po_create_date: date
   requested_delivery_date: date
+  po_status: string
+  ship_to_dc: string
+  unit_cost: numeric
+  extended_cost: numeric
+
+nullable:
+  sku_description: true
+  uom: true
+  po_create_date: true
+  po_status: true
+  ship_to_dc: true
+  unit_cost: true
+  extended_cost: true
+
+enum_values:
+  po_status:
+    - open
+    - confirmed
+    - shipped
+    - received
+    - cancelled
+    - partial
+    - on_hold
+
+constraints:
+  qty_ordered:
+    min: 0
+  unit_cost:
+    min: 0
+  extended_cost:
+    min: 0

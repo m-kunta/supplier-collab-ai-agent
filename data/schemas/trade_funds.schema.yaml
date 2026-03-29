@@ -1,0 +1,51 @@
+name: trade_funds
+primary_key:
+  - fund_id
+
+required_columns:
+  - fund_id
+  - vendor_id
+  - fund_type
+  - fund_period_start
+  - fund_period_end
+  - committed_amount
+
+optional_columns:
+  - actual_spend
+  - remaining_balance
+  - promo_id
+  - fund_description
+
+column_types:
+  fund_id: string
+  vendor_id: string
+  fund_type: string
+  fund_period_start: date
+  fund_period_end: date
+  committed_amount: numeric
+  actual_spend: numeric
+  remaining_balance: numeric
+  promo_id: string
+  fund_description: string
+
+nullable:
+  actual_spend: true        # null = no spend posted yet
+  remaining_balance: true   # null = not yet calculated
+  promo_id: true            # null = not tied to a specific promo event
+  fund_description: true
+
+enum_values:
+  fund_type:
+    - scan_allowance   # deduction taken at point of sale
+    - off_invoice      # deduction taken on invoice
+    - lump_sum         # fixed payment from vendor
+    - scan_back        # rebate paid back after scan data
+    - other
+
+constraints:
+  committed_amount:
+    min: 0
+  actual_spend:
+    min: 0
+  remaining_balance:
+    min: 0

@@ -2,9 +2,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 from pathlib import Path
 
-from src.agent import summarize_request
+from dotenv import load_dotenv
+
+# Load .env before any src imports resolve provider/API key env vars.
+load_dotenv()
+
+from src.agent import summarize_request  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 
 def build_parser() -> argparse.ArgumentParser:

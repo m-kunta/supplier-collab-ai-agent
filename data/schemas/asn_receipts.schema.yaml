@@ -1,0 +1,57 @@
+name: asn_receipts
+primary_key:
+  - asn_number
+  - po_number
+  - po_line
+
+required_columns:
+  - asn_number
+  - po_number
+  - po_line
+  - vendor_id
+  - ship_date
+  - expected_receipt_date
+
+optional_columns:
+  - actual_receipt_date
+  - qty_shipped
+  - qty_received
+  - carrier
+  - tracking_number
+  - receipt_status
+
+column_types:
+  asn_number: string
+  po_number: string
+  po_line: integer
+  vendor_id: string
+  ship_date: date
+  expected_receipt_date: date
+  actual_receipt_date: date
+  qty_shipped: numeric
+  qty_received: numeric
+  carrier: string
+  tracking_number: string
+  receipt_status: string
+
+nullable:
+  actual_receipt_date: true  # null = not yet received
+  qty_shipped: true
+  qty_received: true         # null = not yet received
+  carrier: true
+  tracking_number: true
+  receipt_status: true
+
+enum_values:
+  receipt_status:
+    - in_transit
+    - received
+    - partial
+    - rejected
+    - overdue
+
+constraints:
+  qty_shipped:
+    min: 0
+  qty_received:
+    min: 0
