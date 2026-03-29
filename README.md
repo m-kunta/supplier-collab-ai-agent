@@ -24,8 +24,12 @@ We are following a phased integration plan to move from structural scaffold to a
 - [x] Build provider-agnostic LLM interface wrapper (`src/llm_providers.py`).
 - [x] Setup `README.md` and github repository (`supplier-collab-ai-agent`).
 - [x] Transition `manifest.yaml` data loader to robust YAML parsing mechanism (e.g., `PyYAML`).
-- [ ] Harden manifest YAML loading by rejecting empty or non-mapping documents with clear errors, and add tests for native YAML plus invalid manifest shapes.
-- [ ] Establish foundational data manipulation engine (Pandas/Polars) in requirements.
+- [x] Harden manifest YAML loading by rejecting empty or non-mapping documents with clear errors, and add tests for native YAML plus invalid manifest shapes.
+- [x] Establish foundational data manipulation engine (`pandas`) in requirements.
+
+Phase 1 completion notes:
+- Native YAML parsing is now used for `manifest.yaml`, `config/agent_config.yaml`, and `data/schemas/*.schema.yaml`.
+- Foundation tests cover CLI contract, provider selection, YAML edge cases, and mock data/schema integrity.
 
 ### Phase 2: Data Validation & Ingestion Layer
 - [ ] Implement `pydantic` models for strict data contract validation.
