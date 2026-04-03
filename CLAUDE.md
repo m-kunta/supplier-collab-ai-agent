@@ -30,9 +30,9 @@ pytest tests/ -v
 
 ## Project Status
 
-**Current phase:** Scaffold — repo structure, CLI contract, config, mock data layout, and provider-agnostic LLM seam are in place. No briefing generation implemented yet.
+**Current phase:** MVP Thin Vertical Slice — Data loaded, schemas mapped, mock generator built, and v0 mega-prompt ready. The Orchestrator (`src/agent.py`) is the final remaining step for the MVP milestone.
 
-**Next milestone:** MVP thin vertical slice — vendor ID in, readable briefing out. See `docs/implementation_plan.md` for the scaffold plan and `docs/supplier-collab-ai-agent-scope-v1.0.md` §13 for the full sprint roadmap.
+**Next milestone:** Sprint 1 — Full scorecard + benchmarking (3 vendors, 14 metrics, BIC analysis). See `docs/implementation_plan.md` for the scaffold plan and `docs/supplier-collab-ai-agent-scope-v1.0.md` §13 for the full sprint roadmap.
 
 ---
 
@@ -101,17 +101,17 @@ Each landing zone contains:
 
 **Schemas:** `data/schemas/*.schema.yaml` — YAML schema definitions with `primary_key`, `required_columns`, and `column_types`.
 
-**Mock data:** Single-row CSVs in `data/inbound/mock/` for the 3 required files. MVP will expand these to multi-vendor, multi-week realistic data.
+**Mock data:** Generated via `scripts/generate_mock_csvs.py` for 1 vendor (Kelloggs) and 5 tables (13-week performance history, POs, OOS, Promo) seated in `data/inbound/mock/` to emulate pipeline injection.
 
 ### Prompt versions
 
 | File | Purpose |
 |---|---|
-| `prompts/briefing_v0.md` | MVP — basic tone and quality instructions |
+| `prompts/briefing_v0.md` | MVP — Implemented. Mega-prompt forcing basic tone, quality, and 5 sections |
 | `prompts/briefing_v1.md` | Sprint 1 — scorecard, benchmarking, dual-persona framing |
 | `prompts/briefing_v2.md` | Sprint 2 — cross-domain synthesis (PO×Promo, OOS, benchmarks) |
 
-All are placeholders. Production prompts will inject pre-computed structured data and request section-by-section narrative generation.
+Production prompts currently inject pre-computed structured data and request section-by-section narrative generation.
 
 ### Adding a new LLM provider (`src/llm_providers.py`)
 
