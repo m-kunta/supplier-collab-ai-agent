@@ -1,31 +1,26 @@
-version: "1.0"
-generated_at: "2026-03-26T08:00:00"
-source_system: mock
+version: '1.0'
+generated_at: '2026-04-03T08:00:00'
+source_system: Mock Generator
 environment: mock
 data_directory: ./
-
 files:
   vendor_master:
     filename: vendor_master.csv
-    refresh_frequency: weekly
-    last_refreshed: "2026-03-25T06:00:00"
     row_count: 1
     required: true
-
   purchase_orders:
     filename: purchase_orders.csv
-    refresh_frequency: daily
-    last_refreshed: "2026-03-26T05:30:00"
-    row_count: 1
+    row_count: 3
     required: true
-
   vendor_performance:
     filename: vendor_performance.csv
-    refresh_frequency: weekly
-    last_refreshed: "2026-03-24T06:00:00"
-    row_count: 1
+    row_count: 65
     required: true
-
-benchmarks:
-  method: compute_from_data
-  bic_percentile: 90
+  oos_events:
+    filename: oos_events.csv
+    row_count: 2
+    required: false
+  promo_calendar:
+    filename: promo_calendar.csv
+    row_count: 1
+    required: false

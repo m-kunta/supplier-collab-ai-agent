@@ -1,5 +1,7 @@
 # Supplier Collab AI Scaffold Plan
 
+**Author:** Mohith Kunta ([@m-kunta](https://github.com/m-kunta))
+
 ## Summary
 
 Add this plan as `docs/implementation_plan.md` inside the future project folder `/Users/MKunta/CODE/supplier_collab_ai_agent` once we switch out of Plan Mode. The first pass remains a **scaffold-only** build: set up the repo, package layout, config, docs, prompt placeholders, mock-data structure, and a provider-agnostic AI seam without implementing full briefing generation yet.

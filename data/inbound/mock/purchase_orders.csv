@@ -1,2 +1,4 @@
-po_number,po_line,vendor_id,sku,sku_description,uom,qty_ordered,po_create_date,requested_delivery_date,po_status,ship_to_dc,unit_cost,extended_cost
-8800123,10,V1001,4421,Frosted Flakes 18oz,EA,1000,2026-03-18,2026-04-02,open,DC01,3.5,3500
+po_number,po_line,vendor_id,sku,sku_description,qty_ordered,requested_delivery_date,po_status,ship_to_dc
+PO-9991,1,V1001,SKU-001,Frosted Flakes 18oz,500,2026-04-01,shipped,DC-Atlanta
+PO-9992,1,V1001,SKU-002,Rice Krispies 12oz,300,2026-04-07,open,DC-Atlanta
+PO-9993,1,V1001,SKU-003,Froot Loops 14.7oz,450,2026-04-10,open,DC-Dallas

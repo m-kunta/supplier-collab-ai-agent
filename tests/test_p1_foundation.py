@@ -291,12 +291,12 @@ class PipelineIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(summary["vendor_id"], "V1001")
         self.assertEqual(
-            summary["loaded_datasets"],
-            ["purchase_orders", "vendor_master", "vendor_performance"],
+            sorted(summary["loaded_datasets"]),
+            ["oos_events", "promo_calendar", "purchase_orders", "vendor_master", "vendor_performance"],
         )
         self.assertEqual(summary["validation_warnings"], [])
         self.assertTrue(
-            any("Loaded 3 dataset(s) for vendor_id 'V1001'." in note for note in summary["pipeline_notes"])
+            any("Loaded 5 dataset(s) for vendor_id 'V1001'." in note for note in summary["pipeline_notes"])
         )
 
     def test_summarize_request_rejects_unknown_vendor(self):
