@@ -3,7 +3,7 @@
 **Project:** `supplier-collab-ai-agent`
 **Repository:** `m-kunta/supplier-collab-ai-agent`
 **Description:** Pre-meeting intelligence agent for supplier collaboration — turns scattered vendor performance data into synthesized, actionable briefing documents in seconds
-**Author:** Mohith Kunta
+**Author:** Mohith Kunta ([@m-kunta](https://github.com/m-kunta))
 **Date:** March 26, 2026
 **Status:** Scoping Complete — Ready for MVP Build
 

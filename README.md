@@ -5,7 +5,7 @@
 ![Scope](https://img.shields.io/badge/scope-v1.0-brightgreen.svg)
 ![LLM](https://img.shields.io/badge/AI-Claude%20%7C%20OpenAI-purple.svg)
 
-**Author:** Mohith Kunta  
+**Author:** Mohith Kunta ([@m-kunta](https://github.com/m-kunta))  
 **Project:** `supplier-collab-ai-agent`
 
 ## 🚀 High-Level Overview
