@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 REQUIRED_MANIFEST_KEYS = {"version", "environment", "files"}
 
+REQUIRED_FILES = {"vendor_master", "purchase_orders", "vendor_performance"}
+
 
 @dataclass
 class ValidationResult:
@@ -55,8 +57,14 @@ def validate_manifest_shape(manifest: dict[str, Any]) -> ValidationResult:
         optional-file freshness checks will be added in Phase 2.
     """
     public_keys = {k for k in manifest if not k.startswith("_")}
-    missing = sorted(REQUIRED_MANIFEST_KEYS - public_keys)
-    errors = [f"Missing manifest key: {key}" for key in missing]
+    missing_keys = sorted(REQUIRED_MANIFEST_KEYS - public_keys)
+    errors = [f"Missing manifest key: {key}" for key in missing_keys]
+
+    if not errors:
+        declared_files = set(manifest["files"])
+        missing_files = sorted(REQUIRED_FILES - declared_files)
+        errors.extend(f"Missing required file in manifest: {name}" for name in missing_files)
+
     result = ValidationResult(errors=errors)
     if result.has_errors:
         logger.error("Manifest shape validation failed: %s", result.errors)
