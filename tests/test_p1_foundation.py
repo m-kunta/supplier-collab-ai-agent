@@ -21,7 +21,7 @@ from src.data_loader import (
     load_vendor_data,
     resolve_vendor_id,
 )
-from src.data_validator import ValidationResult, validate_manifest_shape
+from src.data_validator import REQUIRED_FILES, ValidationResult, validate_manifest_shape
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -120,7 +120,11 @@ class ValidateManifestShapeTests(unittest.TestCase):
         return {
             "version": "1.0",
             "environment": "test",
-            "files": {"vendor_master": {"filename": "vendor_master.csv"}},
+            "files": {
+                "vendor_master": {"filename": "vendor_master.csv"},
+                "purchase_orders": {"filename": "purchase_orders.csv"},
+                "vendor_performance": {"filename": "vendor_performance.csv"},
+            },
         }
 
     def test_valid_manifest_returns_no_errors(self):
@@ -163,6 +167,37 @@ class ValidateManifestShapeTests(unittest.TestCase):
         manifest["benchmarks"] = {"bic_percentile": 90}
         result = validate_manifest_shape(manifest)
         self.assertTrue(result.is_valid)
+
+    def test_missing_required_file_in_manifest_is_reported_as_error(self):
+        manifest = self._full_manifest()
+        del manifest["files"]["vendor_master"]
+        result = validate_manifest_shape(manifest)
+        self.assertTrue(result.has_errors)
+        self.assertIn("Missing required file in manifest: vendor_master", result.errors)
+
+    def test_all_three_required_files_missing_produces_three_errors(self):
+        manifest = {"version": "1.0", "environment": "test", "files": {}}
+        result = validate_manifest_shape(manifest)
+        self.assertEqual(len(result.errors), 3)
+        for name in REQUIRED_FILES:
+            self.assertIn(f"Missing required file in manifest: {name}", result.errors)
+
+    def test_optional_files_alone_do_not_satisfy_required_file_check(self):
+        manifest = {
+            "version": "1.0",
+            "environment": "test",
+            "files": {"oos_events": {"filename": "oos_events.csv"}},
+        }
+        result = validate_manifest_shape(manifest)
+        self.assertTrue(result.has_errors)
+        self.assertEqual(len(result.errors), 3)
+
+    def test_required_files_check_skipped_when_files_key_is_absent(self):
+        """Shape errors take precedence; no KeyError when 'files' key is missing."""
+        manifest = {"version": "1.0", "environment": "test"}
+        result = validate_manifest_shape(manifest)
+        self.assertTrue(result.has_errors)
+        self.assertEqual(len(result.errors), 1)  # only the missing 'files' key error
 
 
 # ---------------------------------------------------------------------------
@@ -323,7 +358,7 @@ class PipelineIntegrationTests(unittest.TestCase):
                 "    filename: purchase_orders.csv\n",
                 encoding="utf-8",
             )
-            with self.assertRaisesRegex(KeyError, "vendor_master"):
+            with self.assertRaisesRegex(ValueError, "vendor_master"):
                 summarize_request(
                     vendor="Kelloggs",
                     meeting_date="2026-04-03",
