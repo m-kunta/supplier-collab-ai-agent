@@ -37,7 +37,56 @@ def compute_scorecard(
         - ``trend_direction`` (str) — one of ``'improving'``, ``'declining'``,
           ``'stable'``, or ``'insufficient_data'``
     """
-    raise NotImplementedError(
-        "Scorecard computation is not yet implemented. "
-        "See docs/implementation_plan.md Phase 3."
+    stable_threshold = (
+        config.get("thresholds", {}).get("trend_stable_max_delta", 0.005)
     )
+
+    result: dict[str, Any] = {}
+
+    for metric_code, group in performance_df.groupby("metric_code"):
+        sorted_weeks = (
+            group.sort_values("week_ending")
+            .tail(lookback_weeks)
+            .reset_index(drop=True)
+        )
+        n = len(sorted_weeks)
+
+        current_value = float(sorted_weeks.iloc[-1]["metric_value"])
+
+        trend_4w: float | None = None
+        if n >= 5:
+            prior_4w = float(sorted_weeks.iloc[-5]["metric_value"])
+            trend_4w = round(current_value - prior_4w, 6)
+
+        trend_13w: float | None = None
+        if n >= 13:
+            prior_13w = float(sorted_weeks.iloc[-13]["metric_value"])
+            trend_13w = round(current_value - prior_13w, 6)
+
+        if n < 2:
+            trend_direction = "insufficient_data"
+        elif trend_4w is not None and abs(trend_4w) <= stable_threshold:
+            trend_direction = "stable"
+        elif trend_4w is not None and trend_4w > stable_threshold:
+            trend_direction = "improving"
+        elif trend_4w is not None and trend_4w < -stable_threshold:
+            trend_direction = "declining"
+        else:
+            # Fewer than 4 weeks but at least 2 — use 2-point delta
+            delta = current_value - float(sorted_weeks.iloc[0]["metric_value"])
+            if abs(delta) <= stable_threshold:
+                trend_direction = "stable"
+            elif delta > 0:
+                trend_direction = "improving"
+            else:
+                trend_direction = "declining"
+
+        result[metric_code] = {
+            "current_value": current_value,
+            "trend_4w": trend_4w,
+            "trend_13w": trend_13w,
+            "trend_direction": trend_direction,
+        }
+
+    logger.debug("compute_scorecard: %d metrics computed for vendor '%s'.", len(result), vendor_id)
+    return result
