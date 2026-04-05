@@ -75,31 +75,35 @@ IMPROVING_OTIF = [
 
 
 class TestComputeScorecardCurrentValue(unittest.TestCase):
-    def test_current_value_is_most_recent_week(self):
+    def test_current_value_is_latest_four_week_average(self):
         df = _make_df("V1001", "FILL_RATE", DECLINING_FILL_RATE)
         result = compute_scorecard("V1001", df, lookback_weeks=13, config={})
-        self.assertAlmostEqual(result["FILL_RATE"]["current_value"], 0.918)
+        expected = round((0.930 + 0.925 + 0.920 + 0.918) / 4, 6)
+        self.assertAlmostEqual(result["FILL_RATE"]["current_value"], expected)
 
-    def test_current_value_correct_when_data_unsorted(self):
+    def test_current_value_uses_latest_four_weeks_when_data_unsorted(self):
         weeks_reversed = list(reversed(DECLINING_FILL_RATE))
         df = _make_df("V1001", "FILL_RATE", weeks_reversed)
         result = compute_scorecard("V1001", df, lookback_weeks=13, config={})
-        self.assertAlmostEqual(result["FILL_RATE"]["current_value"], 0.918)
+        expected = round((0.930 + 0.925 + 0.920 + 0.918) / 4, 6)
+        self.assertAlmostEqual(result["FILL_RATE"]["current_value"], expected)
 
 
 class TestComputeScorecardTrends(unittest.TestCase):
     def test_trend_4w_is_delta_vs_four_weeks_ago(self):
         df = _make_df("V1001", "FILL_RATE", DECLINING_FILL_RATE)
         result = compute_scorecard("V1001", df, lookback_weeks=13, config={})
-        # current (2026-03-28) = 0.918, four weeks prior (2026-02-28) = 0.935
-        expected = round(0.918 - 0.935, 6)
+        # current value is the latest 4-week average, compared against the
+        # point-in-time value from four weeks prior.
+        expected = round(((0.930 + 0.925 + 0.920 + 0.918) / 4) - 0.935, 6)
         self.assertAlmostEqual(result["FILL_RATE"]["trend_4w"], expected, places=5)
 
     def test_trend_13w_is_delta_vs_thirteen_weeks_ago(self):
         df = _make_df("V1001", "FILL_RATE", DECLINING_FILL_RATE)
         result = compute_scorecard("V1001", df, lookback_weeks=13, config={})
-        # current (2026-03-28) = 0.918, 13 weeks prior (2026-01-03) = 0.962
-        expected = round(0.918 - 0.962, 6)
+        # current value is the latest 4-week average, compared against the
+        # point-in-time value from the start of the 13-week window.
+        expected = round(((0.930 + 0.925 + 0.920 + 0.918) / 4) - 0.962, 6)
         self.assertAlmostEqual(result["FILL_RATE"]["trend_13w"], expected, places=5)
 
     def test_trend_4w_is_none_when_fewer_than_4_weeks(self):
@@ -128,6 +132,33 @@ class TestComputeScorecardTrendDirection(unittest.TestCase):
         df = _make_df("V1001", "OTIF", IMPROVING_OTIF)
         result = compute_scorecard("V1001", df, lookback_weeks=13, config={})
         self.assertEqual(result["OTIF"]["trend_direction"], "improving")
+
+    def test_small_improvements_are_stable_when_below_min_delta(self):
+        weeks = [
+            ("2026-01-03", 0.900),
+            ("2026-01-10", 0.902),
+            ("2026-01-17", 0.904),
+            ("2026-01-24", 0.906),
+        ]
+        df = _make_df("V1001", "FILL_RATE", weeks)
+        result = compute_scorecard("V1001", df, lookback_weeks=13, config={})
+        self.assertEqual(result["FILL_RATE"]["trend_direction"], "stable")
+
+    def test_trend_direction_honors_configured_consecutive_weeks_and_min_delta(self):
+        weeks = [
+            ("2026-01-03", 0.900),
+            ("2026-01-10", 0.906),
+            ("2026-01-17", 0.912),
+        ]
+        df = _make_df("V1001", "FILL_RATE", weeks)
+        config = {
+            "thresholds": {
+                "trend_improvement_consecutive_weeks": 2,
+                "trend_improvement_min_delta": 0.005,
+            }
+        }
+        result = compute_scorecard("V1001", df, lookback_weeks=13, config=config)
+        self.assertEqual(result["FILL_RATE"]["trend_direction"], "improving")
 
     def test_insufficient_data_when_only_one_week(self):
         df = _make_df("V1001", "FILL_RATE", DECLINING_FILL_RATE[:1])
