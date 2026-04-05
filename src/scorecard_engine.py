@@ -49,7 +49,7 @@ def compute_scorecard(
     Returns:
         Dict keyed by ``metric_code``, each value containing:
 
-        - ``current_value`` (float) — most recent week's value
+        - ``current_value`` (float) — latest 4-week simple average
         - ``trend_4w`` (float | None) — delta vs. 4-week prior value
         - ``trend_13w`` (float | None) — delta vs. 13-week prior value
         - ``trend_direction`` (str) — one of ``'improving'``, ``'declining'``,
