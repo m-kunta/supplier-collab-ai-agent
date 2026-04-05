@@ -8,6 +8,24 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
+def _has_consecutive_streak(
+    deltas: pd.Series,
+    consecutive_weeks: int,
+    min_delta: float,
+    improving: bool,
+) -> bool:
+    streak = 0
+    for delta in deltas:
+        qualifies = delta >= min_delta if improving else delta <= -min_delta
+        if qualifies:
+            streak += 1
+            if streak >= consecutive_weeks:
+                return True
+        else:
+            streak = 0
+    return False
+
+
 def describe_scope() -> str:
     return "Scorecard engine scaffold."
 
@@ -37,9 +55,11 @@ def compute_scorecard(
         - ``trend_direction`` (str) — one of ``'improving'``, ``'declining'``,
           ``'stable'``, or ``'insufficient_data'``
     """
-    stable_threshold = (
-        config.get("thresholds", {}).get("trend_stable_max_delta", 0.005)
+    thresholds = config.get("thresholds", {})
+    consecutive_weeks = int(
+        thresholds.get("trend_improvement_consecutive_weeks", 3)
     )
+    min_delta = float(thresholds.get("trend_improvement_min_delta", 0.005))
 
     result: dict[str, Any] = {}
 
@@ -51,7 +71,8 @@ def compute_scorecard(
         )
         n = len(sorted_weeks)
 
-        current_value = float(sorted_weeks.iloc[-1]["metric_value"])
+        current_window = sorted_weeks.tail(min(4, n))
+        current_value = round(float(current_window["metric_value"].mean()), 6)
 
         trend_4w: float | None = None
         if n >= 5:
@@ -63,23 +84,16 @@ def compute_scorecard(
             prior_13w = float(sorted_weeks.iloc[-13]["metric_value"])
             trend_13w = round(current_value - prior_13w, 6)
 
+        deltas = sorted_weeks["metric_value"].diff().dropna()
+
         if n < 2:
             trend_direction = "insufficient_data"
-        elif trend_4w is not None and abs(trend_4w) <= stable_threshold:
-            trend_direction = "stable"
-        elif trend_4w is not None and trend_4w > stable_threshold:
-            trend_direction = "improving"
-        elif trend_4w is not None and trend_4w < -stable_threshold:
+        elif _has_consecutive_streak(deltas, consecutive_weeks, min_delta, improving=False):
             trend_direction = "declining"
+        elif _has_consecutive_streak(deltas, consecutive_weeks, min_delta, improving=True):
+            trend_direction = "improving"
         else:
-            # Fewer than 4 weeks but at least 2 — use 2-point delta
-            delta = current_value - float(sorted_weeks.iloc[0]["metric_value"])
-            if abs(delta) <= stable_threshold:
-                trend_direction = "stable"
-            elif delta > 0:
-                trend_direction = "improving"
-            else:
-                trend_direction = "declining"
+            trend_direction = "stable"
 
         result[metric_code] = {
             "current_value": current_value,
