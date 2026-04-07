@@ -210,5 +210,34 @@ class TestComputeBenchmarksEdgeCases(unittest.TestCase):
         self.assertEqual(result, {})
 
 
+class TestComputeBenchmarksInputValidation(unittest.TestCase):
+    """Validate input guard clauses: missing columns, empty DataFrames, NaN handling."""
+
+    def test_missing_required_columns_raises_value_error(self):
+        """Missing 'metric_value' column should raise ValueError."""
+        df = pd.DataFrame([{"vendor_id": "V1001", "week_ending": "2026-03-28", "metric_code": "FILL_RATE"}])
+        with self.assertRaises(ValueError):
+            compute_benchmarks("V1001", df, config={})
+
+    def test_empty_dataframe_returns_empty_dict(self):
+        """Empty DataFrame (with correct columns) should return empty dict."""
+        df = pd.DataFrame(columns=["vendor_id", "week_ending", "metric_code", "metric_value", "metric_uom"])
+        result = compute_benchmarks("V1001", df, config={})
+        self.assertEqual(result, {})
+
+    def test_nan_metric_values_are_dropped_gracefully(self):
+        """Rows with NaN metric_value should be dropped; computation proceeds with valid rows."""
+        data = [
+            {"vendor_id": "V1001", "week_ending": "2026-03-21", "metric_code": "FILL_RATE", "metric_value": float("nan"), "metric_uom": "pct"},
+            {"vendor_id": "V1001", "week_ending": "2026-03-28", "metric_code": "FILL_RATE", "metric_value": 0.90, "metric_uom": "pct"},
+            {"vendor_id": "V1002", "week_ending": "2026-03-28", "metric_code": "FILL_RATE", "metric_value": 0.95, "metric_uom": "pct"},
+            {"vendor_id": "V1003", "week_ending": "2026-03-28", "metric_code": "FILL_RATE", "metric_value": 0.98, "metric_uom": "pct"},
+        ]
+        df = pd.DataFrame(data)
+        result = compute_benchmarks("V1001", df, config={})
+        self.assertIn("FILL_RATE", result)
+        self.assertIsNotNone(result["FILL_RATE"]["peer_avg"])
+
+
 if __name__ == "__main__":
     unittest.main()
