@@ -42,7 +42,7 @@ pytest tests/ -v
 
 Pre-meeting intelligence agent for supplier collaboration. Ingests vendor performance CSV exports from a file-based landing zone, computes scorecard metrics and risk flags, then generates a synthesized briefing document via Claude for buyer/planner vendor meetings.
 
-### Pipeline (not yet implemented)
+### Pipeline (partially implemented — scorecard and benchmark engines live; orchestrator not yet wired)
 
 ```
 cli.py → agent.py (orchestrator)
@@ -158,6 +158,8 @@ Current test coverage:
 - Manifest path resolution works against mock data
 - Provider selection resolves anthropic without a live API call
 - Manifest/config edge-case handling and mock fixture integrity live in the Phase 1 foundation tests
+- Scorecard engine: 17 tests covering current_value averaging, trend deltas, trend direction (consecutive-streak), lookback windowing, multiple metrics, and edge cases (`tests/test_scorecard_engine.py`)
+- Benchmark engine: 15 tests covering peer avg, BIC percentile, gap-to-BIC, dollar impact, multiple metrics, input validation (missing columns, empty df, NaN rows) (`tests/test_benchmark_engine.py`)
 
 ---
 
