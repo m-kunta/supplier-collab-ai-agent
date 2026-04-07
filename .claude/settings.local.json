@@ -1,10 +1,39 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls -d /Users/MKunta/CODE/supplier_collab_ai/*/)",
+      "Bash(ls -d /Users/MKunta/AGENTS/CODE/supplier_collab_ai/*/)",
       "Bash(python3 -c \"import yaml; m = yaml.safe_load\\(open\\(''data/inbound/mock/manifest.yaml''\\)\\); print\\(type\\(m\\), m.get\\(''version''\\)\\)\")",
       "Bash(source .venv/bin/activate)",
-      "Bash(pytest tests/ -v --tb=short)"
+      "Bash(pytest tests/ -v --tb=short)",
+      "Bash(pytest tests/test_p1_foundation.py -v)",
+      "Bash(pytest tests/ -v)",
+      "Bash(git push:*)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(npx --version)",
+      "Bash(docker --version)",
+      "Bash(echo $GITHUB_PERSONAL_ACCESS_TOKEN)",
+      "Bash(export PATH=\"/opt/homebrew/bin:/usr/local/bin:/usr/bin:$PATH\")",
+      "Bash(pytest tests/test_scorecard_engine.py -v)",
+      "Bash(python -m pytest tests/test_scorecard_engine.py -v)",
+      "Bash(.venv/bin/python -m pytest tests/test_scorecard_engine.py -v)",
+      "Bash(/Users/MKunta/AGENTS/CODE/supplier_collab_ai_agent/.venv/bin/python -m pytest /Users/MKunta/AGENTS/CODE/supplier_collab_ai_agent/tests/test_scorecard_engine.py -v)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(python3 -m pytest tests/test_scorecard_engine.py -v)",
+      "Bash(/Users/MKunta/AGENTS/CODE/supplier_collab_ai_agent/.venv/bin/python3 -m pytest tests/test_scorecard_engine.py -v)",
+      "Bash(python -m pytest tests/ -v)",
+      "Bash(python3 -m pytest tests/ -v)",
+      "Bash(/Users/MKunta/AGENTS/CODE/supplier_collab_ai_agent/.venv/bin/python3 -m pytest /Users/MKunta/AGENTS/CODE/supplier_collab_ai_agent/tests/ -v)",
+      "Bash(pip install:*)",
+      "Bash(python3 -m venv .venv)",
+      "Bash(/Users/MKunta/AGENTS/CODE/supplier_collab_ai_agent/.venv/bin/python -m pytest tests/test_scorecard_engine.py -v)",
+      "Bash(pytest tests/test_benchmark_engine.py -v -W error::FutureWarning)",
+      "Bash(python -m pytest tests/test_benchmark_engine.py -v -W error::FutureWarning)",
+      "Bash(python -c \"import pandas; print\\(pandas.__version__\\); help\\(pandas.Series.quantile\\)\")",
+      "Bash(python -c \"import numpy as np; peer_values = [0.88, 0.95, 0.97, 0.99]; result = np.percentile\\(peer_values, 90\\); print\\(f''90th percentile: {result}''\\); print\\(f''Type: {type\\(result\\)}''\\)\")",
+      "Bash(python -c \":*)",
+      "Bash(python -W error::FutureWarning -c \":*)"
     ]
   }
 }

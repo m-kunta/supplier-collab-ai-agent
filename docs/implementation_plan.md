@@ -4,12 +4,12 @@
 
 ## Summary
 
-Add this plan as `docs/implementation_plan.md` inside the future project folder `/Users/MKunta/CODE/supplier_collab_ai_agent` once we switch out of Plan Mode. The first pass remains a **scaffold-only** build: set up the repo, package layout, config, docs, prompt placeholders, mock-data structure, and a provider-agnostic AI seam without implementing full briefing generation yet.
+Add this plan as `docs/implementation_plan.md` inside the future project folder `/Users/MKunta/AGENTS/CODE/supplier_collab_ai_agent` once we switch out of Plan Mode. The first pass remains a **scaffold-only** build: set up the repo, package layout, config, docs, prompt placeholders, mock-data structure, and a provider-agnostic AI seam without implementing full briefing generation yet.
 
 ## Implementation Changes
 
-- Create `/Users/MKunta/CODE/supplier_collab_ai_agent` and connect it to `https://github.com/m-kunta/supplier-collab-ai-agent`.
-- Copy the scope document from `/Users/MKunta/CODE/Staging/supplier-collab-ai-agent-scope-v1.0.md` into `docs/scope_v1.0.md`.
+- Create `/Users/MKunta/AGENTS/CODE/supplier_collab_ai_agent` and connect it to `https://github.com/m-kunta/supplier-collab-ai-agent`.
+- Copy the scope document from `/Users/MKunta/AGENTS/CODE/Staging/supplier-collab-ai-agent-scope-v1.0.md` into `docs/scope_v1.0.md`.
 - Add this plan file at `docs/implementation_plan.md`.
 - Create the scaffold structure:
   - `README.md`, `.gitignore`, `.env.example`, `requirements.txt`
