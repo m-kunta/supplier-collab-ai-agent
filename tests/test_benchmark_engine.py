@@ -216,8 +216,9 @@ class TestComputeBenchmarksInputValidation(unittest.TestCase):
     def test_missing_required_columns_raises_value_error(self):
         """Missing 'metric_value' column should raise ValueError."""
         df = pd.DataFrame([{"vendor_id": "V1001", "week_ending": "2026-03-28", "metric_code": "FILL_RATE"}])
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as cm:
             compute_benchmarks("V1001", df, config={})
+        self.assertIn("metric_value", str(cm.exception))
 
     def test_empty_dataframe_returns_empty_dict(self):
         """Empty DataFrame (with correct columns) should return empty dict."""
@@ -237,6 +238,7 @@ class TestComputeBenchmarksInputValidation(unittest.TestCase):
         result = compute_benchmarks("V1001", df, config={})
         self.assertIn("FILL_RATE", result)
         self.assertIsNotNone(result["FILL_RATE"]["peer_avg"])
+        self.assertAlmostEqual(result["FILL_RATE"]["peer_avg"], 0.965, places=4)
 
 
 if __name__ == "__main__":
