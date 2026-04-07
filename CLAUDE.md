@@ -30,9 +30,9 @@ pytest tests/ -v
 
 ## Project Status
 
-**Current phase:** MVP Thin Vertical Slice — Data loaded, schemas mapped, mock generator built, and v0 mega-prompt ready. The Orchestrator (`src/agent.py`) is the final remaining step for the MVP milestone.
+**Current phase:** Phase 3 (Engine Layer) — Partially complete. Scorecard engine and benchmark engine are fully implemented and tested. Remaining Phase 3 engines (`po_risk_engine`, `oos_attribution`, `promo_readiness`) are still placeholder. The Orchestrator (`src/agent.py`) remains a scaffold stub.
 
-**Next milestone:** Sprint 1 — Full scorecard + benchmarking (3 vendors, 14 metrics, BIC analysis). See `docs/implementation_plan.md` for the scaffold plan and `docs/supplier-collab-ai-agent-scope-v1.0.md` §13 for the full sprint roadmap.
+**Next milestone:** Sprint 1 is partially complete — scorecard + benchmark engines are done. Remaining Sprint 1 items are the three compute engines: `src/po_risk_engine.py`, `src/oos_attribution.py`, and `src/promo_readiness.py`. See `docs/implementation_plan.md` for the scaffold plan and `docs/supplier-collab-ai-agent-scope-v1.0.md` §13 for the full sprint roadmap.
 
 ---
 
@@ -72,8 +72,8 @@ data_validator  benchmark_engine       ↓
 | `src/config.py` | Loads `config/agent_config.yaml` with YAML parsing and validates that the top-level document is a mapping. Returns dict. | Working |
 | `src/data_loader.py` | `resolve_data_dir()` and `load_manifest()` — reads `manifest.yaml` from the data landing zone with strict YAML mapping validation. | Working |
 | `src/data_validator.py` | `validate_manifest_shape()` — checks required top-level manifest keys. Will expand to full schema validation. | Minimal stub |
-| `src/scorecard_engine.py` | Scorecard metric computation: current value, 4w/13w trends, trend classification. | Placeholder |
-| `src/benchmark_engine.py` | Peer avg, BIC, gap-to-BIC, dollar-impact translation. | Placeholder |
+| `src/scorecard_engine.py` | Scorecard metric computation: current value, 4w/13w trends, trend classification. | Working |
+| `src/benchmark_engine.py` | Peer avg, BIC, gap-to-BIC, dollar-impact translation. | Working |
 | `src/po_risk_engine.py` | PO risk tiering (red/yellow/green) based on days late, promo dependency, need date. | Placeholder |
 | `src/oos_attribution.py` | OOS root-cause attribution: vendor-controllable vs. demand-driven. | Placeholder |
 | `src/promo_readiness.py` | Promo readiness scoring with PO×promo cross-reference. | Placeholder |

@@ -60,3 +60,27 @@ Add this plan as `docs/implementation_plan.md` inside the future project folder 
 - Remote GitHub repo remains `supplier-collab-ai-agent`.
 - This phase does not include Streamlit, DOCX rendering, or full pipeline implementation.
 - Python is the primary scaffold language; JS rendering pieces remain placeholders.
+
+## Phase 3: Engine Layer (Partial — Scorecard + Benchmark)
+
+Completed after scaffold. Implemented two compute engines with TDD.
+
+### Scorecard Engine (`src/scorecard_engine.py`)
+
+- `compute_scorecard(vendor_id, performance_df, lookback_weeks, config)` — computes per-metric scorecard.
+- Returns dict keyed by metric_code with: `current_value` (4-week average), `trend_4w`, `trend_13w`, `trend_direction`.
+- `trend_direction` uses a consecutive-streak check (configurable weeks + min_delta threshold) applied to the **most recent** N weekly deltas only.
+- 17 tests in `tests/test_scorecard_engine.py`.
+
+### Benchmark Engine (`src/benchmark_engine.py`)
+
+- `compute_benchmarks(vendor_id, performance_df, config)` — computes per-metric peer benchmarks.
+- Returns dict keyed by metric_code with: `peer_avg`, `best_in_class` (configurable percentile, default 90th), `gap_to_bic`, `dollar_impact` (None when no conversion factor configured).
+- Uses latest-week-per-vendor to compute peer pool; target vendor excluded from peer set.
+- 15 tests in `tests/test_benchmark_engine.py`.
+
+### Remaining Phase 3 Work
+
+- `src/po_risk_engine.py` — PO risk tiering (still placeholder)
+- `src/oos_attribution.py` — OOS attribution (still placeholder)
+- `src/promo_readiness.py` — Promo readiness (still placeholder)

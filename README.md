@@ -39,8 +39,8 @@ Phase 1 completion notes:
 - [ ] Generate comprehensive Data Validation Reports via CLI output.
 
 ### Phase 3: Intelligence & Synthesis Pipelines (Engine Layer)
-- [ ] Implement `src/scorecard_engine.py` (calc 4-week, 13-week moving averages and trends).
-- [ ] Implement `src/benchmark_engine.py` (determine category peer and gap-to-best-in-class metrics).
+- [x] Implement `src/scorecard_engine.py` (calc 4-week, 13-week moving averages and trends).
+- [x] Implement `src/benchmark_engine.py` (determine category peer and gap-to-best-in-class metrics).
 - [ ] Implement `src/po_risk_engine.py` (pipeline risk and late-PO classifications).
 - [ ] Implement `src/promo_readiness.py` (promotional impacts and inventory supply cross-referencing).
 - [ ] Implement `src/oos_attribution.py` (OOS event analysis and root-cause handling).
