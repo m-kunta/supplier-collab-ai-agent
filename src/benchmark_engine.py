@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def describe_scope() -> str:
-    return "Benchmark engine scaffold."
+    return "Benchmark engine computes peer averages, BIC gaps, and dollar impact."
 
 
 def compute_benchmarks(

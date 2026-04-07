@@ -191,7 +191,7 @@ class TestComputeBenchmarksMultipleMetrics(unittest.TestCase):
 class TestComputeBenchmarksEdgeCases(unittest.TestCase):
     """Corner cases: single peer, no peers, insufficient data."""
 
-    def test_single_peer_uses_that_peat_for_avg_and_bic(self):
+    def test_single_peer_uses_that_peer_for_avg_and_bic(self):
         data = [
             ("V1001", "2026-03-28", 0.90),
             ("V1002", "2026-03-28", 0.95),
