@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import unittest
 
+import numpy as np
 import pandas as pd
 
 from src.benchmark_engine import compute_benchmarks
@@ -101,11 +102,9 @@ class TestComputeBenchmarksBestInClass(unittest.TestCase):
         df = _make_peer_df("V1001", "FILL_RATE", TARGET_FILL_RATE + PEERS_FILL_RATE)
         result = compute_benchmarks("V1001", df, config={})
         # 90th percentile of [0.88, 0.95, 0.97, 0.99]
-        self.assertAlmostEqual(
-            result["FILL_RATE"]["best_in_class"],
-            0.988,  # np.percentile([0.88, 0.95, 0.97, 0.99], 90) ≈ 0.988
-            places=2,
-        )
+        peer_values = [0.88, 0.95, 0.97, 0.99]  # V1004, V1002, V1003, V1005 latest-week values
+        expected = float(np.percentile(peer_values, 90))
+        self.assertAlmostEqual(result["FILL_RATE"]["best_in_class"], expected, places=4)
 
     def test_bic_respects_configured_percentile(self):
         df = _make_peer_df("V1001", "FILL_RATE", TARGET_FILL_RATE + PEERS_FILL_RATE)
