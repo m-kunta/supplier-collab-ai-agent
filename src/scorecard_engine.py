@@ -14,6 +14,13 @@ def _has_consecutive_streak(
     min_delta: float,
     improving: bool,
 ) -> bool:
+    """Return True if ``deltas`` contains a run of ``consecutive_weeks``
+    consecutive qualifying moves.
+
+    ``deltas`` must be pre-sliced to the relevant recent window (e.g. via
+    ``.tail(consecutive_weeks)``) before calling; this function scans the
+    full series it receives.
+    """
     streak = 0
     for delta in deltas:
         qualifies = delta >= min_delta if improving else delta <= -min_delta
