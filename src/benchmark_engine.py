@@ -36,7 +36,63 @@ def compute_benchmarks(
         - ``dollar_impact`` (float | None) — estimated revenue/cost impact of
           closing the gap; ``None`` when a conversion factor is unavailable
     """
-    raise NotImplementedError(
-        "Benchmark computation is not yet implemented. "
-        "See docs/implementation_plan.md Phase 3."
-    )
+    required_columns = {"vendor_id", "week_ending", "metric_code", "metric_value"}
+    missing_columns = required_columns - set(performance_df.columns)
+    if missing_columns:
+        raise ValueError(
+            "performance_df is missing required columns: "
+            + ", ".join(sorted(missing_columns))
+        )
+
+    if performance_df.empty:
+        return {}
+
+    benchmark_config = config.get("benchmarks", {})
+    bic_percentile = benchmark_config.get("bic_percentile", 90)
+    conversion_factors = benchmark_config.get("conversion_factors", {})
+
+    latest_df = performance_df.copy()
+    latest_df["week_ending"] = pd.to_datetime(latest_df["week_ending"], errors="coerce")
+    latest_df = latest_df.dropna(subset=["week_ending", "metric_value"])
+    if latest_df.empty:
+        return {}
+
+    latest_df = latest_df.sort_values(["metric_code", "vendor_id", "week_ending"])
+    latest_df = latest_df.groupby(["metric_code", "vendor_id"], as_index=False).tail(1)
+
+    vendor_rows = latest_df[latest_df["vendor_id"] == vendor_id]
+    if vendor_rows.empty:
+        return {}
+
+    results: dict[str, Any] = {}
+    for vendor_row in vendor_rows.itertuples(index=False):
+        metric_code = vendor_row.metric_code
+        vendor_current = float(vendor_row.metric_value)
+        peer_rows = latest_df[
+            (latest_df["metric_code"] == metric_code)
+            & (latest_df["vendor_id"] != vendor_id)
+        ]
+
+        if peer_rows.empty:
+            continue
+
+        peer_values = peer_rows["metric_value"].astype(float)
+        peer_avg = float(peer_values.mean())
+        best_in_class = float(
+            peer_values.quantile(bic_percentile / 100, interpolation="linear")
+        )
+        gap_to_bic = round(vendor_current - best_in_class, 6)
+
+        conversion_factor = conversion_factors.get(metric_code)
+        dollar_impact = None
+        if conversion_factor is not None:
+            dollar_impact = round(gap_to_bic * float(conversion_factor), 2)
+
+        results[metric_code] = {
+            "peer_avg": peer_avg,
+            "best_in_class": best_in_class,
+            "gap_to_bic": gap_to_bic,
+            "dollar_impact": dollar_impact,
+        }
+
+    return results
