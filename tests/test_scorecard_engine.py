@@ -38,7 +38,7 @@ DECLINING_FILL_RATE = [
     ("2026-03-07", 0.930),
     ("2026-03-14", 0.925),
     ("2026-03-21", 0.920),
-    ("2026-03-28", 0.918),
+    ("2026-03-28", 0.915),
 ]
 
 STABLE_COMPLIANCE = [
@@ -78,14 +78,14 @@ class TestComputeScorecardCurrentValue(unittest.TestCase):
     def test_current_value_is_latest_four_week_average(self):
         df = _make_df("V1001", "FILL_RATE", DECLINING_FILL_RATE)
         result = compute_scorecard("V1001", df, lookback_weeks=13, config={})
-        expected = round((0.930 + 0.925 + 0.920 + 0.918) / 4, 6)
+        expected = round((0.930 + 0.925 + 0.920 + 0.915) / 4, 6)
         self.assertAlmostEqual(result["FILL_RATE"]["current_value"], expected)
 
     def test_current_value_uses_latest_four_weeks_when_data_unsorted(self):
         weeks_reversed = list(reversed(DECLINING_FILL_RATE))
         df = _make_df("V1001", "FILL_RATE", weeks_reversed)
         result = compute_scorecard("V1001", df, lookback_weeks=13, config={})
-        expected = round((0.930 + 0.925 + 0.920 + 0.918) / 4, 6)
+        expected = round((0.930 + 0.925 + 0.920 + 0.915) / 4, 6)
         self.assertAlmostEqual(result["FILL_RATE"]["current_value"], expected)
 
 
@@ -95,7 +95,7 @@ class TestComputeScorecardTrends(unittest.TestCase):
         result = compute_scorecard("V1001", df, lookback_weeks=13, config={})
         # current value is the latest 4-week average, compared against the
         # point-in-time value from four weeks prior.
-        expected = round(((0.930 + 0.925 + 0.920 + 0.918) / 4) - 0.935, 6)
+        expected = round(((0.930 + 0.925 + 0.920 + 0.915) / 4) - 0.935, 6)
         self.assertAlmostEqual(result["FILL_RATE"]["trend_4w"], expected, places=5)
 
     def test_trend_13w_is_delta_vs_thirteen_weeks_ago(self):
@@ -103,7 +103,7 @@ class TestComputeScorecardTrends(unittest.TestCase):
         result = compute_scorecard("V1001", df, lookback_weeks=13, config={})
         # current value is the latest 4-week average, compared against the
         # point-in-time value from the start of the 13-week window.
-        expected = round(((0.930 + 0.925 + 0.920 + 0.918) / 4) - 0.962, 6)
+        expected = round(((0.930 + 0.925 + 0.920 + 0.915) / 4) - 0.962, 6)
         self.assertAlmostEqual(result["FILL_RATE"]["trend_13w"], expected, places=5)
 
     def test_trend_4w_is_none_when_fewer_than_4_weeks(self):
@@ -164,6 +164,32 @@ class TestComputeScorecardTrendDirection(unittest.TestCase):
         df = _make_df("V1001", "FILL_RATE", DECLINING_FILL_RATE[:1])
         result = compute_scorecard("V1001", df, lookback_weeks=13, config={})
         self.assertEqual(result["FILL_RATE"]["trend_direction"], "insufficient_data")
+
+    def test_historical_streak_does_not_bleed_through_to_current_classification(self):
+        # Improving streak 8 weeks ago (weeks 1-5), flat for the last 8 weeks.
+        # Should be classified as 'stable', not 'improving'.
+        weeks = [
+            ("2026-01-03", 0.800),
+            ("2026-01-10", 0.810),  # +0.010 (improving)
+            ("2026-01-17", 0.820),  # +0.010 (improving)
+            ("2026-01-24", 0.830),  # +0.010 (improving) — streak ends here
+            ("2026-01-31", 0.830),  # flat
+            ("2026-02-07", 0.830),  # flat
+            ("2026-02-14", 0.830),  # flat
+            ("2026-02-21", 0.830),  # flat
+            ("2026-02-28", 0.830),  # flat
+            ("2026-03-07", 0.830),  # flat
+            ("2026-03-14", 0.830),  # flat
+            ("2026-03-21", 0.830),  # flat
+            ("2026-03-28", 0.830),  # flat
+        ]
+        df = _make_df("V1001", "FILL_RATE", weeks)
+        result = compute_scorecard("V1001", df, lookback_weeks=13, config={})
+        self.assertEqual(
+            result["FILL_RATE"]["trend_direction"],
+            "stable",
+            "A streak that ended 8 weeks ago must not classify the metric as 'improving'.",
+        )
 
 
 class TestComputeScorecardMultipleMetrics(unittest.TestCase):

@@ -84,7 +84,7 @@ def compute_scorecard(
             prior_13w = float(sorted_weeks.iloc[-13]["metric_value"])
             trend_13w = round(current_value - prior_13w, 6)
 
-        deltas = sorted_weeks["metric_value"].diff().dropna()
+        deltas = sorted_weeks["metric_value"].diff().dropna().tail(consecutive_weeks)
 
         if n < 2:
             trend_direction = "insufficient_data"
