@@ -124,7 +124,7 @@ class TestComputeBenchmarksGap(unittest.TestCase):
     def test_gap_is_negative_when_vendor_below_bic(self):
         df = _make_peer_df("V1001", "FILL_RATE", TARGET_FILL_RATE + PEERS_FILL_RATE)
         result = compute_benchmarks("V1001", df, config={})
-        # Vendor current (0.918) should be below BIC (≈0.988)
+        # Vendor current (0.918) should be below BIC (≈0.984)
         self.assertLess(result["FILL_RATE"]["gap_to_bic"], 0)
 
     def test_gap_matches_vendor_current_minus_bic(self):
@@ -151,8 +151,8 @@ class TestComputeBenchmarksDollarImpact(unittest.TestCase):
             }
         }
         result = compute_benchmarks("V1001", df, config=config)
-        # gap is 0.918 - ~0.988 = ~-0.07
-        # dollar impact = gap * conversion = ~-0.07 * 1M = ~-$70,000
+        # gap is 0.918 - ~0.984 = ~-0.066
+        # dollar impact = gap * conversion = ~-0.066 * 1M = ~-$66,000
         impact = result["FILL_RATE"]["dollar_impact"]
         self.assertIsNotNone(impact)
         self.assertAlmostEqual(impact, round((0.918 - result["FILL_RATE"]["best_in_class"]) * 1000000, 2), places=1)
