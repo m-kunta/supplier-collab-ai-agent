@@ -30,9 +30,9 @@ pytest tests/ -v
 
 ## Project Status
 
-**Current phase:** Phase 3 (Engine Layer) — Partially complete. Scorecard engine and benchmark engine are fully implemented and tested. Remaining Phase 3 engines (`po_risk_engine`, `oos_attribution`, `promo_readiness`) are still placeholder. The Orchestrator (`src/agent.py`) remains a scaffold stub.
+**Current phase:** Phase 3 (Engine Layer) — Four of five engines complete. Scorecard, benchmark, PO risk, and OOS attribution engines are fully implemented and tested. Only `promo_readiness` remains a placeholder. The Orchestrator (`src/agent.py`) remains a scaffold stub.
 
-**Next milestone:** Sprint 1 is partially complete — scorecard + benchmark engines are done. Remaining Sprint 1 items are the three compute engines: `src/po_risk_engine.py`, `src/oos_attribution.py`, and `src/promo_readiness.py`. See `docs/implementation_plan.md` for the scaffold plan and `docs/supplier-collab-ai-agent-scope-v1.0.md` §13 for the full sprint roadmap.
+**Next milestone:** Sprint 1 is nearly complete — scorecard, benchmark, PO risk, and OOS attribution engines are done. One compute engine remains: `src/promo_readiness.py`. See `docs/implementation_plan.md` for the scaffold plan and `docs/supplier-collab-ai-agent-scope-v1.0.md` §13 for the full sprint roadmap.
 
 ---
 
@@ -74,8 +74,8 @@ data_validator  benchmark_engine       ↓
 | `src/data_validator.py` | `validate_manifest_shape()` — checks required top-level manifest keys. Will expand to full schema validation. | Minimal stub |
 | `src/scorecard_engine.py` | Scorecard metric computation: current value, 4w/13w trends, trend classification. | Working |
 | `src/benchmark_engine.py` | Peer avg, BIC, gap-to-BIC, dollar-impact translation. | Working |
-| `src/po_risk_engine.py` | PO risk tiering (red/yellow/green) based on days late, promo dependency, need date. | Placeholder |
-| `src/oos_attribution.py` | OOS root-cause attribution: vendor-controllable vs. demand-driven. | Placeholder |
+| `src/po_risk_engine.py` | PO risk tiering (red/yellow/green) based on days late vs. requested delivery date. Open/shipped assessed against today; received POs assessed against actual receipt date. | Working |
+| `src/oos_attribution.py` | OOS root-cause attribution: vendor-controllable vs. demand-driven, with PO cancellation cross-reference fallback for null cause codes. Returns counts, pct, units lost, recurring SKUs, top SKUs. | Working |
 | `src/promo_readiness.py` | Promo readiness scoring with PO×promo cross-reference. | Placeholder |
 | `src/llm_providers.py` | Provider-agnostic LLM wrapper. `resolve_provider()` returns a `ProviderSelection` dataclass. `generate_text()` is the shared entrypoint (stub). Supports anthropic, openai, google, groq. | Seam only — no live API calls |
 
@@ -160,6 +160,8 @@ Current test coverage:
 - Manifest/config edge-case handling and mock fixture integrity live in the Phase 1 foundation tests
 - Scorecard engine: 17 tests covering current_value averaging, trend deltas, trend direction (consecutive-streak), lookback windowing, multiple metrics, and edge cases (`tests/test_scorecard_engine.py`)
 - Benchmark engine: 15 tests covering peer avg, BIC percentile, gap-to-BIC, dollar impact, multiple metrics, input validation (missing columns, empty df, NaN rows) (`tests/test_benchmark_engine.py`)
+- PO risk engine: 19 tests covering red/yellow/green tiering, open vs. received PO date logic, config threshold overrides, multi-line aggregation, missing columns, and case-insensitive status handling (`tests/test_po_risk_engine.py`)
+- OOS attribution engine: 35 tests covering primary classification by root_cause_code, PO cancellation cross-reference fallback, bucket counts, vendor_controllable_pct, total_units_lost, recurring SKU detection, top SKU ranking, and edge cases (`tests/test_oos_attribution.py`)
 
 ---
 
