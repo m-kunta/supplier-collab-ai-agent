@@ -81,6 +81,6 @@ Completed after scaffold. Implemented two compute engines with TDD.
 
 ### Remaining Phase 3 Work
 
-- `src/po_risk_engine.py` — PO risk tiering (still placeholder)
-- `src/oos_attribution.py` — OOS attribution (still placeholder)
+- `src/po_risk_engine.py` — ✅ Done (19 tests)
+- `src/oos_attribution.py` — ✅ Done (35 tests)
 - `src/promo_readiness.py` — Promo readiness (still placeholder)
