@@ -126,7 +126,7 @@ Production prompts currently inject pre-computed structured data and request sec
 **`config/agent_config.yaml`** (YAML format):
 - `defaults`: lookback_weeks, persona_emphasis, include_benchmarks, output_format, data_dir
 - `llm`: default_provider, default_model, temperature
-- `thresholds`: po_risk_days_late_red/yellow, promo_readiness_red/yellow_threshold
+- `thresholds`: po_risk_days_late_red/yellow, po_open_statuses, promo_readiness_red/yellow_threshold
 
 **Environment variables** (`.env.example` → `.env`):
 - `LLM_PROVIDER` — overrides config default_provider
