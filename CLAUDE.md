@@ -30,9 +30,9 @@ pytest tests/ -v
 
 ## Project Status
 
-**Current phase:** Phase 3 (Engine Layer) — Four of five engines complete. Scorecard, benchmark, PO risk, and OOS attribution engines are fully implemented and tested. Only `promo_readiness` remains a placeholder. The Orchestrator (`src/agent.py`) remains a scaffold stub.
+**Current phase:** Phase 3 (Engine Layer) — **Complete.** Scorecard, benchmark, PO risk, OOS attribution, and promo readiness engines are implemented and tested. `src/agent.py` runs `run_pipeline()` through config load, manifest validation, vendor resolution, dataset load, and all five engines; `summarize_request()` returns their structured outputs plus pipeline notes.
 
-**Next milestone:** Sprint 1 is nearly complete — scorecard, benchmark, PO risk, and OOS attribution engines are done. One compute engine remains: `src/promo_readiness.py`. See `docs/implementation_plan.md` for the scaffold plan and `docs/supplier-collab-ai-agent-scope-v1.0.md` §13 for the full sprint roadmap.
+**Next milestone:** Phase 4 — prompt assembly, live `generate_text()` / LLM call, and markdown (then DOCX) output. See `docs/implementation_plan.md` and `docs/supplier-collab-ai-scope-v1.0.md` section 13 for the sprint roadmap.
 
 ---
 
@@ -42,7 +42,7 @@ pytest tests/ -v
 
 Pre-meeting intelligence agent for supplier collaboration. Ingests vendor performance CSV exports from a file-based landing zone, computes scorecard metrics and risk flags, then generates a synthesized briefing document via Claude for buyer/planner vendor meetings.
 
-### Pipeline (partially implemented — scorecard and benchmark engines live; orchestrator not yet wired)
+### Pipeline (compute layer wired; LLM narrative not yet implemented)
 
 ```
 cli.py → agent.py (orchestrator)
@@ -68,15 +68,15 @@ data_validator  benchmark_engine       ↓
 | File | Role | Status |
 |---|---|---|
 | `cli.py` | CLI entry point. Parses `--vendor`, `--date`, `--data-dir`, `--lookback-weeks`, `--persona-emphasis`, `--include-benchmarks`, `--output-format`, `--category-filter`. | Working |
-| `src/agent.py` | Orchestrator. Calls config, data loader, validator, provider resolver, returns scaffold summary. Will become the full pipeline coordinator. | Scaffold stub |
+| `src/agent.py` | Orchestrator. Loads config, manifest, validates, resolves vendor and LLM provider, loads vendor data, runs all compute engines, returns summary dict (JSON from CLI). LLM briefing step not yet implemented. | Compute pipeline |
 | `src/config.py` | Loads `config/agent_config.yaml` with YAML parsing and validates that the top-level document is a mapping. Returns dict. | Working |
 | `src/data_loader.py` | `resolve_data_dir()` and `load_manifest()` — reads `manifest.yaml` from the data landing zone with strict YAML mapping validation. | Working |
 | `src/data_validator.py` | `validate_manifest_shape()` — checks required top-level manifest keys. Will expand to full schema validation. | Minimal stub |
 | `src/scorecard_engine.py` | Scorecard metric computation: current value, 4w/13w trends, trend classification. | Working |
 | `src/benchmark_engine.py` | Peer avg, BIC, gap-to-BIC, dollar-impact translation. | Working |
-| `src/po_risk_engine.py` | PO risk tiering (red/yellow/green) based on days late vs. requested delivery date. Open/shipped assessed against today; received POs assessed against actual receipt date. | Working |
+| `src/po_risk_engine.py` | PO risk tiering (red/yellow/green) based on days late vs. requested delivery date. Open/shipped assessed against the meeting date (`--date`); received POs assessed against actual receipt date when present. | Working |
 | `src/oos_attribution.py` | OOS root-cause attribution: vendor-controllable vs. demand-driven, with PO cancellation cross-reference fallback for null cause codes. Returns counts, pct, units lost, recurring SKUs, top SKUs. | Working |
-| `src/promo_readiness.py` | Promo readiness scoring with PO×promo cross-reference. | Placeholder |
+| `src/promo_readiness.py` | Promo readiness: on-time PO quantity vs. promoted volume per event; overall and per-event scores; red/yellow/green vs. config thresholds. | Working |
 | `src/llm_providers.py` | Provider-agnostic LLM wrapper. `resolve_provider()` returns a `ProviderSelection` dataclass. `generate_text()` is the shared entrypoint (stub). Supports anthropic, openai, google, groq. | Seam only — no live API calls |
 
 ### Key implementation details
@@ -142,7 +142,7 @@ Production prompts currently inject pre-computed structured data and request sec
 | **MVP** | Thin vertical slice | 1 vendor, 5 metrics, 5 sections, markdown output |
 | **Sprint 1** | Full scorecard + benchmarking | 3 vendors, 14 metrics, BIC with $ impact, dual persona |
 | **Sprint 2** | Cross-domain synthesis | PO×Promo linkage, OOS attribution, promo readiness |
-| **Sprint 3** | Polished output + pipeline | DOCX output, full orchestration, error handling |
+| **Sprint 3** | Polished output + pipeline | DOCX output, LLM orchestration, error handling |
 | **Sprint 4** | Calendar integration + demo | Auto-trigger, leadership demo, pilot plan |
 
 ---
@@ -162,6 +162,10 @@ Current test coverage:
 - Benchmark engine: 15 tests covering peer avg, BIC percentile, gap-to-BIC, dollar impact, multiple metrics, input validation (missing columns, empty df, NaN rows) (`tests/test_benchmark_engine.py`)
 - PO risk engine: 19 tests covering red/yellow/green tiering, open vs. received PO date logic, config threshold overrides, multi-line aggregation, missing columns, and case-insensitive status handling (`tests/test_po_risk_engine.py`)
 - OOS attribution engine: 35 tests covering primary classification by root_cause_code, PO cancellation cross-reference fallback, bucket counts, vendor_controllable_pct, total_units_lost, recurring SKU detection, top SKU ranking, and edge cases (`tests/test_oos_attribution.py`)
+- Promo readiness engine: 10 tests covering coverage tiers, cancelled/late PO handling, multi-SKU and multi-event weighting (`tests/test_promo_readiness.py`)
+- Pipeline integration: `summarize_request` against mock landing zone (`tests/test_p1_foundation.py`)
+
+Full suite: run `pytest tests/ -q` (156 tests as of last refresh).
 
 ---
 

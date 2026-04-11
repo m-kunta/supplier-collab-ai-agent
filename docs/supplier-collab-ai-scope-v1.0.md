@@ -821,9 +821,9 @@ For environments with data warehouse access, SQL queries run directly against th
 **Goal:** Vendor ID in → readable briefing out. Prove the pipeline end-to-end.
 
 **Data layer:**
-- [ ] Generate mock CSVs for 1 vendor (Kellogg's): vendor_master.csv, purchase_orders.csv, vendor_performance.csv (5 metrics), oos_events.csv, promo_calendar.csv
-- [ ] Generate manifest.yaml with `environment: mock`
-- [ ] Build `src/data_loader.py`: reads manifest, loads CSVs, filters to requested vendor, returns structured dict
+- [x] Generate mock CSVs for 1 vendor (Kellogg's): vendor_master.csv, purchase_orders.csv, vendor_performance.csv (5 metrics), oos_events.csv, promo_calendar.csv
+- [x] Generate manifest.yaml with `environment: mock`
+- [x] Build `src/data_loader.py`: reads manifest, loads CSVs, filters to requested vendor, returns structured dict
 
 **Prompt layer** (parallel with data):
 - [ ] Single mega-prompt: inject loaded data, generate 5 sections (exec summary, scorecard, risk flags, OOS highlights, talking points)
@@ -842,8 +842,8 @@ For environments with data warehouse access, SQL queries run directly against th
 - [ ] Add benchmark reference values
 
 **Compute layer** (parallel with data):
-- [ ] Scorecard engine: current value, 4-week trend, 13-week trend, trend classification
-- [ ] Benchmark engine: peer avg, BIC, gap-to-BIC, dollar-impact translation
+- [x] Scorecard engine: current value, 4-week trend, 13-week trend, trend classification
+- [x] Benchmark engine: peer avg, BIC, gap-to-BIC, dollar-impact translation
 - [ ] Schema validation with auto-correction (percentage range fix)
 
 **Prompt layer:**
@@ -854,10 +854,10 @@ For environments with data warehouse access, SQL queries run directly against th
 ### Sprint 2 — Cross-Domain Synthesis (~2-3h)
 
 **Compute layer:**
-- [ ] PO risk tiering: 🔴 critical / 🟡 watch / 🟢 on-track with rules-based classification
-- [ ] OOS attribution: vendor-controllable vs. demand-driven vs. other
-- [ ] Promo readiness scoring: green/yellow/red with specific PO dependencies
-- [ ] Repeat offender SKU detection
+- [x] PO risk tiering: 🔴 critical / 🟡 watch / 🟢 on-track with rules-based classification
+- [x] OOS attribution: vendor-controllable vs. demand-driven vs. other
+- [x] Promo readiness scoring: green/yellow/red with specific PO dependencies
+- [x] Repeat offender SKU detection
 
 **Data layer** (parallel with compute):
 - [ ] Enrich POs with promo_flag, promo_event_id, need_date
@@ -877,11 +877,11 @@ For environments with data warehouse access, SQL queries run directly against th
 - [ ] Data lineage in footer (source files + freshness from manifest)
 
 **Pipeline layer** (parallel with output):
-- [ ] Orchestrator: vendor ID → data load → validate → compute → prompt → render
-- [ ] CLI: `python cli.py --vendor "Kelloggs" --date "2026-04-03" --data-dir /data/inbound/mock/`
-- [ ] Config file (agent_config.yaml) for thresholds and defaults
+- [x] Orchestrator: vendor ID → data load → validate → compute engines (LLM prompt → render still open)
+- [x] CLI: `python cli.py --vendor "Kelloggs" --date "2026-04-03" --data-dir /data/inbound/mock/`
+- [x] Config file (agent_config.yaml) for thresholds and defaults
 - [ ] Full validation report generation
-- [ ] Graceful degradation for missing optional files
+- [x] Graceful degradation for missing optional files
 - [ ] Error handling: missing data, API failures, token budget management
 
 ### Sprint 4 — Calendar Integration + Demo (~2-3h)
