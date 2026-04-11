@@ -2,13 +2,21 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
+
+from src.benchmark_engine import compute_benchmarks
 from src.config import load_config
 from src.data_loader import load_dataset, load_manifest, load_vendor_data, resolve_vendor_id
 from src.data_validator import ValidationResult, validate_manifest_shape
 from src.llm_providers import ProviderSelection, resolve_provider
+from src.oos_attribution import compute_oos_attribution
+from src.po_risk_engine import compute_po_risk
+from src.promo_readiness import compute_promo_readiness
+from src.scorecard_engine import compute_scorecard
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +133,87 @@ def _stage_load_vendor_data(ctx: BriefingContext) -> BriefingContext:
     return ctx
 
 
+def _meeting_date_as_date(meeting_date: str) -> date:
+    return datetime.strptime(meeting_date.strip(), "%Y-%m-%d").date()
+
+
+def _stage_compute_scorecard(ctx: BriefingContext) -> BriefingContext:
+    perf = ctx.vendor_data.get("vendor_performance")
+    if perf is None:
+        ctx.add_note("Scorecard skipped: vendor_performance not loaded.")
+        ctx.scorecard = None
+        return ctx
+    ctx.scorecard = compute_scorecard(
+        ctx.vendor_id,
+        perf,
+        ctx.lookback_weeks,
+        ctx.config,
+    )
+    return ctx
+
+
+def _stage_compute_benchmarks(ctx: BriefingContext) -> BriefingContext:
+    if not ctx.include_benchmarks:
+        ctx.add_note("Benchmarks skipped: include_benchmarks is false.")
+        ctx.benchmarks = None
+        return ctx
+    try:
+        perf_all = load_dataset(ctx.manifest, "vendor_performance")
+    except (KeyError, FileNotFoundError) as exc:
+        ctx.add_note(f"Benchmarks skipped: cannot load vendor_performance ({exc}).")
+        ctx.benchmarks = None
+        return ctx
+    ctx.benchmarks = compute_benchmarks(ctx.vendor_id, perf_all, ctx.config)
+    if not ctx.benchmarks:
+        ctx.add_note("Benchmarks returned empty (insufficient peer or metric data).")
+    return ctx
+
+
+def _stage_compute_po_risk(ctx: BriefingContext) -> BriefingContext:
+    po = ctx.vendor_data.get("purchase_orders")
+    if po is None:
+        ctx.add_note("PO risk skipped: purchase_orders not loaded.")
+        ctx.po_risk = None
+        return ctx
+    ref = _meeting_date_as_date(ctx.meeting_date)
+    ctx.po_risk = compute_po_risk(ctx.vendor_id, po, ctx.config, reference_date=ref)
+    return ctx
+
+
+def _stage_compute_oos_attribution(ctx: BriefingContext) -> BriefingContext:
+    if "oos_events" not in ctx.vendor_data:
+        ctx.add_note("OOS attribution skipped: oos_events not in landing zone.")
+        ctx.oos_attribution = None
+        return ctx
+    oos_df = ctx.vendor_data["oos_events"]
+    po_df = ctx.vendor_data.get("purchase_orders", pd.DataFrame())
+    ref = _meeting_date_as_date(ctx.meeting_date)
+    ctx.oos_attribution = compute_oos_attribution(
+        ctx.vendor_id,
+        oos_df,
+        po_df,
+        ctx.config,
+        reference_date=ref,
+    )
+    return ctx
+
+
+def _stage_compute_promo_readiness(ctx: BriefingContext) -> BriefingContext:
+    if "promo_calendar" not in ctx.vendor_data:
+        ctx.add_note("Promo readiness skipped: promo_calendar not in landing zone.")
+        ctx.promo_readiness = None
+        return ctx
+    promo_df = ctx.vendor_data["promo_calendar"]
+    po_df = ctx.vendor_data.get("purchase_orders", pd.DataFrame())
+    ctx.promo_readiness = compute_promo_readiness(
+        ctx.vendor_id,
+        promo_df,
+        po_df,
+        ctx.config,
+    )
+    return ctx
+
+
 def run_pipeline(ctx: BriefingContext) -> BriefingContext:
     """Execute the briefing pipeline in stage order.
 
@@ -132,22 +221,20 @@ def run_pipeline(ctx: BriefingContext) -> BriefingContext:
     its slice of the context. Future phases add stages here without
     changing the function signature or the caller.
 
-    Current stages (scaffold):
+    Stages:
       1. Load config
       2. Load manifest
       3. Validate manifest (fatal gate)
       4. Resolve LLM provider
       5. Resolve vendor ID (name → canonical ID)
       6. Load vendor-scoped DataFrames
-
-    Phase 3 will add:
       7. Compute scorecard
-      8. Compute benchmarks (if enabled)
+      8. Compute benchmarks (if ``include_benchmarks``; uses full vendor_performance)
       9. Compute PO risk
-      10. Compute OOS attribution (if data available)
-      11. Compute promo readiness (if data available)
+      10. Compute OOS attribution (if ``oos_events`` loaded)
+      11. Compute promo readiness (if ``promo_calendar`` loaded)
 
-    Phase 4 will add:
+    Phase 4 (not yet implemented):
       12. Assemble prompt
       13. Generate briefing text via LLM
       14. Render to output format
@@ -163,7 +250,13 @@ def run_pipeline(ctx: BriefingContext) -> BriefingContext:
     ctx = _stage_resolve_vendor_id(ctx)
     ctx = _stage_load_vendor_data(ctx)
 
-    ctx.add_note("Scaffold: briefing generation not yet implemented (Phase 4).")
+    ctx = _stage_compute_scorecard(ctx)
+    ctx = _stage_compute_benchmarks(ctx)
+    ctx = _stage_compute_po_risk(ctx)
+    ctx = _stage_compute_oos_attribution(ctx)
+    ctx = _stage_compute_promo_readiness(ctx)
+
+    ctx.add_note("Briefing narrative generation not yet implemented (Phase 4).")
     logger.info("Pipeline complete. Notes: %d", len(ctx.pipeline_notes))
     return ctx
 
@@ -205,7 +298,7 @@ def summarize_request(
 
     return {
         "status": "scaffold",
-        "message": "Briefing generation is not implemented yet.",
+        "message": "Compute engines complete; LLM briefing not yet implemented (Phase 4).",
         "request": {
             "vendor": ctx.vendor_input,
             "meeting_date": ctx.meeting_date,
@@ -227,4 +320,9 @@ def summarize_request(
         "loaded_datasets": sorted(ctx.vendor_data.keys()),
         "validation_warnings": ctx.validation_result.warnings if ctx.validation_result else [],
         "pipeline_notes": ctx.pipeline_notes,
+        "scorecard": ctx.scorecard,
+        "benchmarks": ctx.benchmarks,
+        "po_risk": ctx.po_risk,
+        "oos_attribution": ctx.oos_attribution,
+        "promo_readiness": ctx.promo_readiness,
     }

@@ -333,6 +333,13 @@ class PipelineIntegrationTests(unittest.TestCase):
         self.assertTrue(
             any("Loaded 5 dataset(s) for vendor_id 'V1001'." in note for note in summary["pipeline_notes"])
         )
+        self.assertIsNotNone(summary["scorecard"])
+        self.assertGreater(len(summary["scorecard"]), 0)
+        self.assertIn("benchmarks", summary)
+        self.assertIsNotNone(summary["po_risk"])
+        self.assertIsNotNone(summary["oos_attribution"])
+        self.assertIsNotNone(summary["promo_readiness"])
+        self.assertIn("Phase 4", summary["message"])
 
     def test_summarize_request_rejects_unknown_vendor(self):
         with self.assertRaisesRegex(ValueError, "Vendor 'UnknownCo' not found"):
