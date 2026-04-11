@@ -57,6 +57,7 @@ def compute_po_risk(
         config: Full agent config dict; uses:
             - ``thresholds.po_risk_days_late_red`` — days overdue to assign red (default 3)
             - ``thresholds.po_risk_days_late_yellow`` — days overdue to assign yellow (default 1)
+            - ``thresholds.po_open_statuses`` — statuses considered open (default: open, confirmed, shipped, in_transit)
         reference_date: Date used for open/shipped POs. Defaults to today.
 
     Returns:
@@ -68,6 +69,11 @@ def compute_po_risk(
     thresholds = config.get("thresholds", {})
     red_threshold = float(thresholds.get("po_risk_days_late_red", 3))
     yellow_threshold = float(thresholds.get("po_risk_days_late_yellow", 1))
+    open_statuses = set(
+        thresholds.get(
+            "po_open_statuses", ["open", "confirmed", "shipped", "in_transit"]
+        )
+    )
 
     today = reference_date or date.today()
 
@@ -84,7 +90,6 @@ def compute_po_risk(
     )
     df["_req_date"] = req_col.apply(_parse_date)
 
-    open_statuses = {"open", "confirmed", "shipped", "in_transit"}
     df["po_status"] = (
         df.get("po_status", pd.Series(["open"] * len(df), index=df.index))
         .fillna("open")

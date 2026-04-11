@@ -17,6 +17,13 @@ thresholds:
   po_risk_days_late_red: 3
   po_risk_days_late_yellow: 1
 
+  # PO risk tiering — statuses considered "open" (pipeline at risk)
+  po_open_statuses:
+    - open
+    - confirmed
+    - shipped
+    - in_transit
+
   # Promo readiness scoring — 0.0–1.0 composite score
   promo_readiness_red_threshold: 0.80
   promo_readiness_yellow_threshold: 0.95
