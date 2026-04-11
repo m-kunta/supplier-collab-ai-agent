@@ -12,7 +12,7 @@
 
 The **Supplier Collaboration Briefing Agent** is an in-progress intelligence tool designed to automate pre-meeting preparation for category buyers and supply planners. Instead of requiring users to manually aggregate data across ERPs, WMS, and planning systems, this agent ingests exported vendor performance data (via standardized CSV files defined in a `manifest.yaml`) and synthesizes it into actionable, contextual briefing documents using an LLM.
 
-*This repository is currently in an active developmental (scaffold) phase.*
+*Active development: the **compute pipeline** (scorecard, benchmarks, PO risk, OOS attribution, promo readiness) runs from the CLI via `src/agent.py` and returns structured JSON. **LLM briefing generation** and markdown/DOCX document output are not implemented yet (Phase 4).*
 
 ## 📈 Development Plan & Roadmap
 
@@ -41,17 +41,18 @@ Phase 1 completion notes:
 ### Phase 3: Intelligence & Synthesis Pipelines (Engine Layer)
 - [x] Implement `src/scorecard_engine.py` (calc 4-week, 13-week moving averages and trends).
 - [x] Implement `src/benchmark_engine.py` (determine category peer and gap-to-best-in-class metrics).
-- [ ] Implement `src/po_risk_engine.py` (pipeline risk and late-PO classifications).
-- [ ] Implement `src/promo_readiness.py` (promotional impacts and inventory supply cross-referencing).
-- [ ] Implement `src/oos_attribution.py` (OOS event analysis and root-cause handling).
+- [x] Implement `src/po_risk_engine.py` (pipeline risk and late-PO classifications).
+- [x] Implement `src/promo_readiness.py` (PO×promo coverage vs. promoted volume; red/yellow/green tier).
+- [x] Implement `src/oos_attribution.py` (OOS event analysis and root-cause handling).
+- [x] Wire all engines from `run_pipeline()` / `summarize_request()` with graceful skips for missing optional landing-zone files.
 
 ### Phase 4: AI Differentiation & Output Orchestration
 - [ ] Finalize role-specific system prompts for Claude/OpenAI in `prompts/`.
-- [ ] Integrate cross-domain analytical points into the generative prompt context.
-- [ ] Orchestrate text generation pipeline inside `src/agent.py`.
+- [ ] Integrate cross-domain analytical points into the generative prompt context (inject engine outputs from `BriefingContext`).
+- [ ] Call `generate_text()` in `src/llm_providers.py` and assemble the briefing narrative in `src/agent.py`.
 - [ ] Render the LLM generated output to `md` output format.
 - [ ] Render the LLM generated output to `docx` format.
-- [ ] Hook up end-to-end integration test confirming `cli.py` prints the final briefing document.
+- [ ] Hook up end-to-end integration test confirming `cli.py` writes or prints the final briefing document.
 
 ## 🛠️ Planned Modules
 
@@ -63,7 +64,7 @@ Phase 1 completion notes:
 - `src/benchmark_engine.py`: Category peer and best-in-class calculations.
 - `src/po_risk_engine.py`: Pipeline and late-PO risk classification pipeline.
 - `src/oos_attribution.py`: OOS event analysis and root-cause handling.
-- `src/promo_readiness.py`: Promotional metrics processing hooks.
+- `src/promo_readiness.py`: Promo readiness scoring (on-time PO coverage vs. promoted volume).
 - `src/llm_providers.py`: Model wrappers and agnostic text generation.
 
 ## 💻 Quick Start
@@ -82,7 +83,7 @@ pytest
 python cli.py --vendor "Kelloggs" --date "2026-04-03" --data-dir data/inbound/mock
 ```
 
-*Note: The current CLI validates inputs, loads configuration parameters, resolves the data manifest, and prints a scaffold summary. Full document generation is unbuilt in the current sprint.*
+*Note: The CLI runs the full compute pipeline and prints JSON including `scorecard`, `benchmarks`, `po_risk`, `oos_attribution`, and `promo_readiness` (when data is available). The response `status` remains `"scaffold"` until LLM briefing generation is implemented; see `summarize_request()` in `src/agent.py`.*
 
 ## 📁 Repository Naming
 

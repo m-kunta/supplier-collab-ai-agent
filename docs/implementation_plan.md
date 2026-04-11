@@ -79,8 +79,19 @@ Completed after scaffold. Implemented two compute engines with TDD.
 - Uses latest-week-per-vendor to compute peer pool; target vendor excluded from peer set.
 - 15 tests in `tests/test_benchmark_engine.py`.
 
-### Remaining Phase 3 Work
+### Additional Phase 3 Engines (completed after initial plan)
 
-- `src/po_risk_engine.py` — ✅ Done (19 tests)
-- `src/oos_attribution.py` — ✅ Done (35 tests)
-- `src/promo_readiness.py` — Promo readiness (still placeholder)
+- `src/po_risk_engine.py` — `compute_po_risk` — ✅ (19 tests in `tests/test_po_risk_engine.py`)
+- `src/oos_attribution.py` — `compute_oos_attribution` — ✅ (35 tests in `tests/test_oos_attribution.py`)
+- `src/promo_readiness.py` — `compute_promo_readiness` — volume-weighted on-time PO coverage vs. `promoted_volume`, per-event and overall scores, red/yellow/green via `promo_readiness_red_threshold` / `promo_readiness_yellow_threshold` — ✅ (10 tests in `tests/test_promo_readiness.py`)
+
+### Orchestration (`src/agent.py`)
+
+- `run_pipeline()` executes, in order: load config → manifest → validate → resolve LLM provider → resolve vendor ID → `load_vendor_data` → `compute_scorecard` → `compute_benchmarks` (if `include_benchmarks`, using **full** `vendor_performance` for peer pool) → `compute_po_risk` (reference date = `--date`) → `compute_oos_attribution` (if `oos_events` loaded) → `compute_promo_readiness` (if `promo_calendar` loaded).
+- `summarize_request()` returns JSON-serializable dict including `scorecard`, `benchmarks`, `po_risk`, `oos_attribution`, `promo_readiness`, `pipeline_notes`, and `status: "scaffold"` until Phase 4 adds LLM output.
+
+### Phase 4 (next)
+
+- Prompt assembly from `BriefingContext` / engine outputs.
+- Implement `generate_text()` with provider SDKs.
+- Write briefing to `output/` as markdown, then DOCX.
