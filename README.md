@@ -81,6 +81,66 @@ python cli.py --vendor "Kelloggs" --date "2026-04-03"
 
 It reads structured exports from the systems the organization already uses, computes every analytical dimension a buyer or planner would want, and produces a publication-ready briefing document — without requiring the user to touch a spreadsheet.
 
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                         SUPPLIER COLLAB AI AGENT                                    │
+│                         Pipeline Architecture                                      │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+                                    ┌──────────────────┐
+                                    │   CLI / API      │
+                                    │   (user input)   │
+                                    └────────┬─────────┘
+                                             │
+                    ┌────────────────────────┼────────────────────────┐
+                    │                        │                        │
+            ┌───────▼────────┐       ┌───────▼────────┐       ┌───────▼────────┐
+            │  Data Layer   │       │ Compute Layer  │       │    AI Layer    │
+            │               │       │                │       │                │
+            │ data_loader   │       │scorecard_engine│       │llm_providers   │
+            │ data_validator       │benchmark_engine│       │                │
+            │ manifest.yaml │       │po_risk_engine  │       │ Claude/OpenAI │
+            │ CSV files    │       │oos_attribution │       │                │
+            │               │       │promo_readiness │       │ prompts/      │
+            └───────┬───────┘       └───────┬────────┘       └───────┬────────┘
+                    │                        │                        │
+                    │          ┌─────────────┼─────────────┐          │
+                    │          │             │             │          │
+                    │          ▼             ▼             ▼          │
+                    │   ┌─────────────────────────────────────────┐   │
+                    │   │            agent.py (orchestrator)       │   │
+                    │   │   • chains data load → compute → render  │   │
+                    │   │   • injects engine outputs into prompt   │   │
+                    │   └─────────────────────┬───────────────────┘   │
+                    │                          │                     │
+                    │              ┌───────────┴───────────┐         │
+                    │              │                       │         │
+                    │              ▼                       ▼         │
+                    │   ┌─────────────────┐   ┌────────────────────┐ │
+                    │   │  Output Layer   │   │   FastAPI API      │ │
+                    │   │                 │   │                    │ │
+                    │   │ output/*.md     │   │ POST /api/briefings│ │
+                    │   │ DOCX (future)   │   │ GET  /api/vendors  │ │
+                    │   └─────────────────┘   │ SSE stream, .md    │ │
+                    │                          │ download          │ │
+                    │                          └────────────────────┘ │
+                    │                                                     │
+                    └─────────────────────────────────────────────────────┘
+                                               │
+                                    ┌──────────▼──────────┐
+                                    │   Briefing Output   │
+                                    │                      │
+                                    │ • Exec Summary       │
+                                    │ • Scorecard + Trends │
+                                    │ • Benchmarks (BIC)   │
+                                    │ • PO Risk (R/Y/G)    │
+                                    │ • OOS Attribution    │
+                                    │ • Promo Readiness   │
+                                    │ • Buyer/Planner Focus│
+                                    │ • Talking Points     │
+                                    └───────────────────────┘
+```
+
 The briefing covers:
 
 - **Executive summary** — one-paragraph narrative of the vendor's current standing
