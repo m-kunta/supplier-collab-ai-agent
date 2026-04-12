@@ -10,9 +10,105 @@
 
 ## 🚀 High-Level Overview
 
-The **Supplier Collaboration Briefing Agent** is an in-progress intelligence tool designed to automate pre-meeting preparation for category buyers and supply planners. Instead of requiring users to manually aggregate data across ERPs, WMS, and planning systems, this agent ingests exported vendor performance data (via standardized CSV files defined in a `manifest.yaml`) and synthesizes it into actionable, contextual briefing documents using an LLM.
+The **Supplier Collaboration Briefing Agent** is an intelligence tool that automates pre-meeting preparation for category buyers and supply planners. It ingests exported vendor performance data (standardized CSV files declared in a `manifest.yaml`), runs a suite of deterministic compute engines, and synthesizes everything into a structured, role-specific briefing document via an LLM — in under 60 seconds instead of the 30–60 minutes of manual spreadsheet work the meeting would otherwise require.
 
-*Current capabilities: the full pipeline (compute engines plus **LLM briefing** and **markdown** output to `output/`) runs from the CLI and from the **FastAPI** layer in `api/`. The API supports SSE streaming, `.md` downloads, vendor listing, and `llm_provider`/`llm_model` overrides. Phase 5 is adding a Next.js UI.*
+*Current capabilities: the full pipeline (compute engines + LLM briefing + markdown output to `output/`) runs from the CLI and from a **FastAPI** layer in `api/`. The API supports SSE streaming, `.md` downloads, vendor listing, and `llm_provider`/`llm_model` overrides. Phase 5 is adding a Next.js UI.*
+
+---
+
+## 🎯 The Business Problem
+
+### Problem Statement
+
+**Retailers and distributors lose significant revenue every year** — not because of missing data, but because the right insights aren't synthesized at the right time. When a category buyer walks into a quarterly business review with a $50M supplier, they typically have:
+
+- 15 minutes of prep time (on a good day)
+- Fragmented data across 4-6 different systems
+- No benchmark context (how does this vendor compare to peers?)
+- No dollar-impact translation (what does a 3% fill-rate gap actually cost us?)
+
+The result? **Billions in unnegotiated performance improvements go unclaimed**, supply disruptions that could have been prevented are discovered mid-call, and buyers/planners spend 30-60 minutes per meeting doing spreadsheet archaeology instead of strategic supplier management.
+
+The root cause isn't data availability — the data already exists across ERPs, WMS systems, and performance databases. The gap is **contextual synthesis at the speed of the meeting cadence**.
+
+### User-Facing Benefits
+
+| Benefit | Before | After |
+|---------|--------|-------|
+| **Prep Time** | 30-60 min manual | 15 seconds |
+| **Data Context** | 4-6 systems to check | Single briefing document |
+| **Benchmarking** | Peer comparison requires manual spreadsheet work | Auto-computed vs. category avg + best-in-class |
+| **Dollar Impact** | Abstract metrics | Gap translated to $ (lost sales, excess inventory) |
+| **Consistency** | Varies by individual experience | Standardized output every time |
+| **Coverage** | Only tier-1 vendors get thorough prep | All vendors can be briefed in seconds |
+
+### Who this is for
+
+Organizations that buy goods from external suppliers operate a continuous cadence of **supplier collaboration meetings** — weekly business reviews, quarterly commercial reviews, promo readiness calls, escalation meetings triggered by service failures. Two roles drive these meetings:
+
+| Persona | Primary Responsibility | What they need walking into a meeting |
+|---|---|---|
+| **Category Buyer** | Negotiates commercial terms, drives category growth, manages compliance and cost performance | Service-level trends vs. contract targets, compliance penalty exposure, cost benchmarks vs. best-in-class peers, talking points for commercial leverage |
+| **Supply Planner** | Owns replenishment, PO pipeline health, and on-shelf availability | Which POs are at risk of being late, open OOS events and their root causes, whether the supplier can cover upcoming promotional volume |
+
+A mid-size retailer may have a single buyer or planner managing 50–200 supplier relationships simultaneously. At that scale, thorough manual preparation for every meeting is impossible.
+
+### The status quo — and why it breaks
+
+Before a supplier meeting today, a buyer or planner typically:
+
+1. Pulls a service-level report from the ERP or WMS
+2. Opens the PO tracking spreadsheet to find late or at-risk orders
+3. Manually compares the vendor's fill rate to peer vendors or a category target
+4. Checks a separate OOS log to see if there are open events and tries to remember the cause
+5. Looks up the promo calendar and cross-references PO quantities against promotional volume commitments
+6. Writes up talking points from memory
+
+This process takes **30–60 minutes per meeting** and routinely gets skipped when calendars are full. When it does happen, the quality is inconsistent — dependent on the individual's experience, how recently they touched the account, and how much time they had. Meetings happen without full context, leading to:
+
+- Missed negotiation leverage (the buyer doesn't know the vendor is 15% below best-in-class on fill rate)
+- Reactive conversations (the planner didn't see the three late POs until the vendor mentioned them)
+- Duplicated effort (the same data pulled again next week for the same vendor)
+- Uneven coverage (tier-1 vendors get thorough prep; tier-3 vendors get none)
+
+### What this agent does differently
+
+The Supplier Collaboration Briefing Agent collapses that 30–60 minute manual process into a single command:
+
+```bash
+python cli.py --vendor "Kelloggs" --date "2026-04-03"
+```
+
+It reads structured exports from the systems the organization already uses, computes every analytical dimension a buyer or planner would want, and produces a publication-ready briefing document — without requiring the user to touch a spreadsheet.
+
+The briefing covers:
+
+- **Executive summary** — one-paragraph narrative of the vendor's current standing
+- **Scorecard** — current value, 4-week and 13-week trend, and trend direction for up to 15 performance metrics across Delivery & Fulfillment, Compliance & Quality, Commercial & Cost, and Order Behavior
+- **Benchmark comparison** — where the vendor sits vs. peer category average and best-in-class, with dollar-impact translation for gaps
+- **PO pipeline risk** — red/yellow/green tiering of open and in-transit orders, with days-late calculations and risk explanations
+- **OOS attribution** — root-cause breakdown of out-of-stock events (vendor-controllable vs. demand-driven), recurring SKUs, and units lost
+- **Promo readiness** — on-time PO coverage vs. promoted volume per event, with readiness tiers (red/yellow/green)
+- **Role-specific deep-dives** — §7 Buyer Focus (commercial, compliance, negotiation angles) and §8 Planner Focus (replenishment, supply continuity), expanded based on `--persona-emphasis`
+- **Talking points** — LLM-generated, context-aware conversation starters for the meeting
+
+---
+
+## 📋 Use Cases
+
+### 1. Weekly Supplier Business Review
+A buyer prepares for a standing Monday meeting with a top-10 supplier. They run the agent on Friday; the briefing lands in `output/` with a complete narrative. On Monday they walk in knowing the vendor's fill rate has trended down 2.3 pp over 4 weeks, sits 8 pp below best-in-class, and that the gap translates to an estimated $420K in lost sales — before the vendor says a word.
+
+### 2. OOS Escalation Meeting
+A supply planner is pulled into an emergency call after a major SKU goes out of stock. They run the agent with the OOS events file loaded. The briefing identifies that 68% of OOS events this period are vendor-controllable (lead time failures), cross-references a cancelled PO that wasn't replaced, and surfaces the three SKUs with recurring OOS history. The planner arrives with evidence rather than anecdotes.
+
+### 3. Promotional Readiness Review
+Four weeks before a major promotional event, the buyer runs the agent with the promo calendar loaded. The briefing shows that PO coverage is at 72% of promoted volume for the hero SKU — flagged red — and that two supporting SKUs are yellow. They have four weeks to chase the supplier for confirmation or escalate with procurement. A problem that would have surfaced at 48 hours out is caught at 4 weeks.
+
+### 4. Quarterly Commercial Review
+A buyer preparing for a QBR runs the agent with benchmarks enabled. The briefing compares the vendor's cost index and compliance rate to category peers using the 90th-percentile best-in-class threshold, quantifies the gap in dollar terms, and generates talking points anchored in that data. The meeting shifts from a status update to a structured performance conversation.
+
+---
 
 ## 📈 Development Plan & Roadmap
 
