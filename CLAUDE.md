@@ -26,13 +26,19 @@ python cli.py --help
 pytest tests/ -v
 ```
 
+**Run the HTTP API** (from repo root):
+```bash
+uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
+```
+Interactive docs: `http://127.0.0.1:8000/docs`
+
 ---
 
 ## Project Status
 
-**Current phase:** Phase 4 (AI Differentiation & Output Orchestration) — **Complete.** Prompt builder, live Anthropic API call with retry logic, markdown output rendering, and end-to-end wiring are implemented and tested. The CLI now produces a real LLM-generated briefing document at `output/{vendor_id}_{date}.md`. All four LLM providers (Anthropic, OpenAI, Google, Groq) are wired.
+**Current phase:** Phase 5 — **Web Frontend (in progress).** Phase 4 is complete. **FastAPI** in `api/` exposes: `GET /api/health`, `POST /api/briefings` (`llm_provider`/`llm_model` overrides supported), `GET /api/briefings` (history), `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay of stored text), `GET /api/briefings/{id}/download` (`.md` attachment, 410 on missing file), `GET /api/vendors` (vendor list from landing zone). In-memory store (resets on restart).
 
-**Next milestone:** Phase 5 — **Web Frontend.** FastAPI backend (`api/`) + Next.js frontend (`frontend/`) with SSE streaming, engine data dashboards, and a dark-mode premium UI. See `docs/implementation_plan.md` (or the plan artifact) for the full sprint breakdown.
+**Next milestone:** Next.js UI (`frontend/`), dev launcher (`scripts/dev.sh`).
 
 ---
 
@@ -42,10 +48,10 @@ pytest tests/ -v
 
 Pre-meeting intelligence agent for supplier collaboration. Ingests vendor performance CSV exports from a file-based landing zone, computes scorecard metrics and risk flags, then generates a synthesized briefing document via Claude for buyer/planner vendor meetings.
 
-### Pipeline (compute layer wired; LLM narrative not yet implemented)
+### Pipeline
 
 ```
-cli.py → agent.py (orchestrator)
+cli.py / api → agent.py (orchestrator)
               │
     ┌─────────┼──────────────────────┐
     ▼         ▼                      ▼
@@ -68,7 +74,7 @@ data_validator  benchmark_engine       ↓
 | File | Role | Status |
 |---|---|---|
 | `cli.py` | CLI entry point. Parses `--vendor`, `--date`, `--data-dir`, `--lookback-weeks`, `--persona-emphasis`, `--include-benchmarks`, `--output-format`, `--category-filter`. | Working |
-| `src/agent.py` | Orchestrator. Loads config, manifest, validates, resolves vendor and LLM provider, loads vendor data, runs all compute engines, returns summary dict (JSON from CLI). LLM briefing step not yet implemented. | Compute pipeline |
+| `src/agent.py` | Orchestrator. Loads config, manifest, validates, resolves vendor and LLM provider, loads vendor data, runs compute engines, prompt assembly, `generate_text()`, `write_output()`. `summarize_request()` returns JSON including `briefing_text`, `output_files`, `status`. | Working |
 | `src/config.py` | Loads `config/agent_config.yaml` with YAML parsing and validates that the top-level document is a mapping. Returns dict. | Working |
 | `src/data_loader.py` | `resolve_data_dir()` and `load_manifest()` — reads `manifest.yaml` from the data landing zone with strict YAML mapping validation. | Working |
 | `src/data_validator.py` | `validate_manifest_shape()` — checks required top-level manifest keys. Will expand to full schema validation. | Minimal stub |
@@ -80,7 +86,7 @@ data_validator  benchmark_engine       ↓
 | `src/llm_providers.py` | Provider-agnostic LLM wrapper. `resolve_provider()` returns a `ProviderSelection` dataclass. `generate_text()` calls Anthropic SDK with exponential back-off retry (rate limit, server error, connection error). Other providers raise `ImportError` when SDK missing. All four providers wired: Anthropic, OpenAI, Google, Groq. | All four live |
 | `src/prompt_builder.py` | `build_prompt(ctx)` — loads versioned prompt template from `prompts/`, serialises all engine outputs to JSON, substitutes `{{DATA_PAYLOAD}}`, `{{PERSONA_EMPHASIS}}`, `{{VENDOR_ID}}`, `{{MEETING_DATE}}`. | Working |
 | `src/output_renderer.py` | `render_markdown(ctx)` — prepends YAML front-matter + appends footer. `write_output(ctx, output_dir, output_format)` — dispatches to md renderer and writes file. DOCX deferred to Sprint 3. | Markdown working; DOCX stub |
-| `api/` | **[Phase 5 — Planned]** FastAPI REST API exposing the pipeline. Endpoints: `GET /api/vendors`, `POST /api/briefings`, `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE), `GET /api/briefings/{id}/download`. | Not started |
+| `api/` | FastAPI app. `GET /api/health`, `POST /api/briefings` (`llm_provider`/`llm_model` overrides), `GET /api/briefings`, `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE), `GET /api/briefings/{id}/download`, `GET /api/vendors`. In-memory store. | Working |
 | `frontend/` | **[Phase 5 — Planned]** Next.js web application. Pages: Home (form), `/briefing/{id}` (live streaming results + engine dashboards), `/history`. Dark-mode, glassmorphism, Inter/Outfit typography. | Not started |
 
 ### Key implementation details
@@ -168,11 +174,12 @@ Current test coverage:
 - OOS attribution engine: 35 tests covering primary classification by root_cause_code, PO cancellation cross-reference fallback, bucket counts, vendor_controllable_pct, total_units_lost, recurring SKU detection, top SKU ranking, and edge cases (`tests/test_oos_attribution.py`)
 - Promo readiness engine: 10 tests covering coverage tiers, cancelled/late PO handling, multi-SKU and multi-event weighting (`tests/test_promo_readiness.py`)
 - Pipeline integration: `summarize_request` against mock landing zone with mocked `generate_text` and `write_output` (`tests/test_p1_foundation.py`)
-- LLM providers: 12 tests covering provider resolution, Anthropic happy path, retry logic on rate limits, and NotImplementedError for non-Anthropic providers (`tests/test_llm_providers.py`)
+- LLM providers: 12 tests covering provider resolution, Anthropic happy path, retry logic on rate limits, and multi-provider paths (`tests/test_llm_providers.py`)
+- FastAPI (`tests/test_api.py`): 13 tests — health, POST/GET briefings, list + limit pagination, 404s, SSE stream (content-type + sentinel), download 410 on missing file, `GET /api/vendors` (Kelloggs present, bad-dir 404), `llm_provider` override reflected in response.
 - Prompt builder: 12 tests covering template loading, variable substitution, JSON payload integrity, null optional data, and persona variants (`tests/test_prompt_builder.py`)
 - Phase 4 E2E: 2 integration tests with mocked LLM call verifying `status=complete`, `briefing_text` populated, and `write_output` called correctly (`tests/test_p1_foundation.py`)
 
-Full suite: run `pytest tests/ -q` (181 tests as of Phase 4).
+Full suite: run `pytest tests/ -q` (205 tests as of Phase 5 API completion).
 
 ---
 

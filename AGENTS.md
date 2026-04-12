@@ -26,13 +26,18 @@ python cli.py --help
 pytest tests/ -v
 ```
 
+**Run the HTTP API** (from repo root):
+```bash
+uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
+```
+
 ---
 
 ## Project Status
 
-**Current phase:** Phase 3 (Engine Layer) — **Complete.** Scorecard, benchmark, PO risk, OOS attribution, and promo readiness engines are implemented and tested. `src/agent.py` runs `run_pipeline()` through config load, manifest validation, vendor resolution, dataset load, and all five engines; `summarize_request()` returns their structured outputs plus pipeline notes.
+**Current phase:** Phase 5 — **Web Frontend (in progress).** Phases 3–4 are complete. **FastAPI** in `api/` exposes: health, `POST /api/briefings` (with `llm_provider`/`llm_model` overrides), list/get briefings, SSE stream, `.md` download, and `GET /api/vendors`. **Next:** Next.js UI, dev launcher.
 
-**Next milestone:** Phase 4 — prompt assembly, live `generate_text()` / LLM call, and markdown (then DOCX) output. See `docs/implementation_plan.md` and `docs/supplier-collab-ai-scope-v1.0.md` section 13 for the sprint roadmap.
+**Reference:** `docs/implementation_plan.md`, `docs/supplier-collab-ai-scope-v1.0.md` section 13.
 
 ---
 
@@ -42,10 +47,10 @@ pytest tests/ -v
 
 Pre-meeting intelligence agent for supplier collaboration. Ingests vendor performance CSV exports from a file-based landing zone, computes scorecard metrics and risk flags, then generates a synthesized briefing document via Claude for buyer/planner vendor meetings.
 
-### Pipeline (compute layer wired; LLM narrative not yet implemented)
+### Pipeline
 
 ```
-cli.py → agent.py (orchestrator)
+cli.py / api → agent.py (orchestrator)
               │
     ┌─────────┼──────────────────────┐
     ▼         ▼                      ▼
@@ -68,7 +73,8 @@ data_validator  benchmark_engine       ↓
 | File | Role | Status |
 |---|---|---|
 | `cli.py` | CLI entry point. Parses `--vendor`, `--date`, `--data-dir`, `--lookback-weeks`, `--persona-emphasis`, `--include-benchmarks`, `--output-format`, `--category-filter`. | Working |
-| `src/agent.py` | Orchestrator. Loads config, manifest, validates, resolves vendor and LLM provider, loads vendor data, runs all compute engines, returns summary dict (JSON from CLI). LLM briefing step not yet implemented. | Compute pipeline |
+| `api/` | FastAPI: health, `POST /api/briefings` (`llm_provider`/`llm_model` overrides), list/get briefings, SSE stream, download, `GET /api/vendors`. | Working |
+| `src/agent.py` | Full pipeline including LLM and markdown write; `summarize_request()` returns JSON for CLI and API. | Working |
 | `src/config.py` | Loads `config/agent_config.yaml` with YAML parsing and validates that the top-level document is a mapping. Returns dict. | Working |
 | `src/data_loader.py` | `resolve_data_dir()` and `load_manifest()` — reads `manifest.yaml` from the data landing zone with strict YAML mapping validation. | Working |
 | `src/data_validator.py` | `validate_manifest_shape()` — checks required top-level manifest keys. Will expand to full schema validation. | Minimal stub |
@@ -77,7 +83,7 @@ data_validator  benchmark_engine       ↓
 | `src/po_risk_engine.py` | PO risk tiering (red/yellow/green) based on days late vs. requested delivery date. Open/shipped assessed against the meeting date (`--date`); received POs assessed against actual receipt date when present. | Working |
 | `src/oos_attribution.py` | OOS root-cause attribution: vendor-controllable vs. demand-driven, with PO cancellation cross-reference fallback for null cause codes. Returns counts, pct, units lost, recurring SKUs, top SKUs. | Working |
 | `src/promo_readiness.py` | Promo readiness: on-time PO quantity vs. promoted volume per event; overall and per-event scores; red/yellow/green vs. config thresholds. | Working |
-| `src/llm_providers.py` | Provider-agnostic LLM wrapper. `resolve_provider()` returns a `ProviderSelection` dataclass. `generate_text()` is the shared entrypoint (stub). Supports anthropic, openai, google, groq. | Seam only — no live API calls |
+| `src/llm_providers.py` | Provider-agnostic LLM wrapper. `generate_text()` calls provider SDKs with retry. Anthropic, OpenAI, Google, Groq wired. | Working |
 
 ### Key implementation details
 
@@ -163,9 +169,10 @@ Current test coverage:
 - PO risk engine: 19 tests covering red/yellow/green tiering boundaries, received-PO lateness via actual_receipt_date, threshold configuration, mixed tiers, and graceful handling of missing columns/dates (`tests/test_po_risk_engine.py`)
 - OOS attribution engine: 35 tests covering primary classification by root_cause_code, PO cancellation cross-reference fallback, bucket counts, vendor_controllable_pct, total_units_lost, recurring SKU detection, top SKU ranking, and edge cases (`tests/test_oos_attribution.py`)
 - Promo readiness engine: 10 tests covering coverage tiers, cancelled/late PO handling, multi-SKU and multi-event weighting (`tests/test_promo_readiness.py`)
-- Pipeline integration: `summarize_request` against mock landing zone (`tests/test_p1_foundation.py`)
+- Pipeline integration: `summarize_request` against mock landing zone with mocked LLM (`tests/test_p1_foundation.py`)
+- FastAPI (`tests/test_api.py`)
 
-Full suite: run `pytest tests/ -q` (156 tests as of last refresh).
+Full suite: run `pytest tests/ -q` (205 tests as of Phase 5 API completion).
 
 ---
 

@@ -88,10 +88,15 @@ Completed after scaffold. Implemented two compute engines with TDD.
 ### Orchestration (`src/agent.py`)
 
 - `run_pipeline()` executes, in order: load config → manifest → validate → resolve LLM provider → resolve vendor ID → `load_vendor_data` → `compute_scorecard` → `compute_benchmarks` (if `include_benchmarks`, using **full** `vendor_performance` for peer pool) → `compute_po_risk` (reference date = `--date`) → `compute_oos_attribution` (if `oos_events` loaded) → `compute_promo_readiness` (if `promo_calendar` loaded).
-- `summarize_request()` returns JSON-serializable dict including `scorecard`, `benchmarks`, `po_risk`, `oos_attribution`, `promo_readiness`, `pipeline_notes`, and `status: "scaffold"` until Phase 4 adds LLM output.
+- `summarize_request()` returns JSON-serializable dict including engine outputs, `briefing_text`, `output_files`, `pipeline_notes`, and `status` (`"complete"` when the LLM step succeeds).
 
-### Phase 4 (next)
+### Phase 4 (complete)
 
-- Prompt assembly from `BriefingContext` / engine outputs.
-- Implement `generate_text()` with provider SDKs.
-- Write briefing to `output/` as markdown, then DOCX.
+- Prompt assembly from `BriefingContext` / engine outputs (`src/prompt_builder.py`).
+- `generate_text()` with provider SDKs and retries (`src/llm_providers.py`).
+- Markdown write to `output/` (`src/output_renderer.py`). DOCX remains deferred.
+
+### Phase 5 (in progress)
+
+- **FastAPI (`api/`):** All REST endpoints complete — `GET /api/health`, `POST /api/briefings` (async, thread-pool executor, `llm_provider`/`llm_model` overrides, broad exception handling), `GET /api/briefings` (paginated list), `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay), `GET /api/briefings/{id}/download` (FileResponse, 410 on missing file), `GET /api/vendors` (reads `vendor_master.csv` from any landing zone). CORS configurable via `CORS_ORIGINS` env var. In-memory `BriefingStore` (process-local).
+- **Next:** Next.js frontend (`frontend/`) and combined dev launcher (`scripts/dev.sh`).
