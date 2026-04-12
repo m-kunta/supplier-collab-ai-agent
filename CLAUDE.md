@@ -1,6 +1,7 @@
 # CLAUDE.md
 
-**Author:** Mohith Kunta ([@m-kunta](https://github.com/m-kunta))
+**Author:** Mohith Kunta  
+**GitHub:** [https://github.com/m-kunta](https://github.com/m-kunta)
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 

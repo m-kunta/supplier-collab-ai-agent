@@ -1,6 +1,7 @@
 # AGENTS.md
 
-**Author:** Mohith Kunta ([@m-kunta](https://github.com/m-kunta))
+**Author:** Mohith Kunta  
+**GitHub:** [https://github.com/m-kunta](https://github.com/m-kunta)
 
 This file provides guidance to AI coding agents (Claude, Codex, Gemini, etc.) when working with code in this repository.
 
