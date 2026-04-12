@@ -30,9 +30,9 @@ pytest tests/ -v
 
 ## Project Status
 
-**Current phase:** Phase 3 (Engine Layer) — **Complete.** Scorecard, benchmark, PO risk, OOS attribution, and promo readiness engines are implemented and tested. `src/agent.py` runs `run_pipeline()` through config load, manifest validation, vendor resolution, dataset load, and all five engines; `summarize_request()` returns their structured outputs plus pipeline notes.
+**Current phase:** Phase 4 (AI Differentiation & Output Orchestration) — **Complete.** Prompt builder, live Anthropic API call with retry logic, markdown output rendering, and end-to-end wiring are implemented and tested. The CLI now produces a real LLM-generated briefing document at `output/{vendor_id}_{date}.md`. All four LLM providers (Anthropic, OpenAI, Google, Groq) are wired.
 
-**Next milestone:** Phase 4 — prompt assembly, live `generate_text()` / LLM call, and markdown (then DOCX) output. See `docs/implementation_plan.md` and `docs/supplier-collab-ai-scope-v1.0.md` section 13 for the sprint roadmap.
+**Next milestone:** Phase 5 — **Web Frontend.** FastAPI backend (`api/`) + Next.js frontend (`frontend/`) with SSE streaming, engine data dashboards, and a dark-mode premium UI. See `docs/implementation_plan.md` (or the plan artifact) for the full sprint breakdown.
 
 ---
 
@@ -77,7 +77,11 @@ data_validator  benchmark_engine       ↓
 | `src/po_risk_engine.py` | PO risk tiering (red/yellow/green) based on days late vs. requested delivery date. Open/shipped assessed against the meeting date (`--date`); received POs assessed against actual receipt date when present. | Working |
 | `src/oos_attribution.py` | OOS root-cause attribution: vendor-controllable vs. demand-driven, with PO cancellation cross-reference fallback for null cause codes. Returns counts, pct, units lost, recurring SKUs, top SKUs. | Working |
 | `src/promo_readiness.py` | Promo readiness: on-time PO quantity vs. promoted volume per event; overall and per-event scores; red/yellow/green vs. config thresholds. | Working |
-| `src/llm_providers.py` | Provider-agnostic LLM wrapper. `resolve_provider()` returns a `ProviderSelection` dataclass. `generate_text()` is the shared entrypoint (stub). Supports anthropic, openai, google, groq. | Seam only — no live API calls |
+| `src/llm_providers.py` | Provider-agnostic LLM wrapper. `resolve_provider()` returns a `ProviderSelection` dataclass. `generate_text()` calls Anthropic SDK with exponential back-off retry (rate limit, server error, connection error). Other providers raise `ImportError` when SDK missing. All four providers wired: Anthropic, OpenAI, Google, Groq. | All four live |
+| `src/prompt_builder.py` | `build_prompt(ctx)` — loads versioned prompt template from `prompts/`, serialises all engine outputs to JSON, substitutes `{{DATA_PAYLOAD}}`, `{{PERSONA_EMPHASIS}}`, `{{VENDOR_ID}}`, `{{MEETING_DATE}}`. | Working |
+| `src/output_renderer.py` | `render_markdown(ctx)` — prepends YAML front-matter + appends footer. `write_output(ctx, output_dir, output_format)` — dispatches to md renderer and writes file. DOCX deferred to Sprint 3. | Markdown working; DOCX stub |
+| `api/` | **[Phase 5 — Planned]** FastAPI REST API exposing the pipeline. Endpoints: `GET /api/vendors`, `POST /api/briefings`, `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE), `GET /api/briefings/{id}/download`. | Not started |
+| `frontend/` | **[Phase 5 — Planned]** Next.js web application. Pages: Home (form), `/briefing/{id}` (live streaming results + engine dashboards), `/history`. Dark-mode, glassmorphism, Inter/Outfit typography. | Not started |
 
 ### Key implementation details
 
@@ -108,8 +112,8 @@ Each landing zone contains:
 | File | Purpose |
 |---|---|
 | `prompts/briefing_v0.md` | MVP — Implemented. Mega-prompt forcing basic tone, quality, and 5 sections |
-| `prompts/briefing_v1.md` | Sprint 1 — scorecard, benchmarking, dual-persona framing |
-| `prompts/briefing_v2.md` | Sprint 2 — cross-domain synthesis (PO×Promo, OOS, benchmarks) |
+| `prompts/briefing_v1.md` | **Active (Phase 4).** Full 9-section prompt: exec summary, scorecard, benchmarks, PO risk, OOS attribution, promo readiness, §7 Buyer Focus, §8 Planner Focus, talking points. Dual-persona expansion. Uses all five engine outputs. |
+| `prompts/briefing_v2.md` | Sprint 2 — cross-domain synthesis narrative refinements (reserved) |
 
 Production prompts currently inject pre-computed structured data and request section-by-section narrative generation.
 
@@ -163,9 +167,12 @@ Current test coverage:
 - PO risk engine: 19 tests covering red/yellow/green tiering, open vs. received PO date logic, config threshold overrides, multi-line aggregation, missing columns, and case-insensitive status handling (`tests/test_po_risk_engine.py`)
 - OOS attribution engine: 35 tests covering primary classification by root_cause_code, PO cancellation cross-reference fallback, bucket counts, vendor_controllable_pct, total_units_lost, recurring SKU detection, top SKU ranking, and edge cases (`tests/test_oos_attribution.py`)
 - Promo readiness engine: 10 tests covering coverage tiers, cancelled/late PO handling, multi-SKU and multi-event weighting (`tests/test_promo_readiness.py`)
-- Pipeline integration: `summarize_request` against mock landing zone (`tests/test_p1_foundation.py`)
+- Pipeline integration: `summarize_request` against mock landing zone with mocked `generate_text` and `write_output` (`tests/test_p1_foundation.py`)
+- LLM providers: 12 tests covering provider resolution, Anthropic happy path, retry logic on rate limits, and NotImplementedError for non-Anthropic providers (`tests/test_llm_providers.py`)
+- Prompt builder: 12 tests covering template loading, variable substitution, JSON payload integrity, null optional data, and persona variants (`tests/test_prompt_builder.py`)
+- Phase 4 E2E: 2 integration tests with mocked LLM call verifying `status=complete`, `briefing_text` populated, and `write_output` called correctly (`tests/test_p1_foundation.py`)
 
-Full suite: run `pytest tests/ -q` (156 tests as of last refresh).
+Full suite: run `pytest tests/ -q` (181 tests as of Phase 4).
 
 ---
 

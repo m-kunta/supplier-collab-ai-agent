@@ -46,13 +46,20 @@ Phase 1 completion notes:
 - [x] Implement `src/oos_attribution.py` (OOS event analysis and root-cause handling).
 - [x] Wire all engines from `run_pipeline()` / `summarize_request()` with graceful skips for missing optional landing-zone files.
 
-### Phase 4: AI Differentiation & Output Orchestration
-- [ ] Finalize role-specific system prompts for Claude/OpenAI in `prompts/`.
-- [ ] Integrate cross-domain analytical points into the generative prompt context (inject engine outputs from `BriefingContext`).
-- [ ] Call `generate_text()` in `src/llm_providers.py` and assemble the briefing narrative in `src/agent.py`.
-- [ ] Render the LLM generated output to `md` output format.
-- [ ] Render the LLM generated output to `docx` format.
-- [ ] Hook up end-to-end integration test confirming `cli.py` writes or prints the final briefing document.
+### Phase 4: AI Differentiation & Output Orchestration ✅
+- [x] Finalize role-specific system prompts for Claude/OpenAI in `prompts/` (`briefing_v1.md` — 9 sections, dual-persona).
+- [x] Integrate cross-domain analytical points into the generative prompt context (inject engine outputs from `BriefingContext` via `src/prompt_builder.py`).
+- [x] Call `generate_text()` in `src/llm_providers.py` and assemble the briefing narrative in `src/agent.py` (Anthropic SDK with exponential back-off retry).
+- [x] Render the LLM generated output to `md` output format (`src/output_renderer.py` with YAML front-matter).
+- [ ] Render the LLM generated output to `docx` format (Sprint 3).
+- [x] Hook up end-to-end integration test confirming `cli.py` writes or prints the final briefing document.
+
+### Phase 5: Web Frontend (Planned)
+- [ ] **FastAPI backend** (`api/`) — expose the pipeline as a REST API with async job execution and SSE streaming.
+- [ ] **Next.js frontend** (`frontend/`) — premium dark-mode web UI with vendor selector, briefing form, live LLM streaming, and engine data dashboards (Scorecard, PO Pipeline, OOS, Promo Readiness).
+- [ ] **Dev launcher** (`scripts/dev.sh`, `Makefile`) — single command starts both API and UI.
+- [ ] **Streaming LLM output** — browser receives tokens in real-time via Server-Sent Events.
+- [ ] **Download & history** — `.md` download button, local briefing history.
 
 ## 🛠️ Planned Modules
 

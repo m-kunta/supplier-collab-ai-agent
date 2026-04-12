@@ -1,13 +1,26 @@
 python-dotenv>=1.0.0
 
-# Default provider SDK
+# ---------------------------------------------------------------------------
+# LLM Provider SDKs
+# Install only the providers you intend to use.
+# The agent gracefully falls back to ImportError when a package is absent.
+# ---------------------------------------------------------------------------
+
+# Anthropic (default provider — always install)
 anthropic>=0.34.0
 
-# Future optional providers
+# OpenAI — uncomment to enable gpt-4o / gpt-4o-mini
 # openai>=1.0.0
-# google-genai>=0.3.0
+
+# Google Gen AI (Gemini 2.x) — uncomment to enable gemini-2.5-flash / pro
+# Note: use 'google-genai', NOT the legacy 'google-generativeai'
+# google-genai>=1.0.0
+
+# Groq (ultra-low-latency open-source models) — uncomment to enable
 # groq>=0.9.0
 
+# ---------------------------------------------------------------------------
 # Data Loading
+# ---------------------------------------------------------------------------
 PyYAML>=6.0.1
 pandas>=2.0.0

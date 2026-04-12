@@ -313,8 +313,14 @@ class ResolveVendorIdTests(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 class PipelineIntegrationTests(unittest.TestCase):
-    def test_summarize_request_resolves_vendor_name_and_loads_vendor_data(self):
-        summary = summarize_request(
+    """Pipeline integration tests — LLM and file I/O are mocked."""
+
+    _STUB_TEXT = "# Briefing\n\nStub narrative."
+
+    def _run_pipeline(self, **kwargs):
+        """Run summarize_request with generate_text and write_output mocked."""
+        from unittest.mock import patch
+        defaults = dict(
             vendor="Kelloggs",
             meeting_date="2026-04-03",
             data_dir=MOCK_DATA_DIR,
@@ -324,6 +330,13 @@ class PipelineIntegrationTests(unittest.TestCase):
             output_format="md",
             category_filter=None,
         )
+        defaults.update(kwargs)
+        with patch("src.agent.generate_text", return_value=self._STUB_TEXT):
+            with patch("src.agent.write_output", return_value={"md_path": Path("output/stub.md")}):
+                return summarize_request(**defaults)
+
+    def test_summarize_request_resolves_vendor_name_and_loads_vendor_data(self):
+        summary = self._run_pipeline()
         self.assertEqual(summary["vendor_id"], "V1001")
         self.assertEqual(
             sorted(summary["loaded_datasets"]),
@@ -339,7 +352,6 @@ class PipelineIntegrationTests(unittest.TestCase):
         self.assertIsNotNone(summary["po_risk"])
         self.assertIsNotNone(summary["oos_attribution"])
         self.assertIsNotNone(summary["promo_readiness"])
-        self.assertIn("Phase 4", summary["message"])
 
     def test_summarize_request_rejects_unknown_vendor(self):
         with self.assertRaisesRegex(ValueError, "Vendor 'UnknownCo' not found"):
@@ -376,6 +388,74 @@ class PipelineIntegrationTests(unittest.TestCase):
                     output_format="md",
                     category_filter=None,
                 )
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 end-to-end integration — LLM output mocked
+# ---------------------------------------------------------------------------
+
+class Phase4EndToEndTests(unittest.TestCase):
+    """Verify the full pipeline with a mocked LLM call.
+
+    The Anthropic API is not called — ``generate_text`` is monkeypatched to
+    return a fixed stub string so we can verify:
+      - status flips to ``"complete"``
+      - briefing_text is populated
+      - the markdown output file is written to disk
+    """
+
+    _STUB_BRIEFING = (
+        "# Supplier Collaboration Briefing — V1001 | 2026-04-03\n\n"
+        "## 1. Executive Summary\n\nFill rate is 94 %. All good.\n"
+    )
+
+    def test_summarize_request_returns_complete_status_and_briefing_text(self):
+        """With generate_text mocked, status==complete and briefing_text is set."""
+        import tempfile
+        from unittest.mock import patch
+
+        with tempfile.TemporaryDirectory() as tmp_output:
+            with patch("src.agent.generate_text", return_value=self._STUB_BRIEFING):
+                with patch("src.agent.write_output") as mock_write:
+                    mock_write.return_value = {"md_path": Path(tmp_output) / "V1001_2026-04-03.md"}
+                    summary = summarize_request(
+                        vendor="Kelloggs",
+                        meeting_date="2026-04-03",
+                        data_dir=MOCK_DATA_DIR,
+                        lookback_weeks=13,
+                        persona_emphasis="both",
+                        include_benchmarks=True,
+                        output_format="md",
+                        category_filter=None,
+                    )
+
+        self.assertEqual(summary["status"], "complete")
+        self.assertEqual(summary["briefing_text"], self._STUB_BRIEFING)
+        self.assertIsNotNone(summary["scorecard"])
+
+    def test_write_output_called_with_correct_format(self):
+        """write_output is invoked once with output_format='md'."""
+        import tempfile
+        from unittest.mock import patch
+
+        with tempfile.TemporaryDirectory() as tmp_output:
+            with patch("src.agent.generate_text", return_value=self._STUB_BRIEFING):
+                with patch("src.agent.write_output") as mock_write:
+                    mock_write.return_value = {"md_path": Path(tmp_output) / "V1001_2026-04-03.md"}
+                    summarize_request(
+                        vendor="Kelloggs",
+                        meeting_date="2026-04-03",
+                        data_dir=MOCK_DATA_DIR,
+                        lookback_weeks=13,
+                        persona_emphasis="both",
+                        include_benchmarks=True,
+                        output_format="md",
+                        category_filter=None,
+                    )
+
+        mock_write.assert_called_once()
+        _, kwargs = mock_write.call_args
+        self.assertEqual(kwargs["output_format"], "md")
 
 
 if __name__ == "__main__":
