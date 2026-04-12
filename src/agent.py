@@ -12,9 +12,11 @@ from src.benchmark_engine import compute_benchmarks
 from src.config import load_config
 from src.data_loader import load_dataset, load_manifest, load_vendor_data, resolve_vendor_id
 from src.data_validator import ValidationResult, validate_manifest_shape
-from src.llm_providers import ProviderSelection, resolve_provider
+from src.llm_providers import ProviderSelection, generate_text, resolve_provider
 from src.oos_attribution import compute_oos_attribution
+from src.output_renderer import write_output
 from src.po_risk_engine import compute_po_risk
+from src.prompt_builder import build_prompt
 from src.promo_readiness import compute_promo_readiness
 from src.scorecard_engine import compute_scorecard
 
@@ -65,6 +67,7 @@ class BriefingContext:
     promo_readiness: dict[str, Any] | None = None
 
     # --- Phase 4 output ---
+    prompt: str = ""
     briefing_text: str | None = None
 
     # --- Pipeline metadata ---
@@ -214,6 +217,42 @@ def _stage_compute_promo_readiness(ctx: BriefingContext) -> BriefingContext:
     return ctx
 
 
+def _stage_assemble_prompt(ctx: BriefingContext) -> BriefingContext:
+    """Build the full LLM prompt from engine outputs and the prompt template."""
+    ctx.prompt = build_prompt(ctx)
+    ctx.add_note(f"Prompt assembled ({len(ctx.prompt)} chars).")
+    return ctx
+
+
+def _stage_generate_briefing(ctx: BriefingContext) -> BriefingContext:
+    """Call the configured LLM provider and store the generated briefing text."""
+    llm_cfg = ctx.config.get("llm", {})
+    ctx.briefing_text = generate_text(
+        ctx.prompt,
+        provider=ctx.provider.provider if ctx.provider else None,
+        model=ctx.provider.model if ctx.provider else None,
+        temperature=llm_cfg.get("temperature"),
+        max_tokens=llm_cfg.get("max_tokens"),
+        max_retries=llm_cfg.get("retry_count", 3),
+    )
+    ctx.add_note(
+        f"Briefing generated ({len(ctx.briefing_text)} chars "
+        f"via {ctx.provider.provider if ctx.provider else 'unknown'})."
+    )
+    return ctx
+
+
+def _stage_render_output(ctx: BriefingContext) -> BriefingContext:
+    """Render and write the briefing document to the output directory."""
+    output_dir_str = ctx.config.get("output", {}).get("output_dir", "output/")
+    output_dir = Path(output_dir_str)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    result = write_output(ctx, output_dir=output_dir, output_format=ctx.output_format)
+    paths = ", ".join(str(v) for v in result.values() if v)
+    ctx.add_note(f"Output written: {paths}")
+    return ctx
+
+
 def run_pipeline(ctx: BriefingContext) -> BriefingContext:
     """Execute the briefing pipeline in stage order.
 
@@ -222,22 +261,20 @@ def run_pipeline(ctx: BriefingContext) -> BriefingContext:
     changing the function signature or the caller.
 
     Stages:
-      1. Load config
-      2. Load manifest
-      3. Validate manifest (fatal gate)
-      4. Resolve LLM provider
-      5. Resolve vendor ID (name → canonical ID)
-      6. Load vendor-scoped DataFrames
-      7. Compute scorecard
-      8. Compute benchmarks (if ``include_benchmarks``; uses full vendor_performance)
-      9. Compute PO risk
+      1.  Load config
+      2.  Load manifest
+      3.  Validate manifest (fatal gate)
+      4.  Resolve LLM provider
+      5.  Resolve vendor ID (name → canonical ID)
+      6.  Load vendor-scoped DataFrames
+      7.  Compute scorecard
+      8.  Compute benchmarks (if ``include_benchmarks``; uses full vendor_performance)
+      9.  Compute PO risk
       10. Compute OOS attribution (if ``oos_events`` loaded)
       11. Compute promo readiness (if ``promo_calendar`` loaded)
-
-    Phase 4 (not yet implemented):
-      12. Assemble prompt
+      12. Assemble prompt (prompt_builder)
       13. Generate briefing text via LLM
-      14. Render to output format
+      14. Render and write output file(s)
     """
     logger.info(
         "Pipeline starting: vendor='%s', date='%s', data_dir='%s'",
@@ -256,7 +293,10 @@ def run_pipeline(ctx: BriefingContext) -> BriefingContext:
     ctx = _stage_compute_oos_attribution(ctx)
     ctx = _stage_compute_promo_readiness(ctx)
 
-    ctx.add_note("Briefing narrative generation not yet implemented (Phase 4).")
+    ctx = _stage_assemble_prompt(ctx)
+    ctx = _stage_generate_briefing(ctx)
+    ctx = _stage_render_output(ctx)
+
     logger.info("Pipeline complete. Notes: %d", len(ctx.pipeline_notes))
     return ctx
 
@@ -296,9 +336,14 @@ def summarize_request(
     )
     ctx = run_pipeline(ctx)
 
+    status = "complete" if ctx.briefing_text else "partial"
     return {
-        "status": "scaffold",
-        "message": "Compute engines complete; LLM briefing not yet implemented (Phase 4).",
+        "status": status,
+        "message": (
+            "Briefing generated successfully."
+            if ctx.briefing_text
+            else "Compute engines complete; LLM briefing not generated."
+        ),
         "request": {
             "vendor": ctx.vendor_input,
             "meeting_date": ctx.meeting_date,
@@ -325,4 +370,5 @@ def summarize_request(
         "po_risk": ctx.po_risk,
         "oos_attribution": ctx.oos_attribution,
         "promo_readiness": ctx.promo_readiness,
+        "briefing_text": ctx.briefing_text,
     }

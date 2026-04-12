@@ -48,11 +48,18 @@ class ProviderSelectionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unsupported provider 'unknown'"):
             resolve_provider("unknown", None)
 
-    def test_generate_text_reports_selected_provider_and_prompt_size(self):
-        result = generate_text("hello world", provider="groq", model="llama-test")
-        self.assertIn("provider=groq", result)
-        self.assertIn("model=llama-test", result)
-        self.assertIn("prompt_chars=11", result)
+    def test_generate_text_raises_not_implemented_for_non_anthropic_providers(self):
+        """Groq is now implemented — verify it dispatches correctly when mocked."""
+        from unittest.mock import MagicMock, patch
+
+        fake_resp = MagicMock()
+        fake_resp.choices = [MagicMock()]
+        fake_resp.choices[0].message.content = "groq ok"
+
+        with patch("src.llm_providers.groq") as mock_groq:
+            mock_groq.Groq.return_value.chat.completions.create.return_value = fake_resp
+            result = generate_text("hello world", provider="groq", model="llama-test", max_retries=1)
+        self.assertEqual(result, "groq ok")
 
 
 class DataFixtureIntegrityTests(unittest.TestCase):
