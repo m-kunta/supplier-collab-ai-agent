@@ -12,7 +12,7 @@
 
 The **Supplier Collaboration Briefing Agent** is an in-progress intelligence tool designed to automate pre-meeting preparation for category buyers and supply planners. Instead of requiring users to manually aggregate data across ERPs, WMS, and planning systems, this agent ingests exported vendor performance data (via standardized CSV files defined in a `manifest.yaml`) and synthesizes it into actionable, contextual briefing documents using an LLM.
 
-*Active development: the **compute pipeline** (scorecard, benchmarks, PO risk, OOS attribution, promo readiness) runs from the CLI via `src/agent.py` and returns structured JSON. **LLM briefing generation** and markdown/DOCX document output are not implemented yet (Phase 4).*
+*Current capabilities: the full pipeline (compute engines plus **LLM briefing** and **markdown** output to `output/`) runs from the CLI and from the **FastAPI** layer in `api/`. The API supports SSE streaming, `.md` downloads, vendor listing, and `llm_provider`/`llm_model` overrides. Phase 5 is adding a Next.js UI.*
 
 ## 📈 Development Plan & Roadmap
 
@@ -54,16 +54,18 @@ Phase 1 completion notes:
 - [ ] Render the LLM generated output to `docx` format (Sprint 3).
 - [x] Hook up end-to-end integration test confirming `cli.py` writes or prints the final briefing document.
 
-### Phase 5: Web Frontend (Planned)
-- [ ] **FastAPI backend** (`api/`) — expose the pipeline as a REST API with async job execution and SSE streaming.
+### Phase 5: Web Frontend (In progress)
+- [x] **FastAPI backend** (`api/`) — async `POST /api/briefings` (thread-pool, `llm_provider`/`llm_model` overrides); `GET /api/briefings` (paginated); `GET /api/briefings/{id}`; `GET /api/health`; in-memory store.
+- [x] **FastAPI** — SSE streaming (`GET /api/briefings/{id}/stream`), file download (`GET /api/briefings/{id}/download`), `GET /api/vendors`.
 - [ ] **Next.js frontend** (`frontend/`) — premium dark-mode web UI with vendor selector, briefing form, live LLM streaming, and engine data dashboards (Scorecard, PO Pipeline, OOS, Promo Readiness).
 - [ ] **Dev launcher** (`scripts/dev.sh`, `Makefile`) — single command starts both API and UI.
 - [ ] **Streaming LLM output** — browser receives tokens in real-time via Server-Sent Events.
-- [ ] **Download & history** — `.md` download button, local briefing history.
+- [ ] **Download & history (UI)** — `.md` download button wired to download endpoint; history page consuming list API.
 
-## 🛠️ Planned Modules
+## 🛠️ Key modules
 
 - `cli.py`: Command-line entrypoint.
+- `api/`: FastAPI app (`uvicorn api.main:app`).
 - `src/agent.py`: Orchestration entrypoint.
 - `src/data_loader.py`: Manifest loader and dataset staging.
 - `src/data_validator.py`: Schema and data quality checks logic.
@@ -82,6 +84,8 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python cli.py --help
 pytest
+# Optional — HTTP API (from repo root)
+uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 ## 🔍 Current CLI Shape
@@ -90,7 +94,7 @@ pytest
 python cli.py --vendor "Kelloggs" --date "2026-04-03" --data-dir data/inbound/mock
 ```
 
-*Note: The CLI runs the full compute pipeline and prints JSON including `scorecard`, `benchmarks`, `po_risk`, `oos_attribution`, and `promo_readiness` (when data is available). The response `status` remains `"scaffold"` until LLM briefing generation is implemented; see `summarize_request()` in `src/agent.py`.*
+*Note: The CLI prints JSON including engine outputs and, when the LLM step succeeds, `briefing_text`, `status: "complete"`, and `output_files` (paths written under `output/`). The same payload shape is returned by `POST /api/briefings` with additional `id` and `created_at` fields.*
 
 ## 📁 Repository Naming
 

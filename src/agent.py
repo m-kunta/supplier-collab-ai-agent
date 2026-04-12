@@ -55,6 +55,8 @@ class BriefingContext:
     manifest: dict[str, Any] = field(default_factory=dict)
     vendor_id: str = ""
     validation_result: ValidationResult | None = None
+    provider_override: str | None = None
+    model_override: str | None = None
     provider: ProviderSelection | None = None
     # vendor_data: dict[str, pd.DataFrame] — populated in Phase 3 data stage
     vendor_data: dict[str, Any] = field(default_factory=dict)
@@ -69,6 +71,7 @@ class BriefingContext:
     # --- Phase 4 output ---
     prompt: str = ""
     briefing_text: str | None = None
+    output_files: dict[str, str] | None = None
 
     # --- Pipeline metadata ---
     pipeline_notes: list[str] = field(default_factory=list)
@@ -109,8 +112,8 @@ def _stage_validate_manifest(ctx: BriefingContext) -> BriefingContext:
 
 def _stage_resolve_provider(ctx: BriefingContext) -> BriefingContext:
     ctx.provider = resolve_provider(
-        ctx.config.get("llm", {}).get("default_provider"),
-        ctx.config.get("llm", {}).get("default_model"),
+        ctx.provider_override or ctx.config.get("llm", {}).get("default_provider"),
+        ctx.model_override or ctx.config.get("llm", {}).get("default_model"),
     )
     return ctx
 
@@ -248,6 +251,7 @@ def _stage_render_output(ctx: BriefingContext) -> BriefingContext:
     output_dir = Path(output_dir_str)
     output_dir.mkdir(parents=True, exist_ok=True)
     result = write_output(ctx, output_dir=output_dir, output_format=ctx.output_format)
+    ctx.output_files = {k: str(v) for k, v in result.items() if v}
     paths = ", ".join(str(v) for v in result.values() if v)
     ctx.add_note(f"Output written: {paths}")
     return ctx
@@ -315,6 +319,8 @@ def summarize_request(
     include_benchmarks: bool,
     output_format: str,
     category_filter: str | None,
+    llm_provider: str | None = None,
+    llm_model: str | None = None,
 ) -> dict[str, Any]:
     """Run the briefing pipeline and return a scaffold summary dict.
 
@@ -333,6 +339,8 @@ def summarize_request(
         include_benchmarks=include_benchmarks,
         output_format=output_format,
         category_filter=category_filter,
+        provider_override=llm_provider,
+        model_override=llm_model,
     )
     ctx = run_pipeline(ctx)
 
@@ -371,4 +379,5 @@ def summarize_request(
         "oos_attribution": ctx.oos_attribution,
         "promo_readiness": ctx.promo_readiness,
         "briefing_text": ctx.briefing_text,
+        "output_files": ctx.output_files,
     }
