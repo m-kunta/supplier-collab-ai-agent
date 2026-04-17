@@ -1,0 +1,73 @@
+.page {
+  min-height: 100vh;
+  padding: 2.25rem 0 3rem;
+}
+
+.container {
+  width: min(1080px, 100%);
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 1.4rem;
+}
+
+.heading {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  margin-bottom: 0.2rem;
+}
+
+.subheading {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.2rem;
+}
+
+.grid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.card {
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 0.85rem 0.95rem;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.id {
+  font-family: var(--font-heading);
+  font-size: 0.94rem;
+}
+
+.meta {
+  margin-top: 0.35rem;
+  color: var(--color-text-muted);
+  font-size: 0.84rem;
+}
+
+.badge {
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.16rem 0.52rem;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.empty {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}

@@ -1,5 +1,7 @@
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:8000";
 
 export interface VendorRecord {
   vendor_id: string;
@@ -33,14 +35,32 @@ export interface BriefingResponse {
   [key: string]: unknown;
 }
 
+export interface BriefingListItem {
+  id: string;
+  created_at: string;
+  status: string;
+  vendor_id?: string;
+  vendor?: string;
+  meeting_date?: string;
+}
+
+export interface BriefingListResponse {
+  briefings: BriefingListItem[];
+  total: number;
+}
+
+async function readJson<T>(res: Response, context: string): Promise<T> {
+  if (!res.ok) {
+    throw new Error(`${context}: ${res.status} ${res.statusText}`);
+  }
+  return res.json() as Promise<T>;
+}
+
 export async function listVendors(data_dir: string): Promise<VendorsResponse> {
   const url = new URL(`${API_BASE}/api/vendors`);
   url.searchParams.set("data_dir", data_dir);
   const res = await fetch(url.toString());
-  if (!res.ok) {
-    throw new Error(`Failed to list vendors: ${res.status} ${res.statusText}`);
-  }
-  return res.json() as Promise<VendorsResponse>;
+  return readJson<VendorsResponse>(res, "Failed to list vendors");
 }
 
 export async function createBriefing(
@@ -49,10 +69,27 @@ export async function createBriefing(
   const res = await fetch(`${API_BASE}/api/briefings`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(payload)
   });
-  if (!res.ok) {
-    throw new Error(`Failed to create briefing: ${res.status} ${res.statusText}`);
-  }
-  return res.json() as Promise<BriefingResponse>;
+  return readJson<BriefingResponse>(res, "Failed to create briefing");
+}
+
+export async function listBriefings(limit = 50): Promise<BriefingListResponse> {
+  const url = new URL(`${API_BASE}/api/briefings`);
+  url.searchParams.set("limit", String(limit));
+  const res = await fetch(url.toString());
+  return readJson<BriefingListResponse>(res, "Failed to list briefings");
+}
+
+export async function getBriefing(briefingId: string): Promise<BriefingResponse> {
+  const res = await fetch(`${API_BASE}/api/briefings/${briefingId}`);
+  return readJson<BriefingResponse>(res, "Failed to load briefing");
+}
+
+export function getBriefingStreamUrl(briefingId: string): string {
+  return `${API_BASE}/api/briefings/${briefingId}/stream`;
+}
+
+export function getBriefingDownloadUrl(briefingId: string): string {
+  return `${API_BASE}/api/briefings/${briefingId}/download`;
 }
