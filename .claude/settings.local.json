@@ -34,7 +34,16 @@
       "Bash(python -c \"import numpy as np; peer_values = [0.88, 0.95, 0.97, 0.99]; result = np.percentile\\(peer_values, 90\\); print\\(f''90th percentile: {result}''\\); print\\(f''Type: {type\\(result\\)}''\\)\")",
       "Bash(python -c \":*)",
       "Bash(python -W error::FutureWarning -c \":*)",
-      "mcp__plugin_claude-mem_mcp-search__smart_unfold"
+      "mcp__plugin_claude-mem_mcp-search__smart_unfold",
+      "Bash(npm test:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx next:*)",
+      "Bash(claude plugins:*)",
+      "Bash(claude --plugins update)",
+      "Read(//Users/MKunta/AGENTS/CODE/**)",
+      "Bash(claude restart:*)",
+      "Bash(pkill -f \"claude\")"
     ]
   }
 }
