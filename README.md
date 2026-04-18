@@ -215,9 +215,9 @@ Phase 1 completion notes:
 - [x] **FastAPI backend** (`api/`) — async `POST /api/briefings` (thread-pool, `llm_provider`/`llm_model` overrides); `GET /api/briefings` (paginated); `GET /api/briefings/{id}`; `GET /api/health`; in-memory store.
 - [x] **FastAPI** — SSE streaming (`GET /api/briefings/{id}/stream`), file download (`GET /api/briefings/{id}/download`), `GET /api/vendors`.
 - [ ] **Next.js frontend** (`frontend/`) — premium dark-mode web UI with vendor selector, briefing form, live LLM streaming, and engine data dashboards (Scorecard, PO Pipeline, OOS, Promo Readiness).
-- [ ] **Dev launcher** (`scripts/dev.sh`, `Makefile`) — single command starts both API and UI.
-- [ ] **Streaming LLM output** — browser receives tokens in real-time via Server-Sent Events.
-- [ ] **Download & history (UI)** — `.md` download button wired to download endpoint; history page consuming list API.
+- [x] **Dev launcher** (`scripts/dev.sh`, `Makefile`) — single command starts both API and UI.
+- [x] **Streaming LLM output** — browser receives tokens in real-time via Server-Sent Events.
+- [x] **Download & history (UI)** — `.md` download button wired to download endpoint; history page consuming list API.
 
 ## 🛠️ Key modules
 
