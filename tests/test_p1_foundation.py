@@ -261,9 +261,9 @@ class ResolveVendorIdTests(unittest.TestCase):
     def setUp(self):
         self.vendor_master_df = pd.DataFrame(
             [
-                {"vendor_id": "V1001", "vendor_name": "Kelloggs"},
-                {"vendor_id": "V1002", "vendor_name": "General Mills"},
-                {"vendor_id": "V1003", "vendor_name": "Quaker Oats"},
+                {"vendor_id": "V1001", "vendor_name": "Northstar Foods Co"},
+                {"vendor_id": "V1002", "vendor_name": "Blue Harbor Pantry"},
+                {"vendor_id": "V1003", "vendor_name": "Cedar Peak Provisions"},
             ]
         )
 
@@ -271,23 +271,23 @@ class ResolveVendorIdTests(unittest.TestCase):
         self.assertEqual(resolve_vendor_id("V1001", self.vendor_master_df), "V1001")
 
     def test_resolves_vendor_name_case_insensitive(self):
-        self.assertEqual(resolve_vendor_id("kelloggs", self.vendor_master_df), "V1001")
-        self.assertEqual(resolve_vendor_id("KELLOGGS", self.vendor_master_df), "V1001")
-        self.assertEqual(resolve_vendor_id("Kelloggs", self.vendor_master_df), "V1001")
+        self.assertEqual(resolve_vendor_id("northstar foods co", self.vendor_master_df), "V1001")
+        self.assertEqual(resolve_vendor_id("NORTHSTAR FOODS CO", self.vendor_master_df), "V1001")
+        self.assertEqual(resolve_vendor_id("Northstar Foods Co", self.vendor_master_df), "V1001")
 
     def test_resolves_vendor_name_with_whitespace(self):
-        self.assertEqual(resolve_vendor_id("  Kelloggs  ", self.vendor_master_df), "V1001")
+        self.assertEqual(resolve_vendor_id("  Northstar Foods Co  ", self.vendor_master_df), "V1001")
 
     def test_resolves_multi_word_vendor_name(self):
         self.assertEqual(
-            resolve_vendor_id("General Mills", self.vendor_master_df), "V1002"
+            resolve_vendor_id("Blue Harbor Pantry", self.vendor_master_df), "V1002"
         )
 
     def test_raises_value_error_for_unknown_vendor(self):
         with self.assertRaises(ValueError) as ctx:
             resolve_vendor_id("UnknownCo", self.vendor_master_df)
         self.assertIn("UnknownCo", str(ctx.exception))
-        self.assertIn("Kelloggs", str(ctx.exception))
+        self.assertIn("Northstar Foods Co", str(ctx.exception))
 
     def test_raises_value_error_for_ambiguous_name(self):
         ambiguous_df = pd.DataFrame(
@@ -300,11 +300,11 @@ class ResolveVendorIdTests(unittest.TestCase):
             resolve_vendor_id("Duplicate", ambiguous_df)
         self.assertIn("ambiguous", str(ctx.exception))
 
-    def test_mock_vendor_master_resolves_kelloggs(self):
+    def test_mock_vendor_master_resolves_named_vendor(self):
         """Integration check: resolves against the actual mock CSV fixture."""
         manifest = load_manifest(MOCK_DATA_DIR)
         vendor_master_df = load_dataset(manifest, "vendor_master")
-        resolved = resolve_vendor_id("Kelloggs", vendor_master_df)
+        resolved = resolve_vendor_id("Northstar Foods Co", vendor_master_df)
         self.assertEqual(resolved, "V1001")
 
 
@@ -321,7 +321,7 @@ class PipelineIntegrationTests(unittest.TestCase):
         """Run summarize_request with generate_text and write_output mocked."""
         from unittest.mock import patch
         defaults = dict(
-            vendor="Kelloggs",
+            vendor="Northstar Foods Co",
             meeting_date="2026-04-03",
             data_dir=MOCK_DATA_DIR,
             lookback_weeks=13,
@@ -379,7 +379,7 @@ class PipelineIntegrationTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "vendor_master"):
                 summarize_request(
-                    vendor="Kelloggs",
+                    vendor="Northstar Foods Co",
                     meeting_date="2026-04-03",
                     data_dir=tmp_path,
                     lookback_weeks=13,
@@ -419,7 +419,7 @@ class Phase4EndToEndTests(unittest.TestCase):
                 with patch("src.agent.write_output") as mock_write:
                     mock_write.return_value = {"md_path": Path(tmp_output) / "V1001_2026-04-03.md"}
                     summary = summarize_request(
-                        vendor="Kelloggs",
+                        vendor="Northstar Foods Co",
                         meeting_date="2026-04-03",
                         data_dir=MOCK_DATA_DIR,
                         lookback_weeks=13,
@@ -443,7 +443,7 @@ class Phase4EndToEndTests(unittest.TestCase):
                 with patch("src.agent.write_output") as mock_write:
                     mock_write.return_value = {"md_path": Path(tmp_output) / "V1001_2026-04-03.md"}
                     summarize_request(
-                        vendor="Kelloggs",
+                        vendor="Northstar Foods Co",
                         meeting_date="2026-04-03",
                         data_dir=MOCK_DATA_DIR,
                         lookback_weeks=13,

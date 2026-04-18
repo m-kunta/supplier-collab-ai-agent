@@ -74,6 +74,14 @@ export async function createBriefing(
   return readJson<BriefingResponse>(res, "Failed to create briefing");
 }
 
+export async function startBackend(): Promise<{ ok: boolean; error?: string }> {
+  const res = await fetch("/api/start-backend", {
+    method: "POST",
+    cache: "no-store"
+  });
+  return readJson<{ ok: boolean; error?: string }>(res, "Failed to start backend");
+}
+
 export async function listBriefings(limit = 50): Promise<BriefingListResponse> {
   const url = new URL(`${API_BASE}/api/briefings`);
   url.searchParams.set("limit", String(limit));
@@ -97,7 +105,8 @@ export function getBriefingDownloadUrl(briefingId: string): string {
 export async function checkHealth(): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/api/health`, {
-      signal: AbortSignal.timeout(2000)
+      signal: AbortSignal.timeout(2000),
+      cache: "no-store"
     });
     return res.ok;
   } catch {

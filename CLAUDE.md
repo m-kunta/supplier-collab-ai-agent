@@ -18,7 +18,7 @@ pip install -r requirements.txt
 
 **Run the CLI:**
 ```bash
-python cli.py --vendor "Kelloggs" --date "2026-04-03" --data-dir data/inbound/mock
+python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir data/inbound/mock
 python cli.py --help
 ```
 
@@ -113,7 +113,7 @@ Each landing zone contains:
 
 **Schemas:** `data/schemas/*.schema.yaml` — YAML schema definitions with `primary_key`, `required_columns`, and `column_types`.
 
-**Mock data:** Generated via `scripts/generate_mock_csvs.py` for 1 vendor (Kelloggs) and 5 tables (13-week performance history, POs, OOS, Promo) seated in `data/inbound/mock/` to emulate pipeline injection.
+**Mock data:** Generated via `scripts/generate_mock_csvs.py` for 1 vendor (Northstar Foods Co) and 5 tables (13-week performance history, POs, OOS, Promo) seated in `data/inbound/mock/` to emulate pipeline injection.
 
 ### Prompt versions
 
@@ -177,7 +177,7 @@ Current test coverage:
 - Promo readiness engine: 10 tests covering coverage tiers, cancelled/late PO handling, multi-SKU and multi-event weighting (`tests/test_promo_readiness.py`)
 - Pipeline integration: `summarize_request` against mock landing zone with mocked `generate_text` and `write_output` (`tests/test_p1_foundation.py`)
 - LLM providers: 12 tests covering provider resolution, Anthropic happy path, retry logic on rate limits, and multi-provider paths (`tests/test_llm_providers.py`)
-- FastAPI (`tests/test_api.py`): 13 tests — health, POST/GET briefings, list + limit pagination, 404s, SSE stream (content-type + sentinel), download 410 on missing file, `GET /api/vendors` (Kelloggs present, bad-dir 404), `llm_provider` override reflected in response.
+- FastAPI (`tests/test_api.py`): 13 tests — health, POST/GET briefings, list + limit pagination, 404s, SSE stream (content-type + sentinel), download 410 on missing file, `GET /api/vendors` (Northstar Foods Co present, bad-dir 404), `llm_provider` override reflected in response.
 - Prompt builder: 12 tests covering template loading, variable substitution, JSON payload integrity, null optional data, and persona variants (`tests/test_prompt_builder.py`)
 - Phase 4 E2E: 2 integration tests with mocked LLM call verifying `status=complete`, `briefing_text` populated, and `write_output` called correctly (`tests/test_p1_foundation.py`)
 

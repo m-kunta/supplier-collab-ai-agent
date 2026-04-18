@@ -18,7 +18,7 @@ pip install -r requirements.txt
 
 **Run the CLI:**
 ```bash
-python cli.py --vendor "Kelloggs" --date "2026-04-03" --data-dir data/inbound/mock
+python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir data/inbound/mock
 python cli.py --help
 ```
 
@@ -119,7 +119,7 @@ Each landing zone contains:
 
 **Schemas:** `data/schemas/*.schema.yaml` — YAML schema definitions with `primary_key`, `required_columns`, and `column_types`.
 
-**Mock data:** Generated via `scripts/generate_mock_csvs.py` for 1 vendor (Kelloggs) and 5 tables (13-week performance history, POs, OOS, Promo) seated in `data/inbound/mock/` to emulate pipeline injection.
+**Mock data:** Generated via `scripts/generate_mock_csvs.py` for 1 vendor (Northstar Foods Co) and 5 tables (13-week performance history, POs, OOS, Promo) seated in `data/inbound/mock/` to emulate pipeline injection.
 
 ### Prompt versions
 

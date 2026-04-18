@@ -21,7 +21,7 @@ describe("BriefingsPage", () => {
           id: "b-1",
           created_at: "2026-04-17T12:00:00Z",
           status: "complete",
-          vendor: "Kelloggs",
+          vendor: "Northstar Foods Co",
           meeting_date: "2026-04-03"
         }
       ],
@@ -30,7 +30,7 @@ describe("BriefingsPage", () => {
 
     render(<BriefingsPage />);
 
-    expect(await screen.findByText("Kelloggs")).toBeInTheDocument();
+    expect(await screen.findByText("Northstar Foods Co")).toBeInTheDocument();
     expect(screen.getByText(/Meeting: 2026-04-03/)).toBeInTheDocument();
   });
 

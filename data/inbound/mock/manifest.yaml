@@ -6,21 +6,21 @@ data_directory: ./
 files:
   vendor_master:
     filename: vendor_master.csv
-    row_count: 1
+    row_count: 12
     required: true
   purchase_orders:
     filename: purchase_orders.csv
-    row_count: 3
+    row_count: 36
     required: true
   vendor_performance:
     filename: vendor_performance.csv
-    row_count: 65
+    row_count: 780
     required: true
   oos_events:
     filename: oos_events.csv
-    row_count: 2
+    row_count: 24
     required: false
   promo_calendar:
     filename: promo_calendar.csv
-    row_count: 1
+    row_count: 12
     required: false

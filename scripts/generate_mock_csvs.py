@@ -1,117 +1,365 @@
-import os
+import argparse
 import csv
-import yaml
 from datetime import date, timedelta
+from pathlib import Path
 
-MOCK_DIR = os.path.join("data", "inbound", "mock")
+import yaml
 
-def ensure_dir():
-    os.makedirs(MOCK_DIR, exist_ok=True)
+DEFAULT_OUTPUT_DIR = Path("data") / "inbound" / "mock"
+REFERENCE_DATE = date(2026, 4, 3)
+PERFORMANCE_END_DATE = date(2026, 3, 28)
 
-def write_csv(filename, fieldnames, rows):
-    filepath = os.path.join(MOCK_DIR, filename)
-    with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
+VENDOR_SEEDS = [
+    {
+        "vendor_name": "Northstar Foods Co",
+        "primary_category": "Cereal",
+        "buyer_name": "Alex Carter",
+        "planner_name": "Riley Brooks",
+    },
+    {
+        "vendor_name": "Blue Harbor Pantry",
+        "primary_category": "Snacks",
+        "buyer_name": "Jordan Park",
+        "planner_name": "Morgan Lee",
+    },
+    {
+        "vendor_name": "Cedar Peak Provisions",
+        "primary_category": "Beverage",
+        "buyer_name": "Taylor Quinn",
+        "planner_name": "Avery Kim",
+    },
+    {
+        "vendor_name": "Suntrail Grocery Works",
+        "primary_category": "Frozen",
+        "buyer_name": "Casey Monroe",
+        "planner_name": "Drew Patel",
+    },
+    {
+        "vendor_name": "Maple Bridge Supply",
+        "primary_category": "Household",
+        "buyer_name": "Parker Lane",
+        "planner_name": "Emerson Shaw",
+    },
+    {
+        "vendor_name": "Orbit Harvest Brands",
+        "primary_category": "Wellness",
+        "buyer_name": "Reese Logan",
+        "planner_name": "Hayden Reese",
+    },
+    {
+        "vendor_name": "Silver Meadow Foods",
+        "primary_category": "Bakery",
+        "buyer_name": "Blake Turner",
+        "planner_name": "Rowan Ellis",
+    },
+    {
+        "vendor_name": "Crimson Valley Trading",
+        "primary_category": "Pantry",
+        "buyer_name": "Skyler West",
+        "planner_name": "Cameron Price",
+    },
+]
+
+
+def ensure_dir(output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+
+def write_csv(output_dir: Path, filename: str, fieldnames: list[str], rows: list[dict]) -> int:
+    filepath = output_dir / filename
+    with filepath.open("w", newline="", encoding="utf-8") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
-        for row in rows:
-            writer.writerow(row)
+        writer.writerows(rows)
     print(f"Generated {filepath} with {len(rows)} rows.")
     return len(rows)
 
-def generate_vendor_master():
-    fieldnames = ['vendor_id', 'vendor_name', 'vendor_status', 'primary_category', 'buyer_name', 'planner_name']
-    rows = [
-        {
-            'vendor_id': 'V1001',
-            'vendor_name': 'Kelloggs',
-            'vendor_status': 'active',
-            'primary_category': 'Cereal',
-            'buyer_name': 'John Doe',
-            'planner_name': 'Jane Smith'
-        }
-    ]
-    return write_csv('vendor_master.csv', fieldnames, rows)
 
-def generate_purchase_orders():
-    # po_number, po_line, vendor_id, sku, qty_ordered, requested_delivery_date
-    today = date(2026, 4, 3)
-    fieldnames = ['po_number', 'po_line', 'vendor_id', 'sku', 'sku_description', 'qty_ordered', 'requested_delivery_date', 'po_status', 'ship_to_dc']
-    rows = [
-        {'po_number': 'PO-9991', 'po_line': 1, 'vendor_id': 'V1001', 'sku': 'SKU-001', 'sku_description': 'Frosted Flakes 18oz', 'qty_ordered': 500, 'requested_delivery_date': (today - timedelta(days=2)).isoformat(), 'po_status': 'shipped', 'ship_to_dc': 'DC-Atlanta'},
-        {'po_number': 'PO-9992', 'po_line': 1, 'vendor_id': 'V1001', 'sku': 'SKU-002', 'sku_description': 'Rice Krispies 12oz', 'qty_ordered': 300, 'requested_delivery_date': (today + timedelta(days=4)).isoformat(), 'po_status': 'open', 'ship_to_dc': 'DC-Atlanta'},
-        {'po_number': 'PO-9993', 'po_line': 1, 'vendor_id': 'V1001', 'sku': 'SKU-003', 'sku_description': 'Froot Loops 14.7oz', 'qty_ordered': 450, 'requested_delivery_date': (today + timedelta(days=7)).isoformat(), 'po_status': 'open', 'ship_to_dc': 'DC-Dallas'},
-    ]
-    return write_csv('purchase_orders.csv', fieldnames, rows)
+def build_vendor_master_rows(vendor_count: int) -> list[dict]:
+    if vendor_count < 1:
+        raise ValueError("vendor_count must be >= 1")
 
-def generate_vendor_performance():
-    fieldnames = ['vendor_id', 'week_ending', 'metric_code', 'metric_value', 'metric_uom']
     rows = []
-    
-    # 5 metrics over last 13 weeks ending 2026-03-28 (a Saturday)
-    end_date = date(2026, 3, 28)
-    
-    # Let's simulate a declining fill rate, starting at 96% down to 91%
-    fill_rate_trend = [0.962, 0.958, 0.960, 0.955, 0.950, 0.948, 0.942, 0.940, 0.935, 0.930, 0.925, 0.920, 0.918]
-    otif_trend =      [0.94, 0.93, 0.94, 0.92, 0.90, 0.89, 0.88, 0.88, 0.87, 0.86, 0.85, 0.84, 0.83]
-    
-    for i in range(13):
-        week_end = end_date - timedelta(days=(12-i)*7)
-        rows.append({'vendor_id': 'V1001', 'week_ending': week_end.isoformat(), 'metric_code': 'FILL_RATE', 'metric_value': fill_rate_trend[i], 'metric_uom': 'pct'})
-        rows.append({'vendor_id': 'V1001', 'week_ending': week_end.isoformat(), 'metric_code': 'OTIF', 'metric_value': otif_trend[i], 'metric_uom': 'pct'})
-        rows.append({'vendor_id': 'V1001', 'week_ending': week_end.isoformat(), 'metric_code': 'LEAD_TIME_COMPLIANCE', 'metric_value': 0.88, 'metric_uom': 'pct'})
-        rows.append({'vendor_id': 'V1001', 'week_ending': week_end.isoformat(), 'metric_code': 'FORECAST_ACCURACY', 'metric_value': 0.85, 'metric_uom': 'pct'})
-        rows.append({'vendor_id': 'V1001', 'week_ending': week_end.isoformat(), 'metric_code': 'PROMO_FILL_RATE', 'metric_value': 0.88, 'metric_uom': 'pct'})
+    for index in range(vendor_count):
+        seed = VENDOR_SEEDS[index % len(VENDOR_SEEDS)]
+        cycle = index // len(VENDOR_SEEDS)
+        suffix = "" if cycle == 0 else f" {cycle + 1}"
+        rows.append(
+            {
+                "vendor_id": f"V{1001 + index}",
+                "vendor_name": f"{seed['vendor_name']}{suffix}",
+                "vendor_status": "active",
+                "primary_category": seed["primary_category"],
+                "buyer_name": seed["buyer_name"],
+                "planner_name": seed["planner_name"],
+            }
+        )
+    return rows
 
-    return write_csv('vendor_performance.csv', fieldnames, rows)
 
-def generate_oos_events():
-    fieldnames = ['vendor_id', 'sku', 'oos_start_date', 'oos_end_date', 'oos_units_lost', 'root_cause_code']
-    today = date(2026, 4, 3)
-    rows = [
-        {'vendor_id': 'V1001', 'sku': 'SKU-001', 'oos_start_date': (today - timedelta(days=5)).isoformat(), 'oos_end_date': '', 'oos_units_lost': 120, 'root_cause_code': 'short_fill'},
-        {'vendor_id': 'V1001', 'sku': 'SKU-003', 'oos_start_date': (today - timedelta(days=10)).isoformat(), 'oos_end_date': (today - timedelta(days=8)).isoformat(), 'oos_units_lost': 80, 'root_cause_code': 'late_shipment'}
+def generate_vendor_master(output_dir: Path, vendor_rows: list[dict]) -> int:
+    fieldnames = [
+        "vendor_id",
+        "vendor_name",
+        "vendor_status",
+        "primary_category",
+        "buyer_name",
+        "planner_name",
     ]
-    return write_csv('oos_events.csv', fieldnames, rows)
+    return write_csv(output_dir, "vendor_master.csv", fieldnames, vendor_rows)
 
-def generate_promo_calendar():
-    fieldnames = ['promo_id', 'event_name', 'vendor_id', 'sku', 'start_date', 'end_date', 'promoted_volume', 'promo_type']
-    today = date(2026, 4, 3)
-    rows = [
-        {'promo_id': 'PRM-001', 'event_name': 'Easter TPR', 'vendor_id': 'V1001', 'sku': 'SKU-001', 'start_date': (today + timedelta(days=1)).isoformat(), 'end_date': (today + timedelta(days=8)).isoformat(), 'promoted_volume': 1500, 'promo_type': 'tpr'}
+
+def generate_purchase_orders(output_dir: Path, vendor_rows: list[dict]) -> int:
+    fieldnames = [
+        "po_number",
+        "po_line",
+        "vendor_id",
+        "sku",
+        "sku_description",
+        "qty_ordered",
+        "requested_delivery_date",
+        "po_status",
+        "ship_to_dc",
     ]
-    return write_csv('promo_calendar.csv', fieldnames, rows)
+    rows = []
+    for idx, vendor in enumerate(vendor_rows):
+        vendor_id = vendor["vendor_id"]
+        sku_base = (idx + 1) * 100
+        po_base = 9000 + ((idx + 1) * 10)
+        rows.extend(
+            [
+                {
+                    "po_number": f"PO-{po_base + 1}",
+                    "po_line": 1,
+                    "vendor_id": vendor_id,
+                    "sku": f"SKU-{sku_base + 1:03d}",
+                    "sku_description": f"{vendor['primary_category']} Core Item A",
+                    "qty_ordered": 400 + (idx * 35),
+                    "requested_delivery_date": (REFERENCE_DATE - timedelta(days=2 + idx)).isoformat(),
+                    "po_status": "shipped",
+                    "ship_to_dc": "DC-Atlanta",
+                },
+                {
+                    "po_number": f"PO-{po_base + 2}",
+                    "po_line": 1,
+                    "vendor_id": vendor_id,
+                    "sku": f"SKU-{sku_base + 2:03d}",
+                    "sku_description": f"{vendor['primary_category']} Core Item B",
+                    "qty_ordered": 260 + (idx * 30),
+                    "requested_delivery_date": (REFERENCE_DATE + timedelta(days=4 + idx)).isoformat(),
+                    "po_status": "open",
+                    "ship_to_dc": "DC-Dallas",
+                },
+                {
+                    "po_number": f"PO-{po_base + 3}",
+                    "po_line": 1,
+                    "vendor_id": vendor_id,
+                    "sku": f"SKU-{sku_base + 3:03d}",
+                    "sku_description": f"{vendor['primary_category']} Core Item C",
+                    "qty_ordered": 300 + (idx * 28),
+                    "requested_delivery_date": (REFERENCE_DATE + timedelta(days=7 + idx)).isoformat(),
+                    "po_status": "open",
+                    "ship_to_dc": "DC-Chicago",
+                },
+            ]
+        )
+    return write_csv(output_dir, "purchase_orders.csv", fieldnames, rows)
 
-def generate_manifest(counts):
+
+def generate_vendor_performance(output_dir: Path, vendor_rows: list[dict]) -> int:
+    fieldnames = ["vendor_id", "week_ending", "metric_code", "metric_value", "metric_uom"]
+    rows = []
+
+    base_fill = [0.962, 0.958, 0.960, 0.955, 0.950, 0.948, 0.942, 0.940, 0.935, 0.930, 0.925, 0.920, 0.918]
+    base_otif = [0.940, 0.930, 0.940, 0.920, 0.900, 0.890, 0.880, 0.880, 0.870, 0.860, 0.850, 0.840, 0.830]
+
+    for vendor_index, vendor in enumerate(vendor_rows):
+        vendor_id = vendor["vendor_id"]
+        drift = vendor_index * 0.003
+
+        for week_index in range(13):
+            week_end = PERFORMANCE_END_DATE - timedelta(days=(12 - week_index) * 7)
+            fill_rate = max(0.75, base_fill[week_index] - drift)
+            otif = max(0.70, base_otif[week_index] - (drift * 1.2))
+            rows.extend(
+                [
+                    {
+                        "vendor_id": vendor_id,
+                        "week_ending": week_end.isoformat(),
+                        "metric_code": "FILL_RATE",
+                        "metric_value": round(fill_rate, 4),
+                        "metric_uom": "pct",
+                    },
+                    {
+                        "vendor_id": vendor_id,
+                        "week_ending": week_end.isoformat(),
+                        "metric_code": "OTIF",
+                        "metric_value": round(otif, 4),
+                        "metric_uom": "pct",
+                    },
+                    {
+                        "vendor_id": vendor_id,
+                        "week_ending": week_end.isoformat(),
+                        "metric_code": "LEAD_TIME_COMPLIANCE",
+                        "metric_value": round(max(0.70, 0.88 - drift), 4),
+                        "metric_uom": "pct",
+                    },
+                    {
+                        "vendor_id": vendor_id,
+                        "week_ending": week_end.isoformat(),
+                        "metric_code": "FORECAST_ACCURACY",
+                        "metric_value": round(max(0.68, 0.85 - (drift * 0.8)), 4),
+                        "metric_uom": "pct",
+                    },
+                    {
+                        "vendor_id": vendor_id,
+                        "week_ending": week_end.isoformat(),
+                        "metric_code": "PROMO_FILL_RATE",
+                        "metric_value": round(max(0.70, 0.88 - (drift * 1.1)), 4),
+                        "metric_uom": "pct",
+                    },
+                ]
+            )
+
+    return write_csv(output_dir, "vendor_performance.csv", fieldnames, rows)
+
+
+def generate_oos_events(output_dir: Path, vendor_rows: list[dict]) -> int:
+    fieldnames = ["vendor_id", "sku", "oos_start_date", "oos_end_date", "oos_units_lost", "root_cause_code"]
+    rows = []
+    for idx, vendor in enumerate(vendor_rows):
+        vendor_id = vendor["vendor_id"]
+        sku_base = (idx + 1) * 100
+        rows.extend(
+            [
+                {
+                    "vendor_id": vendor_id,
+                    "sku": f"SKU-{sku_base + 1:03d}",
+                    "oos_start_date": (REFERENCE_DATE - timedelta(days=5 + idx)).isoformat(),
+                    "oos_end_date": "",
+                    "oos_units_lost": 100 + (idx * 12),
+                    "root_cause_code": "short_fill",
+                },
+                {
+                    "vendor_id": vendor_id,
+                    "sku": f"SKU-{sku_base + 3:03d}",
+                    "oos_start_date": (REFERENCE_DATE - timedelta(days=10 + idx)).isoformat(),
+                    "oos_end_date": (REFERENCE_DATE - timedelta(days=8 + idx)).isoformat(),
+                    "oos_units_lost": 70 + (idx * 10),
+                    "root_cause_code": "late_shipment",
+                },
+            ]
+        )
+    return write_csv(output_dir, "oos_events.csv", fieldnames, rows)
+
+
+def generate_promo_calendar(output_dir: Path, vendor_rows: list[dict]) -> int:
+    fieldnames = [
+        "promo_id",
+        "event_name",
+        "vendor_id",
+        "sku",
+        "start_date",
+        "end_date",
+        "promoted_volume",
+        "promo_type",
+    ]
+    rows = []
+    for idx, vendor in enumerate(vendor_rows):
+        sku_base = (idx + 1) * 100
+        rows.append(
+            {
+                "promo_id": f"PRM-{idx + 1:03d}",
+                "event_name": f"Seasonal Lift {idx + 1}",
+                "vendor_id": vendor["vendor_id"],
+                "sku": f"SKU-{sku_base + 1:03d}",
+                "start_date": (REFERENCE_DATE + timedelta(days=1 + idx)).isoformat(),
+                "end_date": (REFERENCE_DATE + timedelta(days=8 + idx)).isoformat(),
+                "promoted_volume": 1200 + (idx * 90),
+                "promo_type": "tpr",
+            }
+        )
+    return write_csv(output_dir, "promo_calendar.csv", fieldnames, rows)
+
+
+def generate_manifest(output_dir: Path, counts: dict[str, int]) -> None:
     manifest = {
-        'version': '1.0',
-        'generated_at': '2026-04-03T08:00:00',
-        'source_system': 'Mock Generator',
-        'environment': 'mock',
-        'data_directory': './',
-        'files': {
-            'vendor_master': {'filename': 'vendor_master.csv', 'row_count': counts[0], 'required': True},
-            'purchase_orders': {'filename': 'purchase_orders.csv', 'row_count': counts[1], 'required': True},
-            'vendor_performance': {'filename': 'vendor_performance.csv', 'row_count': counts[2], 'required': True},
-            'oos_events': {'filename': 'oos_events.csv', 'row_count': counts[3], 'required': False},
-            'promo_calendar': {'filename': 'promo_calendar.csv', 'row_count': counts[4], 'required': False}
-        }
+        "version": "1.0",
+        "generated_at": "2026-04-03T08:00:00",
+        "source_system": "Mock Generator",
+        "environment": "mock",
+        "data_directory": "./",
+        "files": {
+            "vendor_master": {
+                "filename": "vendor_master.csv",
+                "row_count": counts["vendor_master"],
+                "required": True,
+            },
+            "purchase_orders": {
+                "filename": "purchase_orders.csv",
+                "row_count": counts["purchase_orders"],
+                "required": True,
+            },
+            "vendor_performance": {
+                "filename": "vendor_performance.csv",
+                "row_count": counts["vendor_performance"],
+                "required": True,
+            },
+            "oos_events": {
+                "filename": "oos_events.csv",
+                "row_count": counts["oos_events"],
+                "required": False,
+            },
+            "promo_calendar": {
+                "filename": "promo_calendar.csv",
+                "row_count": counts["promo_calendar"],
+                "required": False,
+            },
+        },
     }
-    
-    filepath = os.path.join(MOCK_DIR, 'manifest.yaml')
-    with open(filepath, 'w') as f:
+
+    filepath = output_dir / "manifest.yaml"
+    with filepath.open("w", encoding="utf-8") as f:
         yaml.dump(manifest, f, sort_keys=False)
     print(f"Generated {filepath}")
 
-def main():
-    ensure_dir()
-    c1 = generate_vendor_master()
-    c2 = generate_purchase_orders()
-    c3 = generate_vendor_performance()
-    c4 = generate_oos_events()
-    c5 = generate_promo_calendar()
-    
-    generate_manifest((c1,c2,c3,c4,c5))
-    print("Mock data generation complete!")
 
-if __name__ == '__main__':
+def generate_mock_data(output_dir: Path = DEFAULT_OUTPUT_DIR, vendor_count: int = 6) -> dict[str, int]:
+    ensure_dir(output_dir)
+    vendor_rows = build_vendor_master_rows(vendor_count)
+
+    counts = {
+        "vendor_master": generate_vendor_master(output_dir, vendor_rows),
+        "purchase_orders": generate_purchase_orders(output_dir, vendor_rows),
+        "vendor_performance": generate_vendor_performance(output_dir, vendor_rows),
+        "oos_events": generate_oos_events(output_dir, vendor_rows),
+        "promo_calendar": generate_promo_calendar(output_dir, vendor_rows),
+    }
+    generate_manifest(output_dir, counts)
+    print("Mock data generation complete!")
+    return counts
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate mock landing-zone CSV files.")
+    parser.add_argument(
+        "--output-dir",
+        default=str(DEFAULT_OUTPUT_DIR),
+        help="Directory to write mock files (default: data/inbound/mock)",
+    )
+    parser.add_argument(
+        "--vendor-count",
+        type=int,
+        default=6,
+        help="Number of fictional vendors to generate (default: 6)",
+    )
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    generate_mock_data(output_dir=Path(args.output_dir), vendor_count=args.vendor_count)
+
+
+if __name__ == "__main__":
     main()

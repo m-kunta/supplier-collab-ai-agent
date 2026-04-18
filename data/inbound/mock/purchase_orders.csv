@@ -1,4 +1,37 @@
 po_number,po_line,vendor_id,sku,sku_description,qty_ordered,requested_delivery_date,po_status,ship_to_dc
-PO-9991,1,V1001,SKU-001,Frosted Flakes 18oz,500,2026-04-01,shipped,DC-Atlanta
-PO-9992,1,V1001,SKU-002,Rice Krispies 12oz,300,2026-04-07,open,DC-Atlanta
-PO-9993,1,V1001,SKU-003,Froot Loops 14.7oz,450,2026-04-10,open,DC-Dallas
+PO-9011,1,V1001,SKU-101,Cereal Core Item A,400,2026-04-01,shipped,DC-Atlanta
+PO-9012,1,V1001,SKU-102,Cereal Core Item B,260,2026-04-07,open,DC-Dallas
+PO-9013,1,V1001,SKU-103,Cereal Core Item C,300,2026-04-10,open,DC-Chicago
+PO-9021,1,V1002,SKU-201,Snacks Core Item A,435,2026-03-31,shipped,DC-Atlanta
+PO-9022,1,V1002,SKU-202,Snacks Core Item B,290,2026-04-08,open,DC-Dallas
+PO-9023,1,V1002,SKU-203,Snacks Core Item C,328,2026-04-11,open,DC-Chicago
+PO-9031,1,V1003,SKU-301,Beverage Core Item A,470,2026-03-30,shipped,DC-Atlanta
+PO-9032,1,V1003,SKU-302,Beverage Core Item B,320,2026-04-09,open,DC-Dallas
+PO-9033,1,V1003,SKU-303,Beverage Core Item C,356,2026-04-12,open,DC-Chicago
+PO-9041,1,V1004,SKU-401,Frozen Core Item A,505,2026-03-29,shipped,DC-Atlanta
+PO-9042,1,V1004,SKU-402,Frozen Core Item B,350,2026-04-10,open,DC-Dallas
+PO-9043,1,V1004,SKU-403,Frozen Core Item C,384,2026-04-13,open,DC-Chicago
+PO-9051,1,V1005,SKU-501,Household Core Item A,540,2026-03-28,shipped,DC-Atlanta
+PO-9052,1,V1005,SKU-502,Household Core Item B,380,2026-04-11,open,DC-Dallas
+PO-9053,1,V1005,SKU-503,Household Core Item C,412,2026-04-14,open,DC-Chicago
+PO-9061,1,V1006,SKU-601,Wellness Core Item A,575,2026-03-27,shipped,DC-Atlanta
+PO-9062,1,V1006,SKU-602,Wellness Core Item B,410,2026-04-12,open,DC-Dallas
+PO-9063,1,V1006,SKU-603,Wellness Core Item C,440,2026-04-15,open,DC-Chicago
+PO-9071,1,V1007,SKU-701,Bakery Core Item A,610,2026-03-26,shipped,DC-Atlanta
+PO-9072,1,V1007,SKU-702,Bakery Core Item B,440,2026-04-13,open,DC-Dallas
+PO-9073,1,V1007,SKU-703,Bakery Core Item C,468,2026-04-16,open,DC-Chicago
+PO-9081,1,V1008,SKU-801,Pantry Core Item A,645,2026-03-25,shipped,DC-Atlanta
+PO-9082,1,V1008,SKU-802,Pantry Core Item B,470,2026-04-14,open,DC-Dallas
+PO-9083,1,V1008,SKU-803,Pantry Core Item C,496,2026-04-17,open,DC-Chicago
+PO-9091,1,V1009,SKU-901,Cereal Core Item A,680,2026-03-24,shipped,DC-Atlanta
+PO-9092,1,V1009,SKU-902,Cereal Core Item B,500,2026-04-15,open,DC-Dallas
+PO-9093,1,V1009,SKU-903,Cereal Core Item C,524,2026-04-18,open,DC-Chicago
+PO-9101,1,V1010,SKU-1001,Snacks Core Item A,715,2026-03-23,shipped,DC-Atlanta
+PO-9102,1,V1010,SKU-1002,Snacks Core Item B,530,2026-04-16,open,DC-Dallas
+PO-9103,1,V1010,SKU-1003,Snacks Core Item C,552,2026-04-19,open,DC-Chicago
+PO-9111,1,V1011,SKU-1101,Beverage Core Item A,750,2026-03-22,shipped,DC-Atlanta
+PO-9112,1,V1011,SKU-1102,Beverage Core Item B,560,2026-04-17,open,DC-Dallas
+PO-9113,1,V1011,SKU-1103,Beverage Core Item C,580,2026-04-20,open,DC-Chicago
+PO-9121,1,V1012,SKU-1201,Frozen Core Item A,785,2026-03-21,shipped,DC-Atlanta
+PO-9122,1,V1012,SKU-1202,Frozen Core Item B,590,2026-04-18,open,DC-Dallas
+PO-9123,1,V1012,SKU-1203,Frozen Core Item C,608,2026-04-21,open,DC-Chicago

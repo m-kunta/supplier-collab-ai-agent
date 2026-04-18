@@ -77,7 +77,7 @@ This process takes **30–60 minutes per meeting** and routinely gets skipped wh
 The Supplier Collaboration Briefing Agent collapses that 30–60 minute manual process into a single command:
 
 ```bash
-python cli.py --vendor "Kelloggs" --date "2026-04-03"
+python cli.py --vendor "Northstar Foods Co" --date "2026-04-03"
 ```
 
 It reads structured exports from the systems the organization already uses, computes every analytical dimension a buyer or planner would want, and produces a publication-ready briefing document — without requiring the user to touch a spreadsheet.
@@ -253,7 +253,7 @@ cd frontend && npm run dev
 ## 🔍 Current CLI Shape
 
 ```bash
-python cli.py --vendor "Kelloggs" --date "2026-04-03" --data-dir data/inbound/mock
+python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir data/inbound/mock
 ```
 
 *Note: The CLI prints JSON including engine outputs and, when the LLM step succeeds, `briefing_text`, `status: "complete"`, and `output_files` (paths written under `output/`). The same payload shape is returned by `POST /api/briefings` with additional `id` and `created_at` fields.*
