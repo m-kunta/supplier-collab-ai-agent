@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
@@ -111,10 +112,21 @@ def _stage_validate_manifest(ctx: BriefingContext) -> BriefingContext:
 
 
 def _stage_resolve_provider(ctx: BriefingContext) -> BriefingContext:
-    ctx.provider = resolve_provider(
-        ctx.provider_override or ctx.config.get("llm", {}).get("default_provider"),
-        ctx.model_override or ctx.config.get("llm", {}).get("default_model"),
+    # Precedence: request override > LLM_PROVIDER env var > config default > "anthropic"
+    override_provider = ctx.provider_override or os.getenv("LLM_PROVIDER")
+    config_provider = ctx.config.get("llm", {}).get("default_provider")
+    config_model = ctx.config.get("llm", {}).get("default_model")
+    effective_provider = override_provider or config_provider
+
+    # Only carry the config model when the provider hasn't changed; otherwise let
+    # resolve_provider pick the default model for whichever provider was selected.
+    provider_changed = override_provider and override_provider != config_provider
+    effective_model = (
+        ctx.model_override
+        or os.getenv("LLM_MODEL")
+        or (None if provider_changed else config_model)
     )
+    ctx.provider = resolve_provider(effective_provider, effective_model)
     return ctx
 
 
