@@ -76,4 +76,123 @@ describe("BriefingDetailPage", () => {
     expect(screen.getByText("Stream Replay: Done")).toBeInTheDocument();
     expect(closeMock).toHaveBeenCalled();
   });
+
+  it("stream text overrides fallback text when both are present", async () => {
+    render(<BriefingDetailPage />);
+    await screen.findByText("ID: brief-123");
+
+    latestStream?.onmessage?.({
+      data: JSON.stringify({ type: "token", content: "Streamed content wins" })
+    } as MessageEvent);
+
+    await waitFor(() => {
+      expect(screen.getByText("Streamed content wins")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Fallback text body")).not.toBeInTheDocument();
+  });
+
+  it("renders markdown headings as heading elements, not raw text", async () => {
+    vi.mocked(getBriefing).mockResolvedValue({
+      id: "brief-123",
+      created_at: "2026-04-17T12:00:00Z",
+      status: "complete",
+      request: {},
+      briefing_text: "## Section Header"
+    });
+
+    render(<BriefingDetailPage />);
+    await screen.findByText("ID: brief-123");
+
+    await waitFor(() => {
+      const heading = screen.getByRole("heading", { level: 2, name: "Section Header" });
+      expect(heading).toBeInTheDocument();
+    });
+  });
+
+  it("renders markdown bold via remarkGfm as <strong>", async () => {
+    vi.mocked(getBriefing).mockResolvedValue({
+      id: "brief-123",
+      created_at: "2026-04-17T12:00:00Z",
+      status: "complete",
+      request: {},
+      briefing_text: "**important**"
+    });
+
+    render(<BriefingDetailPage />);
+    await screen.findByText("ID: brief-123");
+
+    await waitFor(() => {
+      const bold = document.querySelector("strong");
+      expect(bold).not.toBeNull();
+      expect(bold?.textContent).toBe("important");
+    });
+  });
+
+  it("renders GFM strikethrough as <del>", async () => {
+    vi.mocked(getBriefing).mockResolvedValue({
+      id: "brief-123",
+      created_at: "2026-04-17T12:00:00Z",
+      status: "complete",
+      request: {},
+      briefing_text: "~~deprecated~~"
+    });
+
+    render(<BriefingDetailPage />);
+    await screen.findByText("ID: brief-123");
+
+    await waitFor(() => {
+      const del = document.querySelector("del");
+      expect(del).not.toBeNull();
+      expect(del?.textContent).toBe("deprecated");
+    });
+  });
+
+  it("shows error message when getBriefing rejects", async () => {
+    vi.mocked(getBriefing).mockRejectedValue(new Error("Not found"));
+
+    render(<BriefingDetailPage />);
+
+    expect(await screen.findByText("Not found")).toBeInTheDocument();
+  });
+
+  it("closes stream and marks done on SSE onerror", async () => {
+    render(<BriefingDetailPage />);
+    await screen.findByText("ID: brief-123");
+
+    latestStream?.onerror?.(new Event("error"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Stream Replay: Done")).toBeInTheDocument();
+    });
+    expect(closeMock).toHaveBeenCalled();
+  });
+
+  it("closes stream gracefully on malformed SSE JSON", async () => {
+    render(<BriefingDetailPage />);
+    await screen.findByText("ID: brief-123");
+
+    latestStream?.onmessage?.({ data: "not-valid-json" } as MessageEvent);
+
+    await waitFor(() => {
+      expect(screen.getByText("Stream Replay: Done")).toBeInTheDocument();
+    });
+    expect(closeMock).toHaveBeenCalled();
+  });
+
+  it("shows fallback message when no briefing text is available", async () => {
+    vi.mocked(getBriefing).mockResolvedValue({
+      id: "brief-123",
+      created_at: "2026-04-17T12:00:00Z",
+      status: "complete",
+      request: {},
+      briefing_text: ""
+    });
+
+    render(<BriefingDetailPage />);
+    await screen.findByText("ID: brief-123");
+
+    await waitFor(() => {
+      expect(screen.getByText("No briefing text available.")).toBeInTheDocument();
+    });
+  });
 });

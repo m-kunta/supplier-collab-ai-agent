@@ -117,9 +117,11 @@ export default function BriefingDetailPage() {
             <p className={styles.muted}>
               Rendering SSE replay when available, with stored text fallback.
             </p>
-            <ReactMarkdown className={styles.content} remarkPlugins={[remarkGfm]}>
-              {displayText}
-            </ReactMarkdown>
+            <div className={styles.content}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {displayText}
+              </ReactMarkdown>
+            </div>
           </article>
         </section>
       </div>

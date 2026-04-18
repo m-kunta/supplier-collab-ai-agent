@@ -7,7 +7,7 @@ export function AppHeader() {
     <header className={styles.header}>
       <div className={styles.brand}>
         <p className={styles.title}>Supplier Briefing Agent</p>
-        <p className={styles.subtitle}>Phase 5 frontend shell</p>
+        <p className={styles.subtitle}>Pre-meeting intelligence</p>
       </div>
       <nav className={styles.nav}>
         <Link href="/briefings/new" className={styles.link}>
