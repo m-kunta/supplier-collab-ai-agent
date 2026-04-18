@@ -10,8 +10,8 @@ import yaml
 logger = logging.getLogger(__name__)
 
 
-def resolve_data_dir(data_dir: Path) -> Path:
-    return data_dir.expanduser().resolve()
+def resolve_data_dir(data_dir: Path | str) -> Path:
+    return Path(data_dir).expanduser().resolve()
 
 
 def load_manifest(data_dir: Path) -> dict[str, Any]:
