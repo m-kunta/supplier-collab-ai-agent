@@ -99,4 +99,4 @@ Completed after scaffold. Implemented two compute engines with TDD.
 ### Phase 5 (in progress)
 
 - **FastAPI (`api/`):** All REST endpoints complete — `GET /api/health`, `POST /api/briefings` (async, thread-pool executor, `llm_provider`/`llm_model` overrides, broad exception handling), `GET /api/briefings` (paginated list), `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay), `GET /api/briefings/{id}/download` (FileResponse, 410 on missing file), `GET /api/vendors` (reads `vendor_master.csv` from any landing zone). CORS configurable via `CORS_ORIGINS` env var. In-memory `BriefingStore` (process-local).
-- **Next:** Next.js frontend (`frontend/`) and combined dev launcher (`scripts/dev.sh`).
+- **Next:** Next.js frontend dashboard polish/completion (`frontend/`). Combined dev launcher is now available via `make dev` / `scripts/dev.sh`; `frontend/npm run dev` runs UI-only.

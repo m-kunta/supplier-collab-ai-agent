@@ -21,6 +21,7 @@ from src.llm_providers import (
 # ---------------------------------------------------------------------------
 
 class TestResolveProvider(unittest.TestCase):
+    @patch.dict("os.environ", {"LLM_PROVIDER": "", "LLM_MODEL": ""})
     def test_defaults_to_anthropic(self):
         sel = resolve_provider()
         self.assertEqual(sel.provider, "anthropic")

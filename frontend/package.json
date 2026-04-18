@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "concurrently -k -n \"api,ui\" -c \"cyan.bold,magenta.bold\" \"cd .. && .venv/bin/uvicorn api.main:app --reload --host 127.0.0.1 --port 8000\" \"next dev\"",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "test": "vitest run"
