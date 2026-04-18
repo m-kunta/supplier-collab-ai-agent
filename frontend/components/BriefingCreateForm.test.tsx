@@ -12,7 +12,8 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("../lib/api", () => ({
   createBriefing: vi.fn(),
-  listVendors: vi.fn()
+  listVendors: vi.fn(),
+  checkHealth: vi.fn().mockResolvedValue(true)
 }));
 
 describe("BriefingCreateForm", () => {
@@ -90,5 +91,23 @@ describe("BriefingCreateForm", () => {
     );
 
     await screen.findByText("Request failed");
+  });
+
+  it("shows friendly message when API server is unreachable", async () => {
+    vi.mocked(createBriefing).mockRejectedValue(new Error("Failed to fetch"));
+
+    render(
+      <BriefingCreateForm
+        heading="Generate Supplier Briefing"
+        subheading="Run pipeline"
+      />
+    );
+
+    await screen.findByRole("option", { name: "Kelloggs" });
+    fireEvent.click(screen.getByRole("button", { name: "Generate Briefing" }));
+
+    await screen.findByText(
+      "Cannot reach the API server. Make sure the backend is running on port 8000."
+    );
   });
 });
