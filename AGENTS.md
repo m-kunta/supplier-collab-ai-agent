@@ -32,6 +32,17 @@ pytest tests/ -v
 uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
+**Run the web UI**:
+```bash
+cd frontend
+npm run dev   # UI only
+```
+
+**Run API + UI together**:
+```bash
+make dev
+```
+
 ---
 
 ## Project Status

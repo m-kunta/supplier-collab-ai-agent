@@ -239,10 +239,15 @@ Phase 1 completion notes:
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cd frontend && npm install && cd ..
 python cli.py --help
 pytest
 # Optional — HTTP API (from repo root)
 uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
+# Optional — run API + UI together
+make dev
+# Optional — run UI only (API can be started from the header badge button)
+cd frontend && npm run dev
 ```
 
 ## 🔍 Current CLI Shape

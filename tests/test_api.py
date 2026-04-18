@@ -122,8 +122,19 @@ class ApiBriefingsTests(unittest.TestCase):
 
     def test_llm_provider_override_is_passed(self) -> None:
         """llm_provider in the request body is reflected in llm_selection.provider."""
-        payload = self._create_briefing()
-        self.assertEqual(payload["llm_selection"]["provider"], "anthropic")
+        with tempfile.TemporaryDirectory() as tmp_output:
+            with patch("src.agent.generate_text", return_value=self._STUB_BRIEFING):
+                with patch("src.agent.write_output") as mock_write:
+                    mock_write.return_value = {
+                        "md_path": Path(tmp_output) / "V1001_2026-04-03.md",
+                    }
+                    r = self.client.post(
+                        "/api/briefings",
+                        json={**_POST_BODY, "llm_provider": "openai"},
+                    )
+        self.assertEqual(r.status_code, 200, r.text)
+        payload = r.json()
+        self.assertEqual(payload["llm_selection"]["provider"], "openai")
 
 
 class ApiStreamDownloadVendorTests(unittest.TestCase):

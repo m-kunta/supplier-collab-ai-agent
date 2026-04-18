@@ -10,7 +10,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 # Load .env before importing the agent stack (LLM provider env vars).
-load_dotenv()
+load_dotenv(override=True)
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
