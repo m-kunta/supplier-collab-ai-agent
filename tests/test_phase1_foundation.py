@@ -21,7 +21,7 @@ SCHEMA_DIR = PROJECT_ROOT / "data" / "schemas"
 class CliContractTests(unittest.TestCase):
     def test_parser_defaults_match_scaffold_expectations(self):
         parser = build_parser()
-        args = parser.parse_args(["--vendor", "Kelloggs", "--date", "2026-04-03"])
+        args = parser.parse_args(["--vendor", "Northstar Foods Co", "--date", "2026-04-03"])
         self.assertEqual(args.data_dir, "data/inbound/mock")
         self.assertEqual(args.lookback_weeks, 13)
         self.assertEqual(args.persona_emphasis, "both")
@@ -32,7 +32,7 @@ class CliContractTests(unittest.TestCase):
     def test_parser_supports_disabling_benchmarks(self):
         parser = build_parser()
         args = parser.parse_args(
-            ["--vendor", "Kelloggs", "--date", "2026-04-03", "--no-include-benchmarks"]
+            ["--vendor", "Northstar Foods Co", "--date", "2026-04-03", "--no-include-benchmarks"]
         )
         self.assertFalse(args.include_benchmarks)
 

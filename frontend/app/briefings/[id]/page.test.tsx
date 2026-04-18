@@ -43,7 +43,7 @@ describe("BriefingDetailPage", () => {
       id: "brief-123",
       created_at: "2026-04-17T12:00:00Z",
       status: "complete",
-      request: { vendor: "Kelloggs", meeting_date: "2026-04-03" },
+      request: { vendor: "Northstar Foods Co", meeting_date: "2026-04-03" },
       briefing_text: "Fallback text body"
     });
   });
@@ -52,7 +52,7 @@ describe("BriefingDetailPage", () => {
     render(<BriefingDetailPage />);
 
     expect(await screen.findByText("ID: brief-123")).toBeInTheDocument();
-    expect(screen.getByText("Vendor: Kelloggs")).toBeInTheDocument();
+    expect(screen.getByText("Vendor: Northstar Foods Co")).toBeInTheDocument();
     expect(screen.getByText("Fallback text body")).toBeInTheDocument();
     expect(getBriefing).toHaveBeenCalledWith("brief-123");
     expect(getBriefingStreamUrl).toHaveBeenCalledWith("brief-123");

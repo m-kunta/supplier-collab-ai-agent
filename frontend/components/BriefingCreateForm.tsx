@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   createBriefing,
   listVendors,
+  startBackend,
   type BriefingCreatePayload,
   type VendorRecord
 } from "../lib/api";
@@ -90,9 +91,19 @@ export function BriefingCreateForm({ heading, subheading }: Props) {
       router.push(`/briefings/${result.id}`);
     } catch (err: unknown) {
       const raw = err instanceof Error ? err.message : "Failed to generate briefing";
-      const msg = raw === "Failed to fetch"
-        ? "Cannot reach the API server. Make sure the backend is running on port 8000."
-        : raw;
+      if (raw === "Failed to fetch") {
+        try {
+          await startBackend();
+          const retried = await createBriefing(payload);
+          router.push(`/briefings/${retried.id}`);
+          return;
+        } catch {
+          setSubmitError("Cannot reach the API server. Make sure the backend is running on port 8000.");
+          setSubmitting(false);
+          return;
+        }
+      }
+      const msg = raw;
       setSubmitError(msg);
       setSubmitting(false);
     }
@@ -134,7 +145,7 @@ export function BriefingCreateForm({ heading, subheading }: Props) {
                   id="vendor"
                   className={styles.input}
                   type="text"
-                  placeholder="e.g. Kelloggs"
+                  placeholder="e.g. Northstar Foods Co"
                   value={vendor}
                   onChange={(e) => setVendor(e.target.value)}
                   required

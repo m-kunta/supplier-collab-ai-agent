@@ -14,7 +14,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 MOCK_DATA_DIR = PROJECT_ROOT / "data" / "inbound" / "mock"
 
 _POST_BODY = {
-    "vendor": "Kelloggs",
+    "vendor": "Northstar Foods Co",
     "meeting_date": "2026-04-03",
     "data_dir": "data/inbound/mock",
     "lookback_weeks": 13,
@@ -49,7 +49,7 @@ class ApiBriefingsTests(unittest.TestCase):
     # ------------------------------------------------------------------
 
     def _create_briefing(self) -> dict:
-        """POST one Kelloggs briefing with mocked LLM and file write.
+        """POST one Northstar Foods Co briefing with mocked LLM and file write.
 
         Returns the parsed JSON response. The temp output directory is
         cleaned up automatically; use ``payload["output_files"]["md_path"]``

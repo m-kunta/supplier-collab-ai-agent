@@ -23,7 +23,7 @@ describe("frontend api client", () => {
     mockFetch.mockResolvedValueOnce(
       new Response(
         JSON.stringify({
-          vendors: [{ vendor_id: "V1001", vendor_name: "Kelloggs" }],
+          vendors: [{ vendor_id: "V1001", vendor_name: "Northstar Foods Co" }],
           total: 1,
           data_dir: "/tmp/mock"
         }),
@@ -55,7 +55,7 @@ describe("frontend api client", () => {
     );
 
     const payload = await createBriefing({
-      vendor: "Kelloggs",
+      vendor: "Northstar Foods Co",
       meeting_date: "2026-04-03",
       data_dir: "data/inbound/mock",
       lookback_weeks: 13,
@@ -85,7 +85,7 @@ describe("frontend api client", () => {
               created_at: "2026-04-13T00:00:00Z",
               status: "complete",
               vendor_id: "V1001",
-              vendor: "Kelloggs",
+              vendor: "Northstar Foods Co",
               meeting_date: "2026-04-03"
             }
           ],
@@ -140,7 +140,7 @@ describe("frontend api client", () => {
 
     await expect(
       createBriefing({
-        vendor: "Kelloggs",
+        vendor: "Northstar Foods Co",
         meeting_date: "2026-04-03",
         data_dir: "data/inbound/mock",
         lookback_weeks: 13,

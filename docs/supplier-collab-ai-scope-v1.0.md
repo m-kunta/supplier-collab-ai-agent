@@ -79,7 +79,7 @@ The briefing is a single document with clearly labeled sections so both personas
 Buyer or planner requests a briefing via the agent interface:
 
 ```
-python cli.py --vendor "Kelloggs" --date "2026-04-03" --data-dir /data/inbound/prod/
+python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir /data/inbound/prod/
 ```
 
 The agent reads the data landing zone, filters to the requested vendor, and generates the briefing for a configurable lookback window (default: trailing 13 weeks).
@@ -621,7 +621,7 @@ The agent translates benchmark gaps into business terms:
 
 Claude doesn't just list metrics — it tells the story:
 
-> "Kellogg's fill rate dropped from 96.2% to 91.8% over the past 6 weeks, coinciding with their Atlanta DC consolidation announced in Q4. 73% of shorts are concentrated in 4 cereal SKUs (Frosted Flakes 18oz, Rice Krispies 12oz, Froot Loops 14.7oz, Raisin Bran 18.7oz). This pattern is consistent with a capacity transition rather than a systemic decline — expect normalization by Week 16 if their consolidation timeline holds. Recommended ask: written confirmation of recovery timeline with weekly fill rate targets."
+> "Northstar's fill rate dropped from 96.2% to 91.8% over the past 6 weeks, coinciding with their Atlanta DC consolidation announced in Q4. 73% of shorts are concentrated in 4 cereal SKUs (Frosted Flakes 18oz, Rice Krispies 12oz, Froot Loops 14.7oz, Raisin Bran 18.7oz). This pattern is consistent with a capacity transition rather than a systemic decline — expect normalization by Week 16 if their consolidation timeline holds. Recommended ask: written confirmation of recovery timeline with weekly fill rate targets."
 
 A dashboard shows "91.8%." Claude shows *why* and *what to do about it*.
 
@@ -821,7 +821,7 @@ For environments with data warehouse access, SQL queries run directly against th
 **Goal:** Vendor ID in → readable briefing out. Prove the pipeline end-to-end.
 
 **Data layer:**
-- [x] Generate mock CSVs for 1 vendor (Kellogg's): vendor_master.csv, purchase_orders.csv, vendor_performance.csv (5 metrics), oos_events.csv, promo_calendar.csv
+- [x] Generate mock CSVs for 1 vendor (Northstar's): vendor_master.csv, purchase_orders.csv, vendor_performance.csv (5 metrics), oos_events.csv, promo_calendar.csv
 - [x] Generate manifest.yaml with `environment: mock`
 - [x] Build `src/data_loader.py`: reads manifest, loads CSVs, filters to requested vendor, returns structured dict
 
@@ -837,7 +837,7 @@ For environments with data warehouse access, SQL queries run directly against th
 ### Sprint 1 — Full Scorecard + Benchmarking (~3-4h)
 
 **Data layer:**
-- [ ] Add 2 vendors (General Mills: declining; Conagra: erratic) with distinct behavioral patterns
+- [ ] Add 2 vendors (Blue Harbor Pantry: declining; Crimson Valley Trading: erratic) with distinct behavioral patterns
 - [ ] Expand to all 14 metric codes × 13-week lookback
 - [ ] Add benchmark reference values
 
@@ -878,7 +878,7 @@ For environments with data warehouse access, SQL queries run directly against th
 
 **Pipeline layer** (parallel with output):
 - [x] Orchestrator: vendor ID → data load → validate → compute engines (LLM prompt → render still open)
-- [x] CLI: `python cli.py --vendor "Kelloggs" --date "2026-04-03" --data-dir /data/inbound/mock/`
+- [x] CLI: `python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir /data/inbound/mock/`
 - [x] Config file (agent_config.yaml) for thresholds and defaults
 - [ ] Full validation report generation
 - [x] Graceful degradation for missing optional files

@@ -137,7 +137,7 @@ def resolve_vendor_id(vendor_input: str, vendor_master_df: pd.DataFrame) -> str:
     """Resolve a vendor name or canonical ID to a canonical ``vendor_id``.
 
     Accepts either the raw vendor ID (e.g. ``'V1001'``) or a vendor name
-    (e.g. ``'Kelloggs'``). Name matching is case-insensitive and strips
+    (e.g. ``'Northstar Foods Co'``). Name matching is case-insensitive and strips
     leading/trailing whitespace. If the input already matches a ``vendor_id``
     value exactly, it is returned as-is without consulting ``vendor_name``.
 
