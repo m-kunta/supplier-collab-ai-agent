@@ -3,6 +3,8 @@
 import React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { AppHeader } from "../../../components/AppHeader";
 import {
   getBriefing,
@@ -115,7 +117,9 @@ export default function BriefingDetailPage() {
             <p className={styles.muted}>
               Rendering SSE replay when available, with stored text fallback.
             </p>
-            <pre className={styles.content}>{displayText}</pre>
+            <ReactMarkdown className={styles.content} remarkPlugins={[remarkGfm]}>
+              {displayText}
+            </ReactMarkdown>
           </article>
         </section>
       </div>

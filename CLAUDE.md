@@ -38,8 +38,9 @@ Interactive docs: `http://127.0.0.1:8000/docs`
 ## Project Status
 
 **Current phase:** Phase 5 — **Web Frontend (in progress).** Phase 4 is complete. **FastAPI** in `api/` exposes: `GET /api/health`, `POST /api/briefings` (`llm_provider`/`llm_model` overrides supported), `GET /api/briefings` (history), `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay of stored text), `GET /api/briefings/{id}/download` (`.md` attachment, 410 on missing file), `GET /api/vendors` (vendor list from landing zone). In-memory store (resets on restart).
+The **Next.js UI** (`frontend/`) scaffold, App Shell, Briefing History, Download functionality, and Live LLM markdown streaming (`react-markdown`) are complete. A Dev Launcher (`scripts/dev.sh`, `Makefile`) is also built.
 
-**Next milestone:** Next.js UI (`frontend/`), dev launcher (`scripts/dev.sh`).
+**Next milestone:** Build Engine Data Dashboards (Scorecard, PO Pipeline, OOS, Promo Readiness) for the UI to complete Phase 5.
 
 ---
 
@@ -88,7 +89,7 @@ data_validator  benchmark_engine       ↓
 | `src/prompt_builder.py` | `build_prompt(ctx)` — loads versioned prompt template from `prompts/`, serialises all engine outputs to JSON, substitutes `{{DATA_PAYLOAD}}`, `{{PERSONA_EMPHASIS}}`, `{{VENDOR_ID}}`, `{{MEETING_DATE}}`. | Working |
 | `src/output_renderer.py` | `render_markdown(ctx)` — prepends YAML front-matter + appends footer. `write_output(ctx, output_dir, output_format)` — dispatches to md renderer and writes file. DOCX deferred to Sprint 3. | Markdown working; DOCX stub |
 | `api/` | FastAPI app. `GET /api/health`, `POST /api/briefings` (`llm_provider`/`llm_model` overrides), `GET /api/briefings`, `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE), `GET /api/briefings/{id}/download`, `GET /api/vendors`. In-memory store. | Working |
-| `frontend/` | **[Phase 5 — Planned]** Next.js web application. Pages: Home (form), `/briefing/{id}` (live streaming results + engine dashboards), `/history`. Dark-mode, glassmorphism, Inter/Outfit typography. | Not started |
+| `frontend/` | **[Phase 5 — In progress]** Next.js web application. App shell, Briefings history page, Briefing details with live SSE markdown streaming (`react-markdown`), and API integration implemented. Next: engine data dashboards. | In progress |
 
 ### Key implementation details
 
