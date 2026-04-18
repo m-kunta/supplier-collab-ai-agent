@@ -93,3 +93,14 @@ export function getBriefingStreamUrl(briefingId: string): string {
 export function getBriefingDownloadUrl(briefingId: string): string {
   return `${API_BASE}/api/briefings/${briefingId}/download`;
 }
+
+export async function checkHealth(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/health`, {
+      signal: AbortSignal.timeout(2000)
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}

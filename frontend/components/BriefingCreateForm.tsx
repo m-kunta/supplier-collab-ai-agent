@@ -89,7 +89,11 @@ export function BriefingCreateForm({ heading, subheading }: Props) {
       const result = await createBriefing(payload);
       router.push(`/briefings/${result.id}`);
     } catch (err: unknown) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to generate briefing");
+      const raw = err instanceof Error ? err.message : "Failed to generate briefing";
+      const msg = raw === "Failed to fetch"
+        ? "Cannot reach the API server. Make sure the backend is running on port 8000."
+        : raw;
+      setSubmitError(msg);
       setSubmitting(false);
     }
   }

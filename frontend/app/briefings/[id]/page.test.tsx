@@ -29,7 +29,8 @@ vi.mock("next/navigation", () => ({
 vi.mock("../../../lib/api", () => ({
   getBriefing: vi.fn(),
   getBriefingDownloadUrl: vi.fn(() => "http://localhost:8000/api/briefings/brief-123/download"),
-  getBriefingStreamUrl: vi.fn(() => "http://localhost:8000/api/briefings/brief-123/stream")
+  getBriefingStreamUrl: vi.fn(() => "http://localhost:8000/api/briefings/brief-123/stream"),
+  checkHealth: vi.fn().mockResolvedValue(true)
 }));
 
 describe("BriefingDetailPage", () => {

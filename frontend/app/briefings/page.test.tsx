@@ -5,7 +5,8 @@ import BriefingsPage from "./page";
 import { listBriefings } from "../../lib/api";
 
 vi.mock("../../lib/api", () => ({
-  listBriefings: vi.fn()
+  listBriefings: vi.fn(),
+  checkHealth: vi.fn().mockResolvedValue(true)
 }));
 
 describe("BriefingsPage", () => {
