@@ -10,9 +10,23 @@ import {
   getBriefing,
   getBriefingDownloadUrl,
   getBriefingStreamUrl,
-  type BriefingResponse
+  type BriefingResponse,
 } from "../../../lib/api";
+import { ScorecardPanel } from "./ScorecardPanel";
+import { PoRiskPanel } from "./PoRiskPanel";
+import { OosPanel } from "./OosPanel";
+import { PromoPanel } from "./PromoPanel";
 import styles from "./detail.module.css";
+
+type Tab = "narrative" | "scorecard" | "po_risk" | "oos" | "promo";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "narrative", label: "Narrative" },
+  { id: "scorecard", label: "Scorecard" },
+  { id: "po_risk", label: "PO Risk" },
+  { id: "oos", label: "OOS" },
+  { id: "promo", label: "Promo" },
+];
 
 function asRecord(value: unknown): Record<string, unknown> {
   if (typeof value === "object" && value !== null) {
@@ -30,16 +44,13 @@ export default function BriefingDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [streamText, setStreamText] = useState("");
   const [streamDone, setStreamDone] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>("narrative");
 
   useEffect(() => {
-    if (!id) {
-      return;
-    }
+    if (!id) return;
     setLoading(true);
     getBriefing(id)
-      .then((payload) => {
-        setBriefing(payload);
-      })
+      .then((payload) => setBriefing(payload))
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : "Could not load briefing.");
       })
@@ -47,10 +58,7 @@ export default function BriefingDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    if (!id) {
-      return;
-    }
-
+    if (!id) return;
     setStreamText("");
     setStreamDone(false);
 
@@ -77,14 +85,18 @@ export default function BriefingDetailPage() {
       stream.close();
     };
 
-    return () => {
-      stream.close();
-    };
+    return () => stream.close();
   }, [id]);
 
   const request = useMemo(() => asRecord(briefing?.request), [briefing?.request]);
   const fallbackText = typeof briefing?.briefing_text === "string" ? briefing.briefing_text : "";
   const displayText = streamText || fallbackText || "No briefing text available.";
+
+  const scorecard = briefing?.scorecard;
+  const benchmarks = briefing?.benchmarks;
+  const poRisk = briefing?.po_risk;
+  const oos = briefing?.oos_attribution;
+  const promo = briefing?.promo_readiness;
 
   return (
     <main className={styles.page}>
@@ -112,16 +124,48 @@ export default function BriefingDetailPage() {
               </>
             )}
           </aside>
+
           <article className={styles.panel}>
-            <h2 className={styles.heading}>Briefing Text</h2>
-            <p className={styles.muted}>
-              Rendering SSE replay when available, with stored text fallback.
-            </p>
-            <div className={styles.content}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {displayText}
-              </ReactMarkdown>
-            </div>
+            <nav className={styles.tabs} aria-label="Briefing sections">
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  className={`${styles.tab} ${activeTab === t.id ? styles.tabActive : ""}`}
+                  onClick={() => setActiveTab(t.id)}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </nav>
+
+            {activeTab === "narrative" && (
+              <>
+                <p className={styles.muted}>
+                  Rendering SSE replay when available, with stored text fallback.
+                </p>
+                <div className={styles.content}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {displayText}
+                  </ReactMarkdown>
+                </div>
+              </>
+            )}
+
+            {activeTab === "scorecard" && (
+              <ScorecardPanel scorecard={scorecard} benchmarks={benchmarks} />
+            )}
+
+            {activeTab === "po_risk" && (
+              <PoRiskPanel data={poRisk} />
+            )}
+
+            {activeTab === "oos" && (
+              <OosPanel data={oos} />
+            )}
+
+            {activeTab === "promo" && (
+              <PromoPanel data={promo} />
+            )}
           </article>
         </section>
       </div>

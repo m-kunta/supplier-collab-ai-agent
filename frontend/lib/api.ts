@@ -28,10 +28,79 @@ export interface BriefingCreatePayload {
   llm_model?: string | null;
 }
 
+export interface ScorecardMetric {
+  current_value: number;
+  trend_4w: number;
+  trend_13w: number;
+  trend_direction: "improving" | "declining" | "stable";
+}
+
+export interface BenchmarkMetric {
+  peer_avg: number;
+  best_in_class: number;
+  gap_to_bic: number;
+  dollar_impact: number | null;
+}
+
+export interface PoLineItem {
+  po_number: string;
+  po_line: number;
+  sku: string;
+  requested_delivery_date: string;
+  po_status: string;
+  days_late: number;
+  risk_tier: "red" | "yellow" | "green";
+}
+
+export interface PoRiskData {
+  summary: { red: number; yellow: number; green: number; total: number };
+  line_items: PoLineItem[];
+}
+
+export interface OosTopSku {
+  sku: string;
+  oos_count: number;
+  primary_cause: string;
+  is_recurring: boolean;
+}
+
+export interface OosAttribution {
+  total_oos_events: number;
+  vendor_controllable: number;
+  demand_driven: number;
+  unattributed: number;
+  vendor_controllable_pct: number;
+  total_units_lost: number;
+  recurring_skus: string[];
+  top_skus: OosTopSku[];
+}
+
+export interface PromoEvent {
+  promo_id: string;
+  event_name: string;
+  start_date: string;
+  score: number;
+  covered_by_po: boolean;
+}
+
+export interface PromoReadiness {
+  overall_score: number;
+  risk_tier: "red" | "yellow" | "green";
+  events: PromoEvent[];
+}
+
 export interface BriefingResponse {
   id: string;
   created_at: string;
   status: string;
+  briefing_text?: string;
+  request?: unknown;
+  vendor_id?: string;
+  scorecard?: Record<string, ScorecardMetric>;
+  benchmarks?: Record<string, BenchmarkMetric>;
+  po_risk?: PoRiskData;
+  oos_attribution?: OosAttribution;
+  promo_readiness?: PromoReadiness;
   [key: string]: unknown;
 }
 

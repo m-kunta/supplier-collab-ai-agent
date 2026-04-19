@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import BriefingDetailPage from "./page";
 import {
@@ -194,6 +194,80 @@ describe("BriefingDetailPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText("No briefing text available.")).toBeInTheDocument();
+    });
+  });
+
+  it("renders all five tab buttons", async () => {
+    render(<BriefingDetailPage />);
+    await screen.findByText("ID: brief-123");
+
+    expect(screen.getByRole("button", { name: "Narrative" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Scorecard" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "PO Risk" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "OOS" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Promo" })).toBeInTheDocument();
+  });
+
+  it("narrative tab is active by default", async () => {
+    render(<BriefingDetailPage />);
+    await screen.findByText("ID: brief-123");
+
+    expect(screen.getByText("Fallback text body")).toBeInTheDocument();
+  });
+
+  it("switching to Scorecard tab shows scorecard no-data when scorecard is absent", async () => {
+    render(<BriefingDetailPage />);
+    await screen.findByText("ID: brief-123");
+
+    fireEvent.click(screen.getByRole("button", { name: "Scorecard" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("No scorecard data available.")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Fallback text body")).not.toBeInTheDocument();
+  });
+
+  it("switching to PO Risk tab shows po-risk no-data when po_risk is absent", async () => {
+    render(<BriefingDetailPage />);
+    await screen.findByText("ID: brief-123");
+
+    fireEvent.click(screen.getByRole("button", { name: "PO Risk" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("No PO risk data available.")).toBeInTheDocument();
+    });
+  });
+
+  it("switching to OOS tab shows oos no-data when oos_attribution is absent", async () => {
+    render(<BriefingDetailPage />);
+    await screen.findByText("ID: brief-123");
+
+    fireEvent.click(screen.getByRole("button", { name: "OOS" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("No OOS attribution data available.")).toBeInTheDocument();
+    });
+  });
+
+  it("switching to Promo tab shows promo no-data when promo_readiness is absent", async () => {
+    render(<BriefingDetailPage />);
+    await screen.findByText("ID: brief-123");
+
+    fireEvent.click(screen.getByRole("button", { name: "Promo" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("No promo readiness data available.")).toBeInTheDocument();
+    });
+  });
+
+  it("switching tabs hides narrative content", async () => {
+    render(<BriefingDetailPage />);
+    await screen.findByText("Fallback text body");
+
+    fireEvent.click(screen.getByRole("button", { name: "Scorecard" }));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Fallback text body")).not.toBeInTheDocument();
     });
   });
 });

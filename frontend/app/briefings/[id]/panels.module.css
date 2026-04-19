@@ -1,0 +1,147 @@
+.noData {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  padding: 2rem 0;
+}
+
+/* ── Stat summary row ── */
+.summaryRow {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.statCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  min-width: 72px;
+}
+
+.statValue {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.statLabel {
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  margin-top: 0.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Table ── */
+.section {
+  margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.6rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.th {
+  text-align: left;
+  padding: 0.35rem 0.55rem;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.td {
+  padding: 0.5rem 0.55rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
+}
+
+/* ── Risk / tier badges ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.red    { background: rgba(255, 107, 107, 0.15); color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.3); }
+.yellow { background: rgba(255, 200, 70,  0.15); color: #ffc846; border: 1px solid rgba(255, 200, 70,  0.3); }
+.green  { background: rgba(74,  222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74,  222, 128, 0.3); }
+
+/* ── Trend direction ── */
+.improving { color: #4ade80; font-weight: 600; }
+.declining { color: #ff6b6b; font-weight: 600; }
+.stable    { color: var(--color-text-muted); }
+
+/* ── Attribution bar ── */
+.barWrap {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 4px;
+  height: 10px;
+  overflow: hidden;
+  margin: 0.4rem 0 0.2rem;
+  width: 100%;
+  max-width: 320px;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 4px;
+  background: #ff6b6b;
+  transition: width 0.4s ease;
+}
+
+.barLegend {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 0.25rem;
+}
+
+/* ── Big score display ── */
+.scoreHero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.scoreNumber {
+  font-family: var(--font-heading);
+  font-size: 2.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.scoreMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* ── Covered pill ── */
+.covered    { color: #4ade80; font-size: 0.78rem; }
+.notCovered { color: #ff6b6b; font-size: 0.78rem; }
