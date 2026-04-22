@@ -143,6 +143,96 @@ export async function createBriefing(
   return readJson<BriefingResponse>(res, "Failed to create briefing");
 }
 
+/**
+ * Phase 6 — event types emitted by `POST /api/briefings/stream`.
+ */
+export type StreamEvent =
+  | { type: "engines"; engines: Record<string, unknown> }
+  | { type: "token"; content: string }
+  | {
+      type: "done";
+      id: string;
+      created_at: string;
+      summary: BriefingResponse;
+    }
+  | { type: "error"; message: string };
+
+export interface StreamCallbacks {
+  onEngines?: (engines: Record<string, unknown>) => void;
+  onToken?: (chunk: string) => void;
+  onDone?: (briefing: BriefingResponse & { id: string; created_at: string }) => void;
+  onError?: (message: string) => void;
+}
+
+/**
+ * POST `/api/briefings/stream` and dispatch SSE events via callbacks.
+ *
+ * Uses `fetch()` + a ReadableStream reader (EventSource is GET-only).
+ * Rejects only on network/HTTP failures; LLM-level errors arrive via `onError`.
+ */
+export async function createBriefingStreaming(
+  payload: BriefingCreatePayload,
+  callbacks: StreamCallbacks = {}
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/briefings/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok || !res.body) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || `Stream request failed (${res.status})`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  const dispatch = (rawLine: string): void => {
+    if (!rawLine.startsWith("data: ")) return;
+    const payload = rawLine.slice("data: ".length);
+    let evt: StreamEvent;
+    try {
+      evt = JSON.parse(payload) as StreamEvent;
+    } catch {
+      return;
+    }
+    switch (evt.type) {
+      case "engines":
+        callbacks.onEngines?.(evt.engines);
+        break;
+      case "token":
+        callbacks.onToken?.(evt.content);
+        break;
+      case "done":
+        callbacks.onDone?.({ ...evt.summary, id: evt.id, created_at: evt.created_at });
+        break;
+      case "error":
+        callbacks.onError?.(evt.message);
+        break;
+    }
+  };
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    // SSE events are separated by a blank line (\n\n). Dispatch complete ones.
+    let sep: number;
+    while ((sep = buffer.indexOf("\n\n")) !== -1) {
+      const chunk = buffer.slice(0, sep);
+      buffer = buffer.slice(sep + 2);
+      for (const line of chunk.split("\n")) dispatch(line);
+    }
+  }
+  // Flush any trailing event (no closing blank line).
+  if (buffer.trim()) {
+    for (const line of buffer.split("\n")) dispatch(line);
+  }
+}
+
 export async function startBackend(): Promise<{ ok: boolean; error?: string }> {
   const res = await fetch("/api/start-backend", {
     method: "POST",

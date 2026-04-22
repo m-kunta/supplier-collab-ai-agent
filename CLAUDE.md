@@ -37,10 +37,11 @@ Interactive docs: `http://127.0.0.1:8000/docs`
 
 ## Project Status
 
-**Current phase:** Phase 5 — **Web Frontend (in progress).** Phase 4 is complete. **FastAPI** in `api/` exposes: `GET /api/health`, `POST /api/briefings` (`llm_provider`/`llm_model` overrides supported), `GET /api/briefings` (history), `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay of stored text), `GET /api/briefings/{id}/download` (`.md` attachment, 410 on missing file), `GET /api/vendors` (vendor list from landing zone). In-memory store (resets on restart).
-The **Next.js UI** (`frontend/`) scaffold, App Shell, Briefing History, Download functionality, and Live LLM markdown streaming (`react-markdown`) are complete. A Dev Launcher (`scripts/dev.sh`, `Makefile`) is also built.
+**Current phase:** Phase 6 — **True LLM Streaming (in progress).** Phases 1–5 are complete.
 
-**Next milestone:** Build Engine Data Dashboards (Scorecard, PO Pipeline, OOS, Promo Readiness) for the UI to complete Phase 5.
+**Phase 5 (complete):** **FastAPI** in `api/` exposes: `GET /api/health`, `POST /api/briefings` (`llm_provider`/`llm_model` overrides), `GET /api/briefings` (history), `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay of stored text in 25-char chunks), `GET /api/briefings/{id}/download` (`.md` attachment, 410 on missing file), `GET /api/vendors` (vendor list from landing zone). In-memory store (resets on restart). The **Next.js UI** (`frontend/`) includes the App Shell, Briefing History, Download, SSE replay with `react-markdown` + `remark-gfm`, and four engine dashboards (Scorecard, PO Risk, OOS, Promo Readiness) with tab navigation. A Dev Launcher (`scripts/dev.sh`, `Makefile`) starts API + UI with one command.
+
+**Next milestone (Phase 6):** Replace SSE replay with **true token-level streaming** from the LLM during briefing generation. Add `generate_text_stream()` to the provider layer, a streaming orchestrator in `src/agent.py`, a new `POST /api/briefings/stream` SSE endpoint, and wire the frontend detail page to consume live tokens as they arrive from Claude.
 
 ---
 
@@ -89,7 +90,7 @@ data_validator  benchmark_engine       ↓
 | `src/prompt_builder.py` | `build_prompt(ctx)` — loads versioned prompt template from `prompts/`, serialises all engine outputs to JSON, substitutes `{{DATA_PAYLOAD}}`, `{{PERSONA_EMPHASIS}}`, `{{VENDOR_ID}}`, `{{MEETING_DATE}}`. | Working |
 | `src/output_renderer.py` | `render_markdown(ctx)` — prepends YAML front-matter + appends footer. `write_output(ctx, output_dir, output_format)` — dispatches to md renderer and writes file. DOCX deferred to Sprint 3. | Markdown working; DOCX stub |
 | `api/` | FastAPI app. `GET /api/health`, `POST /api/briefings` (`llm_provider`/`llm_model` overrides), `GET /api/briefings`, `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE), `GET /api/briefings/{id}/download`, `GET /api/vendors`. In-memory store. | Working |
-| `frontend/` | **[Phase 5 — In progress]** Next.js web application. App shell, Briefings history page, Briefing details with live SSE markdown streaming (`react-markdown`), and API integration implemented. Next: engine data dashboards. | In progress |
+| `frontend/` | **[Phase 5 — Complete]** Next.js web application. App shell, Briefings history page, Briefing details with SSE replay, four engine dashboards (Scorecard, PO Risk, OOS, Promo) with tab navigation, `.md` download. | Working |
 
 ### Key implementation details
 
@@ -156,6 +157,8 @@ Production prompts currently inject pre-computed structured data and request sec
 | **Sprint 2** | Cross-domain synthesis | PO×Promo linkage, OOS attribution, promo readiness |
 | **Sprint 3** | Polished output + pipeline | DOCX output, LLM orchestration, error handling |
 | **Sprint 4** | Calendar integration + demo | Auto-trigger, leadership demo, pilot plan |
+| **Phase 5** | Web Frontend | Next.js UI, FastAPI, SSE replay, engine dashboards (Scorecard, PO Risk, OOS, Promo), download, history |
+| **Phase 6** | True LLM Streaming | `generate_text_stream()`, streaming orchestrator, `POST /api/briefings/stream`, live token UI |
 
 ---
 

@@ -19,7 +19,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from api.deps import resolve_data_dir
 from api.schemas import BriefingCreate
 from api.store import BriefingStore
-from src.agent import summarize_request
+from src.agent import summarize_request, summarize_request_stream
 from src.data_loader import load_manifest
 
 app = FastAPI(
@@ -113,6 +113,85 @@ async def create_briefing(body: BriefingCreate) -> dict[str, Any]:
 
     briefing_id, created_at = briefing_store.save(summary)
     return _merge_briefing_response(briefing_id, created_at, summary)
+
+
+@app.post("/api/briefings/stream")
+async def stream_new_briefing(body: BriefingCreate) -> StreamingResponse:
+    """Run the briefing pipeline and stream LLM tokens live via SSE.
+
+    Phase 6 endpoint — replaces the replay-only ``GET /briefings/{id}/stream``
+    for the new-briefing flow.  Events emitted (each as an SSE ``data:`` line
+    carrying a JSON payload):
+
+    - ``{"type": "engines", "engines": {...}}`` — full engine payload once
+      deterministic computation finishes, so the UI can paint dashboards
+      immediately while the LLM is still generating.
+    - ``{"type": "token", "content": "<chunk>"}`` — one per LLM text delta.
+    - ``{"type": "done", "id": "<briefing_id>", "summary": {...}}`` — final
+      event after the briefing is persisted; carries the full CLI-shaped
+      summary plus the newly-minted briefing id.
+    - ``{"type": "error", "message": "..."}`` — on failure.
+
+    The synchronous generator from :func:`summarize_request_stream` is consumed
+    on a thread so the event loop is not blocked during the LLM call.
+    """
+    data_dir = resolve_data_dir(body.data_dir)
+
+    async def _sse_generator():
+        loop = asyncio.get_running_loop()
+        queue: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue(maxsize=64)
+
+        def _produce() -> None:
+            try:
+                for event in summarize_request_stream(
+                    vendor=body.vendor,
+                    meeting_date=body.meeting_date,
+                    data_dir=data_dir,
+                    lookback_weeks=body.lookback_weeks,
+                    persona_emphasis=body.persona_emphasis,
+                    include_benchmarks=body.include_benchmarks,
+                    output_format=body.output_format,
+                    category_filter=body.category_filter,
+                    llm_provider=body.llm_provider,
+                    llm_model=body.llm_model,
+                ):
+                    asyncio.run_coroutine_threadsafe(queue.put(event), loop).result()
+            except Exception as exc:  # noqa: BLE001
+                asyncio.run_coroutine_threadsafe(
+                    queue.put({"type": "error", "message": str(exc)}), loop
+                ).result()
+            finally:
+                asyncio.run_coroutine_threadsafe(queue.put(None), loop).result()
+
+        producer = loop.run_in_executor(None, _produce)
+
+        try:
+            while True:
+                event = await queue.get()
+                if event is None:
+                    break
+
+                if event.get("type") == "done":
+                    summary = event.get("summary") or {}
+                    briefing_id, created_at = briefing_store.save(summary)
+                    payload = {
+                        "type": "done",
+                        "id": briefing_id,
+                        "created_at": created_at,
+                        "summary": summary,
+                    }
+                    yield f"data: {json.dumps(payload)}\n\n"
+                    continue
+
+                yield f"data: {json.dumps(event)}\n\n"
+        finally:
+            await producer
+
+    return StreamingResponse(
+        _sse_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.get("/api/briefings")

@@ -13,7 +13,7 @@ from src.benchmark_engine import compute_benchmarks
 from src.config import load_config
 from src.data_loader import load_dataset, load_manifest, load_vendor_data, resolve_vendor_id
 from src.data_validator import ValidationResult, validate_manifest_shape
-from src.llm_providers import ProviderSelection, generate_text, resolve_provider
+from src.llm_providers import ProviderSelection, generate_text, generate_text_stream, resolve_provider
 from src.oos_attribution import compute_oos_attribution
 from src.output_renderer import write_output
 from src.po_risk_engine import compute_po_risk
@@ -393,3 +393,168 @@ def summarize_request(
         "briefing_text": ctx.briefing_text,
         "output_files": ctx.output_files,
     }
+
+
+# ---------------------------------------------------------------------------
+# Phase 6 — Streaming orchestrator
+# ---------------------------------------------------------------------------
+
+
+def _serialize_ctx_summary(ctx: BriefingContext) -> dict[str, Any]:
+    """Serialize a completed context the same way ``summarize_request`` does."""
+    status = "complete" if ctx.briefing_text else "partial"
+    return {
+        "status": status,
+        "message": (
+            "Briefing generated successfully."
+            if ctx.briefing_text
+            else "Compute engines complete; LLM briefing not generated."
+        ),
+        "request": {
+            "vendor": ctx.vendor_input,
+            "meeting_date": ctx.meeting_date,
+            "data_dir": str(ctx.data_dir),
+            "lookback_weeks": ctx.lookback_weeks,
+            "persona_emphasis": ctx.persona_emphasis,
+            "include_benchmarks": ctx.include_benchmarks,
+            "output_format": ctx.output_format,
+            "category_filter": ctx.category_filter,
+        },
+        "config_defaults": ctx.config.get("defaults", {}),
+        "llm_selection": {
+            "provider": ctx.provider.provider if ctx.provider else None,
+            "model": ctx.provider.model if ctx.provider else None,
+        },
+        "vendor_id": ctx.vendor_id,
+        "manifest_path": ctx.manifest.get("_manifest_path"),
+        "available_file_keys": sorted(ctx.manifest.get("files", {}).keys()),
+        "loaded_datasets": sorted(ctx.vendor_data.keys()),
+        "validation_warnings": ctx.validation_result.warnings if ctx.validation_result else [],
+        "pipeline_notes": ctx.pipeline_notes,
+        "scorecard": ctx.scorecard,
+        "benchmarks": ctx.benchmarks,
+        "po_risk": ctx.po_risk,
+        "oos_attribution": ctx.oos_attribution,
+        "promo_readiness": ctx.promo_readiness,
+        "briefing_text": ctx.briefing_text,
+        "output_files": ctx.output_files,
+    }
+
+
+def summarize_request_stream(
+    *,
+    vendor: str,
+    meeting_date: str,
+    data_dir: Path,
+    lookback_weeks: int,
+    persona_emphasis: str,
+    include_benchmarks: bool,
+    output_format: str,
+    category_filter: str | None,
+    llm_provider: str | None = None,
+    llm_model: str | None = None,
+):
+    """Stream the briefing pipeline stage-by-stage.
+
+    This is the Phase 6 streaming counterpart to :func:`summarize_request`.  It
+    runs the deterministic compute engines synchronously, then streams LLM
+    tokens as they arrive from the provider, and finally persists the briefing
+    to disk.
+
+    Yields dict events for the caller (typically a FastAPI SSE endpoint) to
+    forward to the browser:
+
+    - ``{"type": "engines", "engines": {...}}`` — emitted once after compute
+      engines finish, carrying the full engine payload so the UI can paint
+      dashboards immediately.
+    - ``{"type": "token", "content": "..."}`` — one per LLM text delta.
+    - ``{"type": "done", "summary": {...}}`` — final event with the full
+      CLI-shaped summary dict (same shape as :func:`summarize_request`).
+    - ``{"type": "error", "message": "..."}`` — emitted on failure; the
+      caller should then stop the stream.
+    """
+    ctx = BriefingContext(
+        vendor_input=vendor,
+        meeting_date=meeting_date,
+        data_dir=data_dir,
+        lookback_weeks=lookback_weeks,
+        persona_emphasis=persona_emphasis,
+        include_benchmarks=include_benchmarks,
+        output_format=output_format,
+        category_filter=category_filter,
+        provider_override=llm_provider,
+        model_override=llm_model,
+    )
+
+    try:
+        ctx = _stage_load_config(ctx)
+        ctx = _stage_load_manifest(ctx)
+        ctx = _stage_validate_manifest(ctx)
+        ctx = _stage_resolve_provider(ctx)
+        ctx = _stage_resolve_vendor_id(ctx)
+        ctx = _stage_load_vendor_data(ctx)
+
+        ctx = _stage_compute_scorecard(ctx)
+        ctx = _stage_compute_benchmarks(ctx)
+        ctx = _stage_compute_po_risk(ctx)
+        ctx = _stage_compute_oos_attribution(ctx)
+        ctx = _stage_compute_promo_readiness(ctx)
+
+        ctx = _stage_assemble_prompt(ctx)
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Stream pipeline failed before LLM call.")
+        yield {"type": "error", "message": str(exc)}
+        return
+
+    # Emit engine payload up-front so the UI can render dashboards immediately.
+    yield {
+        "type": "engines",
+        "engines": {
+            "vendor_id": ctx.vendor_id,
+            "scorecard": ctx.scorecard,
+            "benchmarks": ctx.benchmarks,
+            "po_risk": ctx.po_risk,
+            "oos_attribution": ctx.oos_attribution,
+            "promo_readiness": ctx.promo_readiness,
+            "llm_selection": {
+                "provider": ctx.provider.provider if ctx.provider else None,
+                "model": ctx.provider.model if ctx.provider else None,
+            },
+        },
+    }
+
+    # Stream tokens from the LLM, accumulating into ctx.briefing_text.
+    llm_cfg = ctx.config.get("llm", {})
+    collected: list[str] = []
+    try:
+        for chunk in generate_text_stream(
+            ctx.prompt,
+            provider=ctx.provider.provider if ctx.provider else None,
+            model=ctx.provider.model if ctx.provider else None,
+            temperature=llm_cfg.get("temperature"),
+            max_tokens=llm_cfg.get("max_tokens"),
+        ):
+            if not chunk:
+                continue
+            collected.append(chunk)
+            yield {"type": "token", "content": chunk}
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("LLM streaming failed.")
+        yield {"type": "error", "message": str(exc)}
+        return
+
+    ctx.briefing_text = "".join(collected)
+    ctx.add_note(
+        f"Briefing streamed ({len(ctx.briefing_text)} chars "
+        f"via {ctx.provider.provider if ctx.provider else 'unknown'})."
+    )
+
+    # Persist to disk using the same renderer as the sync path.
+    try:
+        ctx = _stage_render_output(ctx)
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Render/output stage failed after streaming.")
+        yield {"type": "error", "message": str(exc)}
+        return
+
+    yield {"type": "done", "summary": _serialize_ctx_summary(ctx)}
