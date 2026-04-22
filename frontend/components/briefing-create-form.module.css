@@ -111,3 +111,61 @@
   color: var(--color-error);
   font-size: 0.88rem;
 }
+
+/* ── Streaming live preview ── */
+.status {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-top: -0.25rem;
+}
+
+.streamWrap {
+  margin-top: 0.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.streamLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.streamBox {
+  font-family: var(--font-mono, "Fira Code", "Cascadia Code", monospace);
+  font-size: 0.78rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--color-text);
+  padding: 0.75rem;
+  max-height: 220px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+/* Blinking insertion cursor shown while tokens are arriving */
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 0.85em;
+  background: var(--color-accent);
+  border-radius: 1px;
+  vertical-align: text-bottom;
+  animation: blink 0.9s step-start infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
