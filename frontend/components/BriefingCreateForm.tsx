@@ -1,14 +1,14 @@
 "use client";
 
 import React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  createBriefing,
-  listVendors,
+  createBriefingStreaming,
   startBackend,
+  listVendors,
   type BriefingCreatePayload,
-  type VendorRecord
+  type VendorRecord,
 } from "../lib/api";
 import styles from "./briefing-create-form.module.css";
 import { AppHeader } from "./AppHeader";
@@ -38,42 +38,67 @@ export function BriefingCreateForm({ heading, subheading }: Props) {
   const [outputFormat, setOutputFormat] = useState<"md" | "docx" | "both">("md");
   const [categoryFilter, setCategoryFilter] = useState("");
 
-  const [submitting, setSubmitting] = useState(false);
+  // Streaming state
+  const [phase, setPhase] = useState<"idle" | "engines" | "streaming" | "done" | "error">("idle");
+  const [streamPreview, setStreamPreview] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  const submitting = phase === "engines" || phase === "streaming";
 
   useEffect(() => {
     let mounted = true;
     listVendors(DATA_DIR)
       .then((res) => {
-        if (!mounted) {
-          return;
-        }
+        if (!mounted) return;
         setVendors(res.vendors);
         if (res.vendors.length > 0) {
           setVendor(res.vendors[0].vendor_name ?? res.vendors[0].vendor_id);
         }
       })
       .catch((err: unknown) => {
-        if (!mounted) {
-          return;
-        }
+        if (!mounted) return;
         setVendorsError(err instanceof Error ? err.message : "Could not load vendor list");
       })
       .finally(() => {
-        if (mounted) {
-          setVendorsLoading(false);
-        }
+        if (mounted) setVendorsLoading(false);
       });
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
+
+  // Auto-scroll the preview pane as tokens arrive
+  useEffect(() => {
+    if (previewRef.current) {
+      previewRef.current.scrollTop = previewRef.current.scrollHeight;
+    }
+  }, [streamPreview]);
+
+  async function runStream(payload: BriefingCreatePayload) {
+    setPhase("engines");
+    setStreamPreview("");
+    setSubmitError(null);
+
+    await createBriefingStreaming(payload, {
+      onEngines: () => {
+        // Engines data is embedded in the done summary; switch UI to streaming phase
+        setPhase("streaming");
+      },
+      onToken: (chunk) => {
+        setStreamPreview((prev) => prev + chunk);
+      },
+      onDone: (briefing) => {
+        setPhase("done");
+        router.push(`/briefings/${briefing.id}`);
+      },
+      onError: (message) => {
+        setPhase("error");
+        setSubmitError(message);
+      },
+    });
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    setSubmitError(null);
 
     const payload: BriefingCreatePayload = {
       vendor,
@@ -83,31 +108,42 @@ export function BriefingCreateForm({ heading, subheading }: Props) {
       persona_emphasis: personaEmphasis,
       include_benchmarks: includeBenchmarks,
       output_format: outputFormat,
-      category_filter: categoryFilter.trim() || null
+      category_filter: categoryFilter.trim() || null,
     };
 
     try {
-      const result = await createBriefing(payload);
-      router.push(`/briefings/${result.id}`);
+      await runStream(payload);
     } catch (err: unknown) {
       const raw = err instanceof Error ? err.message : "Failed to generate briefing";
+
+      // Network failure — try to auto-start the backend then retry once
       if (raw === "Failed to fetch") {
         try {
           await startBackend();
-          const retried = await createBriefing(payload);
-          router.push(`/briefings/${retried.id}`);
+          await runStream(payload);
           return;
         } catch {
-          setSubmitError("Cannot reach the API server. Make sure the backend is running on port 8000.");
-          setSubmitting(false);
+          setPhase("error");
+          setSubmitError(
+            "Cannot reach the API server. Make sure the backend is running on port 8000."
+          );
           return;
         }
       }
-      const msg = raw;
-      setSubmitError(msg);
-      setSubmitting(false);
+
+      setPhase("error");
+      setSubmitError(raw);
     }
   }
+
+  const statusLabel =
+    phase === "engines"
+      ? "Running compute engines…"
+      : phase === "streaming"
+      ? "Streaming briefing…"
+      : phase === "done"
+      ? "Done — redirecting…"
+      : null;
 
   return (
     <main className={styles.page}>
@@ -242,9 +278,35 @@ export function BriefingCreateForm({ heading, subheading }: Props) {
             />
           </div>
 
-          <button className={styles.cta} type="submit" disabled={submitting}>
-            {submitting ? "Generating..." : "Generate Briefing"}
+          <button
+            className={styles.cta}
+            type="submit"
+            id="generate-briefing-btn"
+            disabled={submitting}
+          >
+            {submitting ? "Generating…" : "Generate Briefing"}
           </button>
+
+          {statusLabel && (
+            <p className={styles.status} aria-live="polite">
+              {statusLabel}
+            </p>
+          )}
+
+          {(phase === "streaming" || phase === "done") && streamPreview && (
+            <div className={styles.streamWrap}>
+              <p className={styles.streamLabel}>
+                Live preview
+                {phase === "streaming" && (
+                  <span className={styles.cursor} aria-hidden="true" />
+                )}
+              </p>
+              <div ref={previewRef} className={styles.streamBox} aria-label="streaming preview">
+                {streamPreview}
+              </div>
+            </div>
+          )}
+
           {submitError && <p className={styles.error}>{submitError}</p>}
         </form>
       </div>
