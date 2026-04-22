@@ -490,3 +490,110 @@ def generate_text(
         max_tokens=resolved_max_tokens,
         max_retries=max_retries,
     )
+
+
+# ---------------------------------------------------------------------------
+# Streaming API (Phase 6)
+# ---------------------------------------------------------------------------
+
+
+def _stream_anthropic(
+    prompt: str,
+    model: str,
+    temperature: float,
+    max_tokens: int,
+):
+    """Stream text chunks from the Anthropic Messages API.
+
+    Yields successive text deltas as they arrive from the model.  Each yielded
+    value is a ``str`` (may be empty for non-text events, which are skipped).
+
+    Uses the SDK's ``messages.stream()`` context manager which emits
+    ``text_stream`` entries for the assistant's text-delta events.
+    """
+    try:
+        import anthropic as _anthropic
+        _ant = _anthropic
+    except ImportError as exc:
+        raise ImportError(
+            "The 'anthropic' package is required. Run: pip install 'anthropic>=0.34.0'"
+        ) from exc
+
+    if anthropic is not None:
+        _ant = anthropic
+
+    client = _ant.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+    logger.info(
+        "Anthropic streaming call: model=%s, max_tokens=%d.", model, max_tokens,
+    )
+
+    with client.messages.stream(
+        model=model,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        messages=[{"role": "user", "content": prompt}],
+    ) as stream:
+        for text_delta in stream.text_stream:
+            if text_delta:
+                yield text_delta
+
+
+def generate_text_stream(
+    prompt: str,
+    provider: str | None = None,
+    model: str | None = None,
+    temperature: float | None = None,
+    max_tokens: int | None = None,
+):
+    """Stream generated text chunks from the configured LLM provider.
+
+    Phase 6 addition: yields successive text deltas so the caller (e.g. a FastAPI
+    SSE endpoint) can forward them to the browser as they arrive.  This is the
+    streaming counterpart to :func:`generate_text`.
+
+    Currently implemented for the ``anthropic`` provider.  Other providers fall
+    back to a single chunk emitted after the non-streaming call completes, so the
+    caller API stays uniform.
+
+    Args:
+        prompt: Full assembled prompt string.
+        provider: Provider override (``'anthropic'``, ``'openai'``, ``'google'``,
+            ``'groq'``). Defaults via :func:`resolve_provider`.
+        model: Model override. Defaults via :func:`resolve_provider`.
+        temperature: Sampling temperature. Defaults to ``0.2``.
+        max_tokens: Maximum tokens to generate. Defaults to ``4096``.
+
+    Yields:
+        ``str`` text deltas. Joining all yielded values produces the full
+        generated text.
+    """
+    selection = resolve_provider(provider, model)
+    resolved_temperature = temperature if temperature is not None else _DEFAULT_TEMPERATURE
+    resolved_max_tokens = max_tokens if max_tokens is not None else _DEFAULT_MAX_TOKENS
+
+    logger.info(
+        "generate_text_stream(): provider=%s, model=%s, prompt_chars=%d.",
+        selection.provider, selection.model, len(prompt),
+    )
+
+    if selection.provider == "anthropic":
+        yield from _stream_anthropic(
+            prompt=prompt,
+            model=selection.model,
+            temperature=resolved_temperature,
+            max_tokens=resolved_max_tokens,
+        )
+        return
+
+    # Non-anthropic providers: single-shot fallback (preserves uniform API).
+    caller = _PROVIDER_DISPATCH[selection.provider]
+    text = caller(
+        prompt=prompt,
+        model=selection.model,
+        temperature=resolved_temperature,
+        max_tokens=resolved_max_tokens,
+        max_retries=3,
+    )
+    if text:
+        yield text

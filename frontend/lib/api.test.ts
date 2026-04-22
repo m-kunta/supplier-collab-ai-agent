@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
   createBriefing,
+  createBriefingStreaming,
   getBriefing,
   getBriefingDownloadUrl,
   getBriefingStreamUrl,
@@ -164,5 +165,135 @@ describe("frontend api client", () => {
     await expect(listBriefings(10)).rejects.toThrow(
       "Failed to list briefings: 500 Internal Server Error"
     );
+  });
+
+  // -------------------------------------------------------------------
+  // Phase 6 — createBriefingStreaming
+  // -------------------------------------------------------------------
+
+  function sseBody(lines: string[]): ReadableStream<Uint8Array> {
+    const encoder = new TextEncoder();
+    return new ReadableStream({
+      start(controller) {
+        for (const line of lines) controller.enqueue(encoder.encode(line));
+        controller.close();
+      }
+    });
+  }
+
+  it("createBriefingStreaming dispatches engines/token/done callbacks", async () => {
+    const mockFetch = vi.mocked(fetch);
+    const body = sseBody([
+      'data: {"type":"engines","engines":{"scorecard":{"OTIF":{"current_value":0.95}}}}\n\n',
+      'data: {"type":"token","content":"Hello "}\n\n',
+      'data: {"type":"token","content":"world"}\n\n',
+      'data: {"type":"done","id":"brief-1","created_at":"2026-04-21T00:00:00Z","summary":{"id":"brief-1","created_at":"2026-04-21T00:00:00Z","status":"complete","briefing_text":"Hello world"}}\n\n'
+    ]);
+    mockFetch.mockResolvedValueOnce(
+      new Response(body, { status: 200, headers: { "Content-Type": "text/event-stream" } })
+    );
+
+    const onEngines = vi.fn();
+    const onToken = vi.fn();
+    const onDone = vi.fn();
+    const onError = vi.fn();
+
+    await createBriefingStreaming(
+      {
+        vendor: "Acme Co",
+        meeting_date: "2026-04-21",
+        data_dir: "data/inbound/mock",
+        lookback_weeks: 13,
+        persona_emphasis: "both",
+        include_benchmarks: true,
+        output_format: "md",
+        category_filter: null
+      },
+      { onEngines, onToken, onDone, onError }
+    );
+
+    expect(onEngines).toHaveBeenCalledOnce();
+    expect(onEngines.mock.calls[0][0]).toHaveProperty("scorecard");
+    expect(onToken).toHaveBeenCalledTimes(2);
+    expect(onToken.mock.calls[0][0]).toBe("Hello ");
+    expect(onToken.mock.calls[1][0]).toBe("world");
+    expect(onDone).toHaveBeenCalledOnce();
+    expect(onDone.mock.calls[0][0].id).toBe("brief-1");
+    expect(onDone.mock.calls[0][0].briefing_text).toBe("Hello world");
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("createBriefingStreaming dispatches error events", async () => {
+    const mockFetch = vi.mocked(fetch);
+    const body = sseBody(['data: {"type":"error","message":"boom"}\n\n']);
+    mockFetch.mockResolvedValueOnce(
+      new Response(body, { status: 200, headers: { "Content-Type": "text/event-stream" } })
+    );
+
+    const onError = vi.fn();
+    await createBriefingStreaming(
+      {
+        vendor: "Acme Co",
+        meeting_date: "2026-04-21",
+        data_dir: "data/inbound/mock",
+        lookback_weeks: 13,
+        persona_emphasis: "both",
+        include_benchmarks: true,
+        output_format: "md",
+        category_filter: null
+      },
+      { onError }
+    );
+    expect(onError).toHaveBeenCalledWith("boom");
+  });
+
+  it("createBriefingStreaming handles chunked SSE with split event boundaries", async () => {
+    const mockFetch = vi.mocked(fetch);
+    // Split a single SSE event across multiple reader chunks.
+    const body = sseBody([
+      'data: {"type":"toke',
+      'n","content":"chunk1"}\n\n',
+      'data: {"type":"token","content":"chunk2"}\n\n'
+    ]);
+    mockFetch.mockResolvedValueOnce(
+      new Response(body, { status: 200, headers: { "Content-Type": "text/event-stream" } })
+    );
+
+    const onToken = vi.fn();
+    await createBriefingStreaming(
+      {
+        vendor: "Acme Co",
+        meeting_date: "2026-04-21",
+        data_dir: "data/inbound/mock",
+        lookback_weeks: 13,
+        persona_emphasis: "both",
+        include_benchmarks: true,
+        output_format: "md",
+        category_filter: null
+      },
+      { onToken }
+    );
+    expect(onToken).toHaveBeenCalledTimes(2);
+    expect(onToken.mock.calls[0][0]).toBe("chunk1");
+    expect(onToken.mock.calls[1][0]).toBe("chunk2");
+  });
+
+  it("createBriefingStreaming throws on HTTP error", async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce(
+      new Response("backend down", { status: 500 })
+    );
+    await expect(
+      createBriefingStreaming({
+        vendor: "Acme Co",
+        meeting_date: "2026-04-21",
+        data_dir: "data/inbound/mock",
+        lookback_weeks: 13,
+        persona_emphasis: "both",
+        include_benchmarks: true,
+        output_format: "md",
+        category_filter: null
+      })
+    ).rejects.toThrow("backend down");
   });
 });
