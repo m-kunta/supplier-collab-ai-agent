@@ -8,6 +8,12 @@ function tierClass(tier: string): string {
   return styles.green;
 }
 
+function scoreTier(score: number): string {
+  if (score >= 0.7) return "green";
+  if (score >= 0.4) return "yellow";
+  return "red";
+}
+
 interface Props {
   data?: PromoReadiness;
 }
@@ -54,9 +60,7 @@ export function PromoPanel({ data }: Props) {
                 <tr key={ev.promo_id}>
                   <td className={styles.td}>{ev.event_name}</td>
                   <td className={styles.td}>{ev.start_date}</td>
-                  <td className={`${styles.td} ${tierClass(
-                    ev.score >= 0.7 ? "green" : ev.score >= 0.4 ? "yellow" : "red"
-                  )}`}>
+                  <td className={`${styles.td} ${tierClass(scoreTier(ev.score))}`}>
                     {Math.round(ev.score * 100)}%
                   </td>
                   <td className={styles.td}>

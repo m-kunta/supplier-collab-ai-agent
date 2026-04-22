@@ -15,6 +15,9 @@ export function OosPanel({ data }: Props) {
   const ddPct = data.total_oos_events > 0
     ? Math.round((data.demand_driven / data.total_oos_events) * 100)
     : 0;
+  const uaPct = data.total_oos_events > 0
+    ? Math.round((data.unattributed / data.total_oos_events) * 100)
+    : 0;
 
   return (
     <div>
@@ -49,7 +52,7 @@ export function OosPanel({ data }: Props) {
         <div className={styles.barLegend}>
           <span className={styles.declining}>■ Vendor controllable {vcPct}%</span>
           <span>■ Demand driven {ddPct}%</span>
-          {data.unattributed > 0 && <span>■ Unattributed {data.unattributed}</span>}
+          {data.unattributed > 0 && <span>■ Unattributed {uaPct}%</span>}
         </div>
       </div>
 
