@@ -37,11 +37,13 @@ Interactive docs: `http://127.0.0.1:8000/docs`
 
 ## Project Status
 
-**Current phase:** Phase 6 — **True LLM Streaming (in progress).** Phases 1–5 are complete.
+**Current phase:** Phase 6 — **True LLM Streaming — Complete.** All phases 1–6 are done.
+
+**Phase 6 (complete):** `generate_text_stream()` added to `src/llm_providers.py` using the Anthropic SDK `messages.stream()` context manager for true token-level streaming. `summarize_request_stream()` added to `src/agent.py` — runs all compute engines, emits an `engines` event (full engine payload) so the UI can paint dashboards immediately, then streams LLM token chunks via `generate_text_stream()`, persists the briefing, and emits `done`. `POST /api/briefings/stream` FastAPI endpoint bridges the sync generator to an async `StreamingResponse` via `asyncio.Queue`. `createBriefingStreaming()` in `frontend/lib/api.ts` consumes the SSE stream via `fetch()` + `ReadableStream`. `BriefingCreateForm` is wired to the streaming endpoint with a live token preview pane (blinking cursor, auto-scroll), three-phase status labels, and navigates to the briefing detail page on `done`.
 
 **Phase 5 (complete):** **FastAPI** in `api/` exposes: `GET /api/health`, `POST /api/briefings` (`llm_provider`/`llm_model` overrides), `GET /api/briefings` (history), `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay of stored text in 25-char chunks), `GET /api/briefings/{id}/download` (`.md` attachment, 410 on missing file), `GET /api/vendors` (vendor list from landing zone). In-memory store (resets on restart). The **Next.js UI** (`frontend/`) includes the App Shell, Briefing History, Download, SSE replay with `react-markdown` + `remark-gfm`, and four engine dashboards (Scorecard, PO Risk, OOS, Promo Readiness) with tab navigation. A Dev Launcher (`scripts/dev.sh`, `Makefile`) starts API + UI with one command.
 
-**Next milestone (Phase 6):** Replace SSE replay with **true token-level streaming** from the LLM during briefing generation. Add `generate_text_stream()` to the provider layer, a streaming orchestrator in `src/agent.py`, a new `POST /api/briefings/stream` SSE endpoint, and wire the frontend detail page to consume live tokens as they arrive from Claude.
+**Next work (Phase 7 / Sprint 3):** DOCX output format, Pydantic data contract validation, production data landing zone support.
 
 ---
 
@@ -86,11 +88,11 @@ data_validator  benchmark_engine       ↓
 | `src/po_risk_engine.py` | PO risk tiering (red/yellow/green) based on days late vs. requested delivery date. Open/shipped assessed against the meeting date (`--date`); received POs assessed against actual receipt date when present. | Working |
 | `src/oos_attribution.py` | OOS root-cause attribution: vendor-controllable vs. demand-driven, with PO cancellation cross-reference fallback for null cause codes. Returns counts, pct, units lost, recurring SKUs, top SKUs. | Working |
 | `src/promo_readiness.py` | Promo readiness: on-time PO quantity vs. promoted volume per event; overall and per-event scores; red/yellow/green vs. config thresholds. | Working |
-| `src/llm_providers.py` | Provider-agnostic LLM wrapper. `resolve_provider()` returns a `ProviderSelection` dataclass. `generate_text()` calls Anthropic SDK with exponential back-off retry (rate limit, server error, connection error). Other providers raise `ImportError` when SDK missing. All four providers wired: Anthropic, OpenAI, Google, Groq. | All four live |
+| `src/llm_providers.py` | Provider-agnostic LLM wrapper. `resolve_provider()` returns a `ProviderSelection` dataclass. `generate_text()` (blocking, with exponential back-off retry) and `generate_text_stream()` (true token streaming via Anthropic `messages.stream()`; single-chunk fallback for OpenAI/Google/Groq). All four providers wired. | All four live |
 | `src/prompt_builder.py` | `build_prompt(ctx)` — loads versioned prompt template from `prompts/`, serialises all engine outputs to JSON, substitutes `{{DATA_PAYLOAD}}`, `{{PERSONA_EMPHASIS}}`, `{{VENDOR_ID}}`, `{{MEETING_DATE}}`. | Working |
 | `src/output_renderer.py` | `render_markdown(ctx)` — prepends YAML front-matter + appends footer. `write_output(ctx, output_dir, output_format)` — dispatches to md renderer and writes file. DOCX deferred to Sprint 3. | Markdown working; DOCX stub |
-| `api/` | FastAPI app. `GET /api/health`, `POST /api/briefings` (`llm_provider`/`llm_model` overrides), `GET /api/briefings`, `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE), `GET /api/briefings/{id}/download`, `GET /api/vendors`. In-memory store. | Working |
-| `frontend/` | **[Phase 5 — Complete]** Next.js web application. App shell, Briefings history page, Briefing details with SSE replay, four engine dashboards (Scorecard, PO Risk, OOS, Promo) with tab navigation, `.md` download. | Working |
+| `api/` | FastAPI app. `GET /api/health`, `POST /api/briefings` (blocking, thread-pool), **`POST /api/briefings/stream`** (true SSE streaming via `asyncio.Queue`), `GET /api/briefings`, `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay), `GET /api/briefings/{id}/download`, `GET /api/vendors`. In-memory store. | Working |
+| `frontend/` | **[Phase 5–6 — Complete]** Next.js web app. App shell, briefings history, briefing detail with SSE replay + tab dashboards (Scorecard, PO Risk, OOS, Promo). `BriefingCreateForm` wired to `POST /api/briefings/stream` with live token preview, blinking cursor, auto-scroll, and three-phase status labels. | Working |
 
 ### Key implementation details
 
@@ -158,7 +160,7 @@ Production prompts currently inject pre-computed structured data and request sec
 | **Sprint 3** | Polished output + pipeline | DOCX output, LLM orchestration, error handling |
 | **Sprint 4** | Calendar integration + demo | Auto-trigger, leadership demo, pilot plan |
 | **Phase 5** | Web Frontend | Next.js UI, FastAPI, SSE replay, engine dashboards (Scorecard, PO Risk, OOS, Promo), download, history |
-| **Phase 6** | True LLM Streaming | `generate_text_stream()`, streaming orchestrator, `POST /api/briefings/stream`, live token UI |
+| **Phase 6** | True LLM Streaming ✅ | `generate_text_stream()`, streaming orchestrator, `POST /api/briefings/stream`, live token preview in `BriefingCreateForm` |
 
 ---
 
@@ -184,7 +186,11 @@ Current test coverage:
 - Prompt builder: 12 tests covering template loading, variable substitution, JSON payload integrity, null optional data, and persona variants (`tests/test_prompt_builder.py`)
 - Phase 4 E2E: 2 integration tests with mocked LLM call verifying `status=complete`, `briefing_text` populated, and `write_output` called correctly (`tests/test_p1_foundation.py`)
 
-Full suite: run `pytest tests/ -q` (205 tests as of Phase 5 API completion).
+- Streaming (Phase 6): 8 backend tests (`tests/test_streaming.py`) — Anthropic text-delta yielding, empty-chunk skipping, param pass-through, non-Anthropic fallback, orchestrator `engines`/`token`/`done` events, error event, SSE endpoint e2e, error forwarding.
+- Frontend `createBriefingStreaming`: 4 tests in `frontend/lib/api.test.ts` — callback dispatch, error events, chunked SSE boundary handling, HTTP error rejection.
+- Frontend `BriefingCreateForm`: 10 tests in `frontend/components/BriefingCreateForm.test.tsx` — payload shape, phase labels, live preview tokens, `onDone` navigation, `onError`, network retry, generic exception.
+
+Full backend suite: run `pytest tests/ -q` (**215 tests**). Frontend: `cd frontend && npm test` (**47 tests**). **Total: 262 tests, 0 failures.**
 
 ---
 

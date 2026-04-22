@@ -13,7 +13,7 @@
 
 The **Supplier Collaboration Briefing Agent** is an intelligence tool that automates pre-meeting preparation for category buyers and supply planners. It ingests exported vendor performance data (standardized CSV files declared in a `manifest.yaml`), runs a suite of deterministic compute engines, and synthesizes everything into a structured, role-specific briefing document via an LLM — in under 60 seconds instead of the 30–60 minutes of manual spreadsheet work the meeting would otherwise require.
 
-*Current capabilities: the full pipeline (compute engines + LLM briefing + markdown output to `output/`) runs from the CLI and from a **FastAPI** layer in `api/`. The API supports SSE streaming, `.md` downloads, vendor listing, and `llm_provider`/`llm_model` overrides. A **Next.js web UI** in `frontend/` provides a premium dark-mode interface with live SSE replay, briefing history, `.md` download, and four engine data dashboards (Scorecard, PO Risk, OOS Attribution, Promo Readiness). Phase 6 is adding true token-level LLM streaming during generation.*
+*Current capabilities: the full pipeline (compute engines + LLM briefing + markdown output to `output/`) runs from the CLI and from a **FastAPI** layer in `api/`. The API supports true token-level SSE streaming during generation, `.md` downloads, vendor listing, and `llm_provider`/`llm_model` overrides. A **Next.js web UI** in `frontend/` provides a premium dark-mode interface with a **live token-by-token streaming preview** while a briefing is generating, briefing history, `.md` download, and four engine data dashboards (Scorecard, PO Risk, OOS Attribution, Promo Readiness) with tab navigation. Phases 1–6 are complete.*
 
 ---
 
@@ -219,12 +219,13 @@ Phase 1 completion notes:
 - [x] **SSE replay in UI** — browser receives stored briefing text in 25-char chunks via Server-Sent Events.
 - [x] **Download & history (UI)** — `.md` download button wired to download endpoint; history page consuming list API.
 
-### Phase 6: True LLM Streaming (In progress)
-- [ ] **`generate_text_stream()`** in `src/llm_providers.py` — Anthropic SDK `messages.stream()` yielding token chunks; exponential back-off retry preserved.
-- [ ] **`summarize_request_stream()`** in `src/agent.py` — async generator that runs compute engines, streams LLM tokens as they arrive, then persists the final briefing to disk and store.
-- [ ] **`POST /api/briefings/stream`** — new SSE endpoint returning `engines` event (full engine payload), `token` events (live LLM chunks), and `done` event (`briefing_id`, `output_files`).
-- [ ] **Frontend integration** — detail page consumes live-streaming endpoint instead of replaying stored text.
-- [ ] **Test coverage** — streaming provider, streaming orchestrator, and streaming endpoint.
+### Phase 6: True LLM Streaming ✅
+- [x] **`generate_text_stream()`** in `src/llm_providers.py` — Anthropic SDK `messages.stream()` yielding token text-deltas as they arrive; non-Anthropic providers fall back to a single-chunk yield via the sync path.
+- [x] **`summarize_request_stream()`** in `src/agent.py` — sync generator that runs compute engines, emits `engines` event (full engine payload), streams LLM token chunks, persists briefing to disk, then emits `done`.
+- [x] **`POST /api/briefings/stream`** — SSE endpoint bridging the sync generator to async via `asyncio.Queue`; returns `engines` → `token`* → `done` event sequence; persists briefing to in-memory store on `done`.
+- [x] **Frontend `createBriefingStreaming()`** — `fetch()` + `ReadableStream` SSE client with `onEngines`, `onToken`, `onDone`, `onError` callbacks (in `frontend/lib/api.ts`).
+- [x] **`BriefingCreateForm` wired to streaming** — live token-by-token preview pane with blinking cursor and auto-scroll; three-phase status labels (engines → streaming → done); navigates to briefing detail on `done`.
+- [x] **Test coverage** — 8 backend streaming tests (`tests/test_streaming.py`), 4 frontend `createBriefingStreaming` tests (`frontend/lib/api.test.ts`), 10 `BriefingCreateForm` streaming tests (`frontend/components/BriefingCreateForm.test.tsx`).
 
 ## 🛠️ Key modules
 
@@ -238,7 +239,7 @@ Phase 1 completion notes:
 - `src/po_risk_engine.py`: Pipeline and late-PO risk classification pipeline.
 - `src/oos_attribution.py`: OOS event analysis and root-cause handling.
 - `src/promo_readiness.py`: Promo readiness scoring (on-time PO coverage vs. promoted volume).
-- `src/llm_providers.py`: Model wrappers and agnostic text generation.
+- `src/llm_providers.py`: Model wrappers — `generate_text()` (blocking) and `generate_text_stream()` (true token streaming, Anthropic; fallback for others).
 
 ## 💻 Quick Start
 
@@ -264,6 +265,16 @@ python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir data/
 ```
 
 *Note: The CLI prints JSON including engine outputs and, when the LLM step succeeds, `briefing_text`, `status: "complete"`, and `output_files` (paths written under `output/`). The same payload shape is returned by `POST /api/briefings` with additional `id` and `created_at` fields.*
+
+## 🧪 Test Suite Summary
+
+| Layer | Runner | Count |
+|---|---|---|
+| Backend (Python) | `pytest tests/ -q` | **215 tests** |
+| Frontend (TypeScript) | `cd frontend && npm test` | **47 tests** |
+| **Total** | | **262 tests** |
+
+---
 
 ## 📁 Repository Naming
 
