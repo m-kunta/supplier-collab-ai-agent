@@ -21,6 +21,10 @@ class ScaffoldTests(unittest.TestCase):
             PROJECT_ROOT / "cli.py",
             PROJECT_ROOT / "config" / "agent_config.yaml",
             PROJECT_ROOT / "data" / "inbound" / "mock" / "manifest.yaml",
+            PROJECT_ROOT / "data" / "inbound" / "prod" / "manifest.yaml",
+            PROJECT_ROOT / "data" / "inbound" / "prod" / "vendor_master.csv",
+            PROJECT_ROOT / "data" / "inbound" / "prod" / "purchase_orders.csv",
+            PROJECT_ROOT / "data" / "inbound" / "prod" / "vendor_performance.csv",
             PROJECT_ROOT / "data" / "schemas" / "vendor_master.schema.yaml",
             PROJECT_ROOT / "docs" / "implementation_plan.md",
             PROJECT_ROOT / "prompts" / "briefing_v0.md",
@@ -73,6 +77,14 @@ class ScaffoldTests(unittest.TestCase):
         manifest = load_manifest(data_dir)
         self.assertEqual(resolved_dir.name, "mock")
         self.assertEqual(manifest["environment"], "mock")
+        self.assertTrue(manifest["_manifest_path"].endswith("manifest.yaml"))
+
+    def test_prod_manifest_path_resolution(self):
+        data_dir = PROJECT_ROOT / "data" / "inbound" / "prod"
+        resolved_dir = resolve_data_dir(data_dir)
+        manifest = load_manifest(data_dir)
+        self.assertEqual(resolved_dir.name, "prod")
+        self.assertEqual(manifest["environment"], "production")
         self.assertTrue(manifest["_manifest_path"].endswith("manifest.yaml"))
 
     def test_provider_selection_without_live_call(self):

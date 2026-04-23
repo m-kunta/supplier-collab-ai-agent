@@ -100,3 +100,23 @@ Completed after scaffold. Implemented two compute engines with TDD.
 
 - **FastAPI (`api/`):** All REST endpoints complete — `GET /api/health`, `POST /api/briefings` (async, thread-pool executor, `llm_provider`/`llm_model` overrides, broad exception handling), `GET /api/briefings` (paginated list), `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay), `GET /api/briefings/{id}/download` (FileResponse, 410 on missing file), `GET /api/vendors` (reads `vendor_master.csv` from any landing zone). CORS configurable via `CORS_ORIGINS` env var. In-memory `BriefingStore` (process-local).
 - **Next:** Next.js frontend dashboard polish/completion (`frontend/`). Combined dev launcher is now available via `make dev` / `scripts/dev.sh`; `frontend/npm run dev` runs UI-only.
+
+### Phase 6 (complete)
+
+- True provider streaming in `src/llm_providers.py` via `generate_text_stream()`.
+- Streaming orchestrator in `src/agent.py` with `engines` → `token` → `done` event flow.
+- `POST /api/briefings/stream` SSE endpoint in `api/main.py`.
+- Frontend live-preview streaming flow via `createBriefingStreaming()` and `BriefingCreateForm`.
+
+### Phase 7 (in progress)
+
+- Pydantic-backed schema contract validation in `src/data_validator.py`.
+- Dataset validation stage in `src/agent.py` for sync and streaming paths with required-file failure and optional-file degradation.
+- Structured `validation_report` added to briefing summaries and API responses.
+- Validation report persisted as `validation_report_path` alongside rendered output artifacts.
+- Production landing-zone scaffold added under `data/inbound/prod/` with a loadable manifest and header-only required CSV templates.
+
+### Verification Snapshot
+
+- Backend: `.venv/bin/pytest tests/ -q` → `238 passed`
+- Frontend: `cd frontend && npm test` → `47 passed`

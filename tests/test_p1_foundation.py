@@ -10,8 +10,11 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+import shutil
+from unittest.mock import patch
 
 import pandas as pd
+import yaml
 
 from src.agent import summarize_request
 from src.config import load_config
@@ -21,7 +24,13 @@ from src.data_loader import (
     load_vendor_data,
     resolve_vendor_id,
 )
-from src.data_validator import REQUIRED_FILES, ValidationResult, validate_manifest_shape
+from src.data_validator import (
+    REQUIRED_FILES,
+    ValidationResult,
+    load_dataset_schema,
+    validate_dataset_frame,
+    validate_manifest_shape,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -200,6 +209,132 @@ class ValidateManifestShapeTests(unittest.TestCase):
         self.assertEqual(len(result.errors), 1)  # only the missing 'files' key error
 
 
+class DatasetSchemaValidationTests(unittest.TestCase):
+    def test_load_dataset_schema_returns_yaml_mapping(self):
+        schema = load_dataset_schema("vendor_master")
+        self.assertEqual(schema["name"], "vendor_master")
+        self.assertIn("required_columns", schema)
+        self.assertIn("column_types", schema)
+
+    def test_load_dataset_schema_raises_for_unknown_dataset(self):
+        with self.assertRaises(FileNotFoundError):
+            load_dataset_schema("ghost_dataset")
+
+    def test_load_dataset_schema_rejects_invalid_schema_shape(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            schema_dir = Path(tmp)
+            (schema_dir / "bad.schema.yaml").write_text("- not-a-mapping\n", encoding="utf-8")
+
+            with patch("src.data_validator.SCHEMA_DIR", schema_dir):
+                with self.assertRaisesRegex(ValueError, "YAML mapping"):
+                    load_dataset_schema("bad")
+
+    def test_validate_dataset_frame_accepts_valid_vendor_master_fixture(self):
+        manifest = load_manifest(MOCK_DATA_DIR)
+        vendor_master_df = load_dataset(manifest, "vendor_master")
+
+        result = validate_dataset_frame("vendor_master", vendor_master_df)
+
+        self.assertTrue(result.is_valid)
+        self.assertEqual(result.errors, [])
+
+    def test_validate_dataset_frame_reports_missing_required_column(self):
+        manifest = load_manifest(MOCK_DATA_DIR)
+        vendor_master_df = load_dataset(manifest, "vendor_master").drop(
+            columns=["vendor_name"]
+        )
+
+        result = validate_dataset_frame("vendor_master", vendor_master_df)
+
+        self.assertTrue(result.has_errors)
+        self.assertIn("Missing required column: vendor_name", result.errors)
+
+    def test_validate_dataset_frame_reports_invalid_enum_value(self):
+        manifest = load_manifest(MOCK_DATA_DIR)
+        vendor_master_df = load_dataset(manifest, "vendor_master").copy()
+        vendor_master_df.loc[0, "vendor_status"] = "paused"
+
+        result = validate_dataset_frame("vendor_master", vendor_master_df)
+
+        self.assertTrue(result.has_errors)
+        self.assertTrue(
+            any("vendor_status" in error and "paused" in error for error in result.errors)
+        )
+
+    def test_validate_dataset_frame_reports_invalid_date_value(self):
+        manifest = load_manifest(MOCK_DATA_DIR)
+        purchase_orders_df = load_dataset(manifest, "purchase_orders").copy()
+        purchase_orders_df.loc[0, "requested_delivery_date"] = "not-a-date"
+
+        result = validate_dataset_frame("purchase_orders", purchase_orders_df)
+
+        self.assertTrue(result.has_errors)
+        self.assertTrue(
+            any(
+                "requested_delivery_date" in error and "not-a-date" in error
+                for error in result.errors
+            )
+        )
+
+    def test_validate_dataset_frame_reports_pct_metric_above_one(self):
+        manifest = load_manifest(MOCK_DATA_DIR)
+        performance_df = load_dataset(manifest, "vendor_performance").copy()
+        performance_df.loc[0, "metric_uom"] = "pct"
+        performance_df.loc[0, "metric_value"] = 1.25
+
+        result = validate_dataset_frame("vendor_performance", performance_df)
+
+        self.assertTrue(result.has_errors)
+        self.assertTrue(
+            any("metric_value" in error and "between 0 and 1" in error for error in result.errors)
+        )
+
+    def test_validate_dataset_frame_reports_negative_numeric_value(self):
+        manifest = load_manifest(MOCK_DATA_DIR)
+        purchase_orders_df = load_dataset(manifest, "purchase_orders").copy()
+        purchase_orders_df.loc[0, "qty_ordered"] = -1
+
+        result = validate_dataset_frame("purchase_orders", purchase_orders_df)
+
+        self.assertTrue(result.has_errors)
+        self.assertTrue(
+            any("qty_ordered" in error and "below minimum" in error for error in result.errors)
+        )
+
+    def test_validate_dataset_frame_reports_non_integer_value(self):
+        manifest = load_manifest(MOCK_DATA_DIR)
+        purchase_orders_df = load_dataset(manifest, "purchase_orders").copy()
+        purchase_orders_df.loc[0, "po_line"] = 1.5
+
+        result = validate_dataset_frame("purchase_orders", purchase_orders_df)
+
+        self.assertTrue(result.has_errors)
+        self.assertTrue(
+            any("po_line" in error and "invalid integer" in error for error in result.errors)
+        )
+
+    def test_validate_dataset_frame_allows_nullable_optional_columns(self):
+        manifest = load_manifest(MOCK_DATA_DIR)
+        purchase_orders_df = load_dataset(manifest, "purchase_orders").copy()
+        purchase_orders_df.loc[0, "ship_to_dc"] = None
+
+        result = validate_dataset_frame("purchase_orders", purchase_orders_df)
+
+        self.assertTrue(result.is_valid)
+
+    def test_validate_dataset_frame_rejects_null_in_non_nullable_column(self):
+        manifest = load_manifest(MOCK_DATA_DIR)
+        purchase_orders_df = load_dataset(manifest, "purchase_orders").copy()
+        purchase_orders_df.loc[0, "qty_ordered"] = None
+
+        result = validate_dataset_frame("purchase_orders", purchase_orders_df)
+
+        self.assertTrue(result.has_errors)
+        self.assertTrue(
+            any("qty_ordered" in error and "null" in error.lower() for error in result.errors)
+        )
+
+
 # ---------------------------------------------------------------------------
 # load_dataset and load_vendor_data
 # ---------------------------------------------------------------------------
@@ -335,6 +470,11 @@ class PipelineIntegrationTests(unittest.TestCase):
             with patch("src.agent.write_output", return_value={"md_path": Path("output/stub.md")}):
                 return summarize_request(**defaults)
 
+    def _copy_mock_data_dir(self, tmp_path: Path) -> Path:
+        target = tmp_path / "landing_zone"
+        shutil.copytree(MOCK_DATA_DIR, target)
+        return target
+
     def test_summarize_request_resolves_vendor_name_and_loads_vendor_data(self):
         summary = self._run_pipeline()
         self.assertEqual(summary["vendor_id"], "V1001")
@@ -352,6 +492,14 @@ class PipelineIntegrationTests(unittest.TestCase):
         self.assertIsNotNone(summary["po_risk"])
         self.assertIsNotNone(summary["oos_attribution"])
         self.assertIsNotNone(summary["promo_readiness"])
+        self.assertIn("validation_report", summary)
+        self.assertEqual(summary["validation_report"]["overall_status"], "passed")
+        self.assertEqual(summary["validation_report"]["error_count"], 0)
+        self.assertEqual(summary["validation_report"]["warning_count"], 0)
+        self.assertEqual(
+            summary["validation_report"]["datasets"]["vendor_master"]["status"],
+            "passed",
+        )
 
     def test_summarize_request_rejects_unknown_vendor(self):
         with self.assertRaisesRegex(ValueError, "Vendor 'UnknownCo' not found"):
@@ -388,6 +536,70 @@ class PipelineIntegrationTests(unittest.TestCase):
                     output_format="md",
                     category_filter=None,
                 )
+
+    def test_summarize_request_fails_when_required_dataset_breaks_schema(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            data_dir = self._copy_mock_data_dir(Path(tmp))
+            vendor_master_path = data_dir / "vendor_master.csv"
+            broken_contents = vendor_master_path.read_text(encoding="utf-8").replace(
+                "vendor_status", "vendor_state", 1
+            )
+            vendor_master_path.write_text(broken_contents, encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "vendor_master"):
+                self._run_pipeline(data_dir=data_dir)
+
+    def test_summarize_request_skips_optional_dataset_with_validation_warning(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            data_dir = self._copy_mock_data_dir(Path(tmp))
+            oos_path = data_dir / "oos_events.csv"
+            broken_contents = oos_path.read_text(encoding="utf-8").replace(
+                "root_cause_code", "root_cause", 1
+            )
+            oos_path.write_text(broken_contents, encoding="utf-8")
+
+            summary = self._run_pipeline(data_dir=data_dir)
+
+        self.assertTrue(
+            any("oos_events" in warning for warning in summary["validation_warnings"])
+        )
+        self.assertNotIn("oos_events", summary["loaded_datasets"])
+        self.assertIsNone(summary["oos_attribution"])
+        self.assertEqual(summary["validation_report"]["overall_status"], "warning")
+        self.assertEqual(
+            summary["validation_report"]["datasets"]["oos_events"]["status"],
+            "warning",
+        )
+        self.assertGreater(
+            len(summary["validation_report"]["datasets"]["oos_events"]["warnings"]), 0
+        )
+
+    def test_summarize_request_fails_cleanly_when_required_schema_is_missing(self):
+        with tempfile.TemporaryDirectory() as tmp_data, tempfile.TemporaryDirectory() as tmp_schema:
+            data_dir = self._copy_mock_data_dir(Path(tmp_data))
+            schema_dir = Path(tmp_schema)
+            shutil.copytree(PROJECT_ROOT / "data" / "schemas", schema_dir, dirs_exist_ok=True)
+            (schema_dir / "vendor_master.schema.yaml").unlink()
+
+            with patch("src.data_validator.SCHEMA_DIR", schema_dir):
+                with self.assertRaisesRegex(ValueError, "vendor_master"):
+                    self._run_pipeline(data_dir=data_dir)
+
+    def test_summarize_request_skips_optional_dataset_when_schema_is_missing(self):
+        with tempfile.TemporaryDirectory() as tmp_data, tempfile.TemporaryDirectory() as tmp_schema:
+            data_dir = self._copy_mock_data_dir(Path(tmp_data))
+            schema_dir = Path(tmp_schema)
+            shutil.copytree(PROJECT_ROOT / "data" / "schemas", schema_dir, dirs_exist_ok=True)
+            (schema_dir / "oos_events.schema.yaml").unlink()
+
+            with patch("src.data_validator.SCHEMA_DIR", schema_dir):
+                summary = self._run_pipeline(data_dir=data_dir)
+
+        self.assertTrue(
+            any("oos_events" in warning and "Schema file not found" in warning for warning in summary["validation_warnings"])
+        )
+        self.assertNotIn("oos_events", summary["loaded_datasets"])
+        self.assertIsNone(summary["oos_attribution"])
 
 
 # ---------------------------------------------------------------------------

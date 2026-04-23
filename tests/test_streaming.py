@@ -9,6 +9,8 @@ Covers:
 from __future__ import annotations
 
 import json
+import shutil
+import tempfile
 import unittest
 from contextlib import contextmanager
 from pathlib import Path
@@ -162,6 +164,36 @@ class TestSummarizeRequestStream(unittest.TestCase):
 
         self.assertEqual(events[-1]["type"], "error")
         self.assertIn("LLM exploded", events[-1]["message"])
+
+    def test_emits_error_before_engines_when_required_dataset_is_invalid(self):
+        from src import agent as agent_mod
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            shutil.copytree(MOCK_DATA_DIR, tmp_path / "landing_zone")
+            data_dir = tmp_path / "landing_zone"
+            vendor_master_path = data_dir / "vendor_master.csv"
+            broken = vendor_master_path.read_text(encoding="utf-8").replace(
+                "vendor_status", "vendor_state", 1
+            )
+            vendor_master_path.write_text(broken, encoding="utf-8")
+
+            events = list(
+                agent_mod.summarize_request_stream(
+                    vendor="Northstar Foods Co",
+                    meeting_date="2026-04-21",
+                    data_dir=data_dir,
+                    lookback_weeks=13,
+                    persona_emphasis="both",
+                    include_benchmarks=True,
+                    output_format="md",
+                    category_filter=None,
+                )
+            )
+
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["type"], "error")
+        self.assertIn("vendor_master", events[0]["message"])
 
 
 # ---------------------------------------------------------------------------

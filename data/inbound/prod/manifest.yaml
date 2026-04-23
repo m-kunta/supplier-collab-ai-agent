@@ -1,0 +1,18 @@
+version: "1.0"
+generated_at: "2026-04-23T09:00:00"
+source_system: "Production Landing Zone Template"
+environment: "production"
+data_directory: "./"
+files:
+  vendor_master:
+    filename: "vendor_master.csv"
+    row_count: 0
+    required: true
+  purchase_orders:
+    filename: "purchase_orders.csv"
+    row_count: 0
+    required: true
+  vendor_performance:
+    filename: "vendor_performance.csv"
+    row_count: 0
+    required: true
