@@ -51,7 +51,7 @@ make dev
 
 **Phase 6 (complete):** `generate_text_stream()` in `src/llm_providers.py` (Anthropic `messages.stream()`, single-chunk fallback for others). `summarize_request_stream()` in `src/agent.py` — compute engines → `engines` event → LLM token stream → persist → `done` event. `POST /api/briefings/stream` FastAPI SSE endpoint (async `asyncio.Queue` bridge). `createBriefingStreaming()` frontend client (`fetch()` + `ReadableStream`). `BriefingCreateForm` wired with live token preview pane, blinking cursor, auto-scroll, three-phase status labels.
 
-**Next work (Phase 7 / Sprint 3):** DOCX output format, Pydantic data contract validation, production data landing zone support.
+**Next work (Phase 7 / Sprint 3):** Pydantic data contract validation, production data landing zone support.
 
 **Reference:** `docs/implementation_plan.md`, `docs/supplier-collab-ai-scope-v1.0.md` section 13.
 
@@ -165,7 +165,7 @@ Production prompts currently inject pre-computed structured data and request sec
 | **MVP** | Thin vertical slice | 1 vendor, 5 metrics, 5 sections, markdown output |
 | **Sprint 1** | Full scorecard + benchmarking | 3 vendors, 14 metrics, BIC with $ impact, dual persona |
 | **Sprint 2** | Cross-domain synthesis | PO×Promo linkage, OOS attribution, promo readiness |
-| **Sprint 3** | Polished output + pipeline | DOCX output, LLM orchestration, error handling |
+| **Sprint 3** | Polished output + pipeline | DOCX output ✅, LLM orchestration, error handling |
 | **Sprint 4** | Calendar integration + demo | Auto-trigger, leadership demo, pilot plan |
 | **Phase 5** | Web Frontend ✅ | Next.js UI, FastAPI, SSE replay, engine dashboards, download, history |
 | **Phase 6** | True LLM Streaming ✅ | `generate_text_stream()`, streaming orchestrator, `POST /api/briefings/stream`, live token preview |
@@ -191,10 +191,11 @@ Current test coverage:
 - Pipeline integration: `summarize_request` against mock landing zone with mocked LLM (`tests/test_p1_foundation.py`)
 - FastAPI (`tests/test_api.py`): 13 tests — health, POST/GET briefings, list + limit pagination, 404s, SSE stream (content-type + sentinel), download 410 on missing file, `GET /api/vendors`, `llm_provider` override reflected in response.
 - Streaming (Phase 6) — `tests/test_streaming.py`: 8 tests — Anthropic text-delta yielding, empty-chunk skipping, param pass-through, non-Anthropic fallback, orchestrator `engines`/`token`/`done` events, error event, SSE endpoint e2e, error forwarding.
+- DOCX Output Renderer — `tests/test_output_renderer.py`: 5 tests — markdown front-matter, docx table generation and color mapping, `write_output` dispatcher logic.
 - Frontend `createBriefingStreaming` — `frontend/lib/api.test.ts`: 4 tests — callback dispatch, error events, chunked SSE boundary handling, HTTP error rejection.
 - Frontend `BriefingCreateForm` — `frontend/components/BriefingCreateForm.test.tsx`: 10 tests — payload shape, phase labels, live preview tokens, `onDone` navigation, `onError`, network retry.
 
-Full backend suite: `pytest tests/ -q` (**215 tests**). Frontend: `cd frontend && npm test` (**47 tests**). **Total: 262 tests, 0 failures.**
+Full backend suite: `pytest tests/ -q` (**220 tests**). Frontend: `cd frontend && npm test` (**47 tests**). **Total: 267 tests, 0 failures.**
 
 ---
 

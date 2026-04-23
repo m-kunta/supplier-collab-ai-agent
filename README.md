@@ -121,7 +121,7 @@ It reads structured exports from the systems the organization already uses, comp
                     │   │  Output Layer   │   │   FastAPI API      │ │
                     │   │                 │   │                    │ │
                     │   │ output/*.md     │   │ POST /api/briefings│ │
-                    │   │ DOCX (future)   │   │ GET  /api/vendors  │ │
+                    │   │ DOCX            │   │ GET  /api/vendors  │ │
                     │   └─────────────────┘   │ SSE stream, .md    │ │
                     │                          │ download          │ │
                     │                          └────────────────────┘ │
@@ -270,9 +270,9 @@ python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir data/
 
 | Layer | Runner | Count |
 |---|---|---|
-| Backend (Python) | `pytest tests/ -q` | **215 tests** |
+| Backend (Python) | `pytest tests/ -q` | **220 tests** |
 | Frontend (TypeScript) | `cd frontend && npm test` | **47 tests** |
-| **Total** | | **262 tests** |
+| **Total** | | **267 tests** |
 
 ---
 

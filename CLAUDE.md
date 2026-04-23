@@ -43,7 +43,7 @@ Interactive docs: `http://127.0.0.1:8000/docs`
 
 **Phase 5 (complete):** **FastAPI** in `api/` exposes: `GET /api/health`, `POST /api/briefings` (`llm_provider`/`llm_model` overrides), `GET /api/briefings` (history), `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay of stored text in 25-char chunks), `GET /api/briefings/{id}/download` (`.md` attachment, 410 on missing file), `GET /api/vendors` (vendor list from landing zone). In-memory store (resets on restart). The **Next.js UI** (`frontend/`) includes the App Shell, Briefing History, Download, SSE replay with `react-markdown` + `remark-gfm`, and four engine dashboards (Scorecard, PO Risk, OOS, Promo Readiness) with tab navigation. A Dev Launcher (`scripts/dev.sh`, `Makefile`) starts API + UI with one command.
 
-**Next work (Phase 7 / Sprint 3):** DOCX output format, Pydantic data contract validation, production data landing zone support.
+**Next work (Phase 7 / Sprint 3):** Pydantic data contract validation, production data landing zone support.
 
 ---
 
@@ -90,7 +90,7 @@ data_validator  benchmark_engine       ↓
 | `src/promo_readiness.py` | Promo readiness: on-time PO quantity vs. promoted volume per event; overall and per-event scores; red/yellow/green vs. config thresholds. | Working |
 | `src/llm_providers.py` | Provider-agnostic LLM wrapper. `resolve_provider()` returns a `ProviderSelection` dataclass. `generate_text()` (blocking, with exponential back-off retry) and `generate_text_stream()` (true token streaming via Anthropic `messages.stream()`; single-chunk fallback for OpenAI/Google/Groq). All four providers wired. | All four live |
 | `src/prompt_builder.py` | `build_prompt(ctx)` — loads versioned prompt template from `prompts/`, serialises all engine outputs to JSON, substitutes `{{DATA_PAYLOAD}}`, `{{PERSONA_EMPHASIS}}`, `{{VENDOR_ID}}`, `{{MEETING_DATE}}`. | Working |
-| `src/output_renderer.py` | `render_markdown(ctx)` — prepends YAML front-matter + appends footer. `write_output(ctx, output_dir, output_format)` — dispatches to md renderer and writes file. DOCX deferred to Sprint 3. | Markdown working; DOCX stub |
+| `src/output_renderer.py` | `render_markdown(ctx)` — prepends YAML front-matter + appends footer. `render_docx(ctx)` — generates formatted Word document. `write_output(ctx, output_dir, output_format)` — dispatches to md/docx renderer and writes file(s). | Markdown & DOCX working |
 | `api/` | FastAPI app. `GET /api/health`, `POST /api/briefings` (blocking, thread-pool), **`POST /api/briefings/stream`** (true SSE streaming via `asyncio.Queue`), `GET /api/briefings`, `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay), `GET /api/briefings/{id}/download`, `GET /api/vendors`. In-memory store. | Working |
 | `frontend/` | **[Phase 5–6 — Complete]** Next.js web app. App shell, briefings history, briefing detail with SSE replay + tab dashboards (Scorecard, PO Risk, OOS, Promo). `BriefingCreateForm` wired to `POST /api/briefings/stream` with live token preview, blinking cursor, auto-scroll, and three-phase status labels. | Working |
 
@@ -157,7 +157,7 @@ Production prompts currently inject pre-computed structured data and request sec
 | **MVP** | Thin vertical slice | 1 vendor, 5 metrics, 5 sections, markdown output |
 | **Sprint 1** | Full scorecard + benchmarking | 3 vendors, 14 metrics, BIC with $ impact, dual persona |
 | **Sprint 2** | Cross-domain synthesis | PO×Promo linkage, OOS attribution, promo readiness |
-| **Sprint 3** | Polished output + pipeline | DOCX output, LLM orchestration, error handling |
+| **Sprint 3** | Polished output + pipeline | DOCX output ✅, LLM orchestration, error handling |
 | **Sprint 4** | Calendar integration + demo | Auto-trigger, leadership demo, pilot plan |
 | **Phase 5** | Web Frontend | Next.js UI, FastAPI, SSE replay, engine dashboards (Scorecard, PO Risk, OOS, Promo), download, history |
 | **Phase 6** | True LLM Streaming ✅ | `generate_text_stream()`, streaming orchestrator, `POST /api/briefings/stream`, live token preview in `BriefingCreateForm` |
@@ -187,10 +187,11 @@ Current test coverage:
 - Phase 4 E2E: 2 integration tests with mocked LLM call verifying `status=complete`, `briefing_text` populated, and `write_output` called correctly (`tests/test_p1_foundation.py`)
 
 - Streaming (Phase 6): 8 backend tests (`tests/test_streaming.py`) — Anthropic text-delta yielding, empty-chunk skipping, param pass-through, non-Anthropic fallback, orchestrator `engines`/`token`/`done` events, error event, SSE endpoint e2e, error forwarding.
+- DOCX Output Renderer: 5 backend tests (`tests/test_output_renderer.py`) — generation, missing text exceptions, and formatting validation.
 - Frontend `createBriefingStreaming`: 4 tests in `frontend/lib/api.test.ts` — callback dispatch, error events, chunked SSE boundary handling, HTTP error rejection.
 - Frontend `BriefingCreateForm`: 10 tests in `frontend/components/BriefingCreateForm.test.tsx` — payload shape, phase labels, live preview tokens, `onDone` navigation, `onError`, network retry, generic exception.
 
-Full backend suite: run `pytest tests/ -q` (**215 tests**). Frontend: `cd frontend && npm test` (**47 tests**). **Total: 262 tests, 0 failures.**
+Full backend suite: run `pytest tests/ -q` (**220 tests**). Frontend: `cd frontend && npm test` (**47 tests**). **Total: 267 tests, 0 failures.**
 
 ---
 
