@@ -195,6 +195,9 @@ def _stage_validate_datasets(ctx: BriefingContext) -> BriefingContext:
                 warnings=[],
             )
 
+    # Prune failed optional datasets from the manifest so downstream stages
+    # (load_vendor_data etc.) don't attempt to load them.  ctx.manifest reflects
+    # the effective set of usable files for this pipeline run, not the on-disk state.
     for dataset_name in optional_datasets_to_skip:
         ctx.manifest.get("files", {}).pop(dataset_name, None)
         ctx.add_note(

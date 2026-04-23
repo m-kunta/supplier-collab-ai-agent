@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -105,7 +106,6 @@ def render_docx(ctx: BriefingContext, output_path: Path) -> Path:  # type: ignor
     if not ctx.briefing_text:
         raise ValueError("render_docx() called but ctx.briefing_text is empty.")
 
-    import re
     from docx import Document
     from docx.shared import RGBColor
 
@@ -129,7 +129,9 @@ def render_docx(ctx: BriefingContext, output_path: Path) -> Path:  # type: ignor
             
             bg_color = None
             if i > 0: # Not header row
-                # Risk tier coloring
+                # Heuristic: colour rows based on risk-tier keywords present in cell text.
+                # Works correctly for current briefing output shapes (OTIF, PO risk, OOS tables).
+                # TODO: pass explicit tier metadata alongside text for a robust solution.
                 if 'red' in row_text_lower and 'yellow' not in row_text_lower and 'green' not in row_text_lower:
                     bg_color = RGBColor(255, 230, 230)
                 elif 'yellow' in row_text_lower and 'green' not in row_text_lower:

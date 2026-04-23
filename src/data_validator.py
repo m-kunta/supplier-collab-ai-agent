@@ -218,6 +218,9 @@ def _validate_rows_with_pydantic(
     present_columns: list[str],
     df: pd.DataFrame,
 ) -> list[str]:
+    # Row-by-row Pydantic validation via iterrows() — suitable for CSV ingestion
+    # volumes (hundreds to low-thousands of rows).  Revisit for high-throughput
+    # batch use cases where vectorised validation would be more appropriate.
     errors: list[str] = []
     for row_idx, (_, row) in enumerate(df[present_columns].iterrows()):
         payload = {
