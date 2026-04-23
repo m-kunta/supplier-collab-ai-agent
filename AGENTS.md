@@ -47,11 +47,13 @@ make dev
 
 ## Project Status
 
-**Current phase:** Phase 6 — **True LLM Streaming — Complete.** All phases 1–6 are done.
+**Current phase:** Phase 7 — **Data Contracts + Production Landing Zone — In Progress.** Phases 1–6 are complete.
 
 **Phase 6 (complete):** `generate_text_stream()` in `src/llm_providers.py` (Anthropic `messages.stream()`, single-chunk fallback for others). `summarize_request_stream()` in `src/agent.py` — compute engines → `engines` event → LLM token stream → persist → `done` event. `POST /api/briefings/stream` FastAPI SSE endpoint (async `asyncio.Queue` bridge). `createBriefingStreaming()` frontend client (`fetch()` + `ReadableStream`). `BriefingCreateForm` wired with live token preview pane, blinking cursor, auto-scroll, three-phase status labels.
 
-**Next work (Phase 7 / Sprint 3):** Pydantic data contract validation, production data landing zone support.
+**Phase 7 (in progress):** Pydantic-backed dataset schema validation in `src/data_validator.py` (schema model validation, row-model validation, numeric/date/nullability/enum checks, dataset-specific cross-field rules). Dataset validation gate in `src/agent.py` for both sync and streaming flows with required-vs-optional handling. Structured `validation_report` included in pipeline summaries and API responses. Persisted validation report artifact via `validation_report_path` in `output_files`. Production landing-zone scaffold now lives in `data/inbound/prod/` with a loadable manifest and header-only required CSV templates.
+
+**Next work (remaining Phase 7 / Sprint 3):** Surface validation reporting in the frontend/history UI, continue error-handling hardening, and deepen production landing-zone support beyond the current scaffold/template.
 
 **Reference:** `docs/implementation_plan.md`, `docs/supplier-collab-ai-scope-v1.0.md` section 13.
 
@@ -94,7 +96,7 @@ data_validator  benchmark_engine       ↓
 | `src/agent.py` | Full pipeline including LLM and markdown write; `summarize_request()` returns JSON for CLI and API. | Working |
 | `src/config.py` | Loads `config/agent_config.yaml` with YAML parsing and validates that the top-level document is a mapping. Returns dict. | Working |
 | `src/data_loader.py` | `resolve_data_dir()` and `load_manifest()` — reads `manifest.yaml` from the data landing zone with strict YAML mapping validation. | Working |
-| `src/data_validator.py` | `validate_manifest_shape()` — checks required top-level manifest keys. Will expand to full schema validation. | Minimal stub |
+| `src/data_validator.py` | Manifest validation plus Pydantic-backed dataset contract validation: schema loading, row-model validation, type/nullability/enum/constraint checks, and dataset-specific rules. | Working |
 | `src/scorecard_engine.py` | Scorecard metric computation: current value, 4w/13w trends, trend classification. | Working |
 | `src/benchmark_engine.py` | Peer avg, BIC, gap-to-BIC, dollar-impact translation. | Working |
 | `src/po_risk_engine.py` | PO risk tiering (red/yellow/green) based on days late vs. requested delivery date. Open/shipped assessed against the meeting date (`--date`); received POs assessed against actual receipt date when present. | Working |
@@ -122,9 +124,11 @@ Each landing zone contains:
 - `manifest.yaml` — declares available files, freshness, row counts, environment
 - CSV files per the 10-file schema inventory (3 required, 7 optional)
 
-**Schemas:** `data/schemas/*.schema.yaml` — YAML schema definitions with `primary_key`, `required_columns`, and `column_types`.
+**Schemas:** `data/schemas/*.schema.yaml` — YAML schema definitions with `primary_key`, `required_columns`, `column_types`, nullability, enums, and constraints. Loaded and validated through Pydantic-backed schema models.
 
 **Mock data:** Generated via `scripts/generate_mock_csvs.py` for 1 vendor (Northstar Foods Co) and 5 tables (13-week performance history, POs, OOS, Promo) seated in `data/inbound/mock/` to emulate pipeline injection.
+
+**Production landing zone:** `data/inbound/prod/` is now a committed scaffold with `manifest.yaml` plus header-only required CSV templates (`vendor_master.csv`, `purchase_orders.csv`, `vendor_performance.csv`) so the app can target a production-formatted landing zone without storing real production data in git.
 
 ### Prompt versions
 
@@ -169,6 +173,7 @@ Production prompts currently inject pre-computed structured data and request sec
 | **Sprint 4** | Calendar integration + demo | Auto-trigger, leadership demo, pilot plan |
 | **Phase 5** | Web Frontend ✅ | Next.js UI, FastAPI, SSE replay, engine dashboards, download, history |
 | **Phase 6** | True LLM Streaming ✅ | `generate_text_stream()`, streaming orchestrator, `POST /api/briefings/stream`, live token preview |
+| **Phase 7** | Data Contracts + Prod Landing Zone 🚧 | Pydantic validation, structured validation reports, persisted validation artifacts, prod landing-zone scaffold |
 
 ---
 
@@ -188,14 +193,14 @@ Current test coverage:
 - PO risk engine: 19 tests covering red/yellow/green tiering boundaries, received-PO lateness via actual_receipt_date, threshold configuration, mixed tiers, and graceful handling of missing columns/dates (`tests/test_po_risk_engine.py`)
 - OOS attribution engine: 35 tests covering primary classification by root_cause_code, PO cancellation cross-reference fallback, bucket counts, vendor_controllable_pct, total_units_lost, recurring SKU detection, top SKU ranking, and edge cases (`tests/test_oos_attribution.py`)
 - Promo readiness engine: 10 tests covering coverage tiers, cancelled/late PO handling, multi-SKU and multi-event weighting (`tests/test_promo_readiness.py`)
-- Pipeline integration: `summarize_request` against mock landing zone with mocked LLM (`tests/test_p1_foundation.py`)
-- FastAPI (`tests/test_api.py`): 13 tests — health, POST/GET briefings, list + limit pagination, 404s, SSE stream (content-type + sentinel), download 410 on missing file, `GET /api/vendors`, `llm_provider` override reflected in response.
-- Streaming (Phase 6) — `tests/test_streaming.py`: 8 tests — Anthropic text-delta yielding, empty-chunk skipping, param pass-through, non-Anthropic fallback, orchestrator `engines`/`token`/`done` events, error event, SSE endpoint e2e, error forwarding.
-- DOCX Output Renderer — `tests/test_output_renderer.py`: 5 tests — markdown front-matter, docx table generation and color mapping, `write_output` dispatcher logic.
+- Pipeline integration: `summarize_request` against mock landing zone with mocked LLM, plus dataset validation/reporting scenarios (`tests/test_p1_foundation.py`)
+- FastAPI (`tests/test_api.py`): 13 tests — health, POST/GET briefings, list + limit pagination, 404s, SSE stream (content-type + sentinel), download 410 on missing file, `GET /api/vendors`, `llm_provider` override reflected in response, validation report presence.
+- Streaming (Phase 6/7) — `tests/test_streaming.py`: 9 tests — Anthropic text-delta yielding, empty-chunk skipping, param pass-through, non-Anthropic fallback, orchestrator `engines`/`token`/`done` events, error event, pre-engine dataset-validation failure, SSE endpoint e2e, error forwarding.
+- Output Renderer — `tests/test_output_renderer.py`: 5 tests — markdown front-matter, docx table generation and color mapping, `write_output` dispatcher logic, persisted validation report artifact.
 - Frontend `createBriefingStreaming` — `frontend/lib/api.test.ts`: 4 tests — callback dispatch, error events, chunked SSE boundary handling, HTTP error rejection.
 - Frontend `BriefingCreateForm` — `frontend/components/BriefingCreateForm.test.tsx`: 10 tests — payload shape, phase labels, live preview tokens, `onDone` navigation, `onError`, network retry.
 
-Full backend suite: `pytest tests/ -q` (**220 tests**). Frontend: `cd frontend && npm test` (**47 tests**). **Total: 267 tests, 0 failures.**
+Full backend suite: `.venv/bin/pytest tests/ -q` (**238 tests**). Frontend: `cd frontend && npm test` (**47 tests**). **Total: 285 tests, 0 failures.**
 
 ---
 

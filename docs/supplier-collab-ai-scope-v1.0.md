@@ -880,7 +880,7 @@ For environments with data warehouse access, SQL queries run directly against th
 - [x] Orchestrator: vendor ID → data load → validate → compute engines (LLM prompt → render still open)
 - [x] CLI: `python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir /data/inbound/mock/`
 - [x] Config file (agent_config.yaml) for thresholds and defaults
-- [ ] Full validation report generation
+- [x] Full validation report generation
 - [x] Graceful degradation for missing optional files
 - [ ] Error handling: missing data, API failures, token budget management
 

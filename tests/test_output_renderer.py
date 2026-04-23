@@ -1,4 +1,5 @@
 import os
+import json
 from pathlib import Path
 from unittest.mock import MagicMock
 import pytest
@@ -17,6 +18,13 @@ class MockContext:
         self.persona_emphasis = "both"
         self.provider = MockProvider()
         self.pipeline_notes = []
+        self.validation_report = {
+            "overall_status": "passed",
+            "error_count": 0,
+            "warning_count": 0,
+            "manifest": {"status": "passed", "errors": [], "warnings": []},
+            "datasets": {"vendor_master": {"status": "passed", "errors": [], "warnings": []}},
+        }
         self.config = {"output": {"footer_text": "Mock Footer"}}
         self.briefing_text = """
 # Heading 1
@@ -71,15 +79,22 @@ def test_render_docx_success(mock_ctx, tmp_path):
 def test_write_output_md(mock_ctx, tmp_path):
     result = write_output(mock_ctx, tmp_path, "md")
     assert "md_path" in result
+    assert "validation_report_path" in result
     assert "docx_path" not in result
     assert result["md_path"].exists()
+    assert result["validation_report_path"].exists()
+
+    report = json.loads(result["validation_report_path"].read_text(encoding="utf-8"))
+    assert report["overall_status"] == "passed"
 
 def test_write_output_both(mock_ctx, tmp_path):
     result = write_output(mock_ctx, tmp_path, "both")
     assert "md_path" in result
     assert "docx_path" in result
+    assert "validation_report_path" in result
     assert result["md_path"].exists()
     assert result["docx_path"].exists()
+    assert result["validation_report_path"].exists()
 
 def test_render_docx_empty_text_raises():
     ctx = MockContext()

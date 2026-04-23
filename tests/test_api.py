@@ -76,6 +76,8 @@ class ApiBriefingsTests(unittest.TestCase):
         self.assertEqual(payload["status"], "complete")
         self.assertEqual(payload["vendor_id"], "V1001")
         self.assertEqual(payload["briefing_text"], self._STUB_BRIEFING)
+        self.assertIn("validation_report", payload)
+        self.assertEqual(payload["validation_report"]["overall_status"], "passed")
         self.assertIsNotNone(payload.get("scorecard"))
         md_path = payload.get("output_files", {}).get("md_path", "")
         self.assertTrue(md_path.endswith("V1001_2026-04-03.md"))

@@ -8,12 +8,12 @@ required_columns:
   - vendor_id
   - sku
   - oos_start_date
+  - root_cause_code
 
 optional_columns:
   - oos_end_date
   - oos_units_lost
   - dc_location
-  - root_cause_code
 
 column_types:
   vendor_id: string

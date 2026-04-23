@@ -12,7 +12,12 @@ import pandas as pd
 from src.benchmark_engine import compute_benchmarks
 from src.config import load_config
 from src.data_loader import load_dataset, load_manifest, load_vendor_data, resolve_vendor_id
-from src.data_validator import ValidationResult, validate_manifest_shape
+from src.data_validator import (
+    REQUIRED_FILES,
+    ValidationResult,
+    validate_dataset_frame,
+    validate_manifest_shape,
+)
 from src.llm_providers import ProviderSelection, generate_text, generate_text_stream, resolve_provider
 from src.oos_attribution import compute_oos_attribution
 from src.output_renderer import write_output
@@ -56,6 +61,7 @@ class BriefingContext:
     manifest: dict[str, Any] = field(default_factory=dict)
     vendor_id: str = ""
     validation_result: ValidationResult | None = None
+    validation_report: dict[str, Any] = field(default_factory=dict)
     provider_override: str | None = None
     model_override: str | None = None
     provider: ProviderSelection | None = None
@@ -99,8 +105,15 @@ def _stage_load_manifest(ctx: BriefingContext) -> BriefingContext:
 
 
 def _stage_validate_manifest(ctx: BriefingContext) -> BriefingContext:
+    _ensure_validation_report(ctx)
     ctx.validation_result = validate_manifest_shape(ctx.manifest)
+    ctx.validation_report["manifest"] = {
+        "status": "failed" if ctx.validation_result.has_errors else "passed",
+        "errors": list(ctx.validation_result.errors),
+        "warnings": list(ctx.validation_result.warnings),
+    }
     if ctx.validation_result.has_errors:
+        _finalize_validation_report(ctx)
         raise ValueError(
             "Manifest validation failed — cannot proceed:\n"
             + "\n".join(f"  - {e}" for e in ctx.validation_result.errors)
@@ -108,7 +121,151 @@ def _stage_validate_manifest(ctx: BriefingContext) -> BriefingContext:
     for w in ctx.validation_result.warnings:
         logger.warning("Manifest validation warning: %s", w)
         ctx.add_note(f"Manifest warning: {w}")
+    _finalize_validation_report(ctx)
     return ctx
+
+
+def _stage_validate_datasets(ctx: BriefingContext) -> BriefingContext:
+    _ensure_validation_report(ctx)
+    if ctx.validation_result is None:
+        ctx.validation_result = ValidationResult()
+
+    fatal_errors: list[str] = []
+    optional_datasets_to_skip: list[str] = []
+
+    for dataset_name, metadata in list(ctx.manifest.get("files", {}).items()):
+        is_required = dataset_name in REQUIRED_FILES or metadata.get("required", False)
+
+        try:
+            df = load_dataset(ctx.manifest, dataset_name)
+        except FileNotFoundError as exc:
+            message = f"{dataset_name}: {exc}"
+            _record_dataset_validation(
+                ctx,
+                dataset_name,
+                status="failed" if is_required else "warning",
+                errors=[message] if is_required else [],
+                warnings=[] if is_required else [message],
+            )
+            if is_required:
+                fatal_errors.append(message)
+            else:
+                ctx.validation_result.warnings.append(message)
+                optional_datasets_to_skip.append(dataset_name)
+            continue
+
+        try:
+            dataset_result = validate_dataset_frame(dataset_name, df)
+        except (FileNotFoundError, ValueError) as exc:
+            message = f"{dataset_name}: {exc}"
+            _record_dataset_validation(
+                ctx,
+                dataset_name,
+                status="failed" if is_required else "warning",
+                errors=[message] if is_required else [],
+                warnings=[] if is_required else [message],
+            )
+            if is_required:
+                fatal_errors.append(message)
+            else:
+                ctx.validation_result.warnings.append(message)
+                optional_datasets_to_skip.append(dataset_name)
+            continue
+
+        if dataset_result.has_errors:
+            prefixed = [f"{dataset_name}: {error}" for error in dataset_result.errors]
+            _record_dataset_validation(
+                ctx,
+                dataset_name,
+                status="failed" if is_required else "warning",
+                errors=prefixed if is_required else [],
+                warnings=[] if is_required else prefixed,
+            )
+            if is_required:
+                fatal_errors.extend(prefixed)
+            else:
+                ctx.validation_result.warnings.extend(prefixed)
+                optional_datasets_to_skip.append(dataset_name)
+        else:
+            _record_dataset_validation(
+                ctx,
+                dataset_name,
+                status="passed",
+                errors=[],
+                warnings=[],
+            )
+
+    for dataset_name in optional_datasets_to_skip:
+        ctx.manifest.get("files", {}).pop(dataset_name, None)
+        ctx.add_note(
+            f"Optional dataset '{dataset_name}' failed validation and will be skipped."
+        )
+
+    if fatal_errors:
+        ctx.validation_result.errors.extend(fatal_errors)
+        _finalize_validation_report(ctx)
+        raise ValueError(
+            "Dataset validation failed — cannot proceed:\n"
+            + "\n".join(f"  - {error}" for error in fatal_errors)
+        )
+
+    for warning in ctx.validation_result.warnings:
+        logger.warning("Dataset validation warning: %s", warning)
+
+    _finalize_validation_report(ctx)
+    return ctx
+
+
+def _ensure_validation_report(ctx: BriefingContext) -> None:
+    if ctx.validation_report:
+        return
+    ctx.validation_report = {
+        "overall_status": "passed",
+        "error_count": 0,
+        "warning_count": 0,
+        "manifest": {"status": "pending", "errors": [], "warnings": []},
+        "datasets": {},
+    }
+
+
+def _record_dataset_validation(
+    ctx: BriefingContext,
+    dataset_name: str,
+    *,
+    status: str,
+    errors: list[str],
+    warnings: list[str],
+) -> None:
+    _ensure_validation_report(ctx)
+    ctx.validation_report.setdefault("datasets", {})[dataset_name] = {
+        "status": status,
+        "errors": list(errors),
+        "warnings": list(warnings),
+    }
+
+
+def _finalize_validation_report(ctx: BriefingContext) -> None:
+    _ensure_validation_report(ctx)
+    manifest = ctx.validation_report.get("manifest", {})
+    datasets = ctx.validation_report.get("datasets", {})
+
+    error_count = len(manifest.get("errors", []))
+    warning_count = len(manifest.get("warnings", []))
+
+    for details in datasets.values():
+        error_count += len(details.get("errors", []))
+        warning_count += len(details.get("warnings", []))
+
+    if error_count:
+        overall_status = "failed"
+    elif warning_count:
+        overall_status = "warning"
+    else:
+        overall_status = "passed"
+
+    ctx.validation_report["error_count"] = error_count
+    ctx.validation_report["warning_count"] = warning_count
+    ctx.validation_report["overall_status"] = overall_status
 
 
 def _stage_resolve_provider(ctx: BriefingContext) -> BriefingContext:
@@ -299,6 +456,7 @@ def run_pipeline(ctx: BriefingContext) -> BriefingContext:
     ctx = _stage_load_config(ctx)
     ctx = _stage_load_manifest(ctx)
     ctx = _stage_validate_manifest(ctx)
+    ctx = _stage_validate_datasets(ctx)
     ctx = _stage_resolve_provider(ctx)
     ctx = _stage_resolve_vendor_id(ctx)
     ctx = _stage_load_vendor_data(ctx)
@@ -384,6 +542,7 @@ def summarize_request(
         "available_file_keys": sorted(ctx.manifest.get("files", {}).keys()),
         "loaded_datasets": sorted(ctx.vendor_data.keys()),
         "validation_warnings": ctx.validation_result.warnings if ctx.validation_result else [],
+        "validation_report": ctx.validation_report,
         "pipeline_notes": ctx.pipeline_notes,
         "scorecard": ctx.scorecard,
         "benchmarks": ctx.benchmarks,
@@ -430,6 +589,7 @@ def _serialize_ctx_summary(ctx: BriefingContext) -> dict[str, Any]:
         "available_file_keys": sorted(ctx.manifest.get("files", {}).keys()),
         "loaded_datasets": sorted(ctx.vendor_data.keys()),
         "validation_warnings": ctx.validation_result.warnings if ctx.validation_result else [],
+        "validation_report": ctx.validation_report,
         "pipeline_notes": ctx.pipeline_notes,
         "scorecard": ctx.scorecard,
         "benchmarks": ctx.benchmarks,
@@ -490,6 +650,7 @@ def summarize_request_stream(
         ctx = _stage_load_config(ctx)
         ctx = _stage_load_manifest(ctx)
         ctx = _stage_validate_manifest(ctx)
+        ctx = _stage_validate_datasets(ctx)
         ctx = _stage_resolve_provider(ctx)
         ctx = _stage_resolve_vendor_id(ctx)
         ctx = _stage_load_vendor_data(ctx)

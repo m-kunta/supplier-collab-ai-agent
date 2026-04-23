@@ -9,6 +9,7 @@ DOCX rendering is deferred to Sprint 3 and raises :exc:`NotImplementedError`.
 """
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
@@ -229,7 +230,8 @@ def write_output(
         output_format: One of ``'md'``, ``'docx'``, or ``'both'``.
 
     Returns:
-        Dict with ``'md_path'`` and/or ``'docx_path'`` keys for each written file.
+        Dict with any written artifact paths such as ``'md_path'``,
+        ``'docx_path'``, and ``'validation_report_path'``.
 
     Raises:
         ValueError: If ``output_format`` is not a recognised value.
@@ -249,6 +251,14 @@ def write_output(
     stem = f"{safe_vendor}_{safe_date}"
 
     result: dict[str, Any] = {}
+
+    validation_report_path = output_dir / f"{stem}.validation_report.json"
+    validation_report_path.write_text(
+        json.dumps(ctx.validation_report or {}, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    result["validation_report_path"] = validation_report_path
+    logger.info("Validation report written to: %s", validation_report_path)
 
     if output_format in {"md", "both"}:
         md_path = output_dir / f"{stem}.md"
