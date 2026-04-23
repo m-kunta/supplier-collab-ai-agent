@@ -304,6 +304,9 @@ class DatasetSchemaValidationTests(unittest.TestCase):
     def test_validate_dataset_frame_reports_non_integer_value(self):
         manifest = load_manifest(MOCK_DATA_DIR)
         purchase_orders_df = load_dataset(manifest, "purchase_orders").copy()
+        # Cast to object dtype before injecting a float so pandas doesn't warn
+        # about incompatible dtype assignment (FutureWarning → error in pandas 3).
+        purchase_orders_df["po_line"] = purchase_orders_df["po_line"].astype(object)
         purchase_orders_df.loc[0, "po_line"] = 1.5
 
         result = validate_dataset_frame("purchase_orders", purchase_orders_df)
