@@ -28,6 +28,12 @@ from src.scorecard_engine import compute_scorecard
 
 logger = logging.getLogger(__name__)
 
+class AgentPipelineError(Exception):
+    """Exception raised when the pipeline fails, carrying context state."""
+    def __init__(self, message: str, validation_report: dict[str, Any] | None = None):
+        super().__init__(message)
+        self.validation_report = validation_report
+
 
 @dataclass
 class BriefingContext:
@@ -515,7 +521,10 @@ def summarize_request(
         provider_override=llm_provider,
         model_override=llm_model,
     )
-    ctx = run_pipeline(ctx)
+    try:
+        ctx = run_pipeline(ctx)
+    except Exception as exc:
+        raise AgentPipelineError(str(exc), getattr(ctx, "validation_report", None)) from exc
 
     status = "complete" if ctx.briefing_text else "partial"
     return {
@@ -667,7 +676,11 @@ def summarize_request_stream(
         ctx = _stage_assemble_prompt(ctx)
     except Exception as exc:  # noqa: BLE001
         logger.exception("Stream pipeline failed before LLM call.")
-        yield {"type": "error", "message": str(exc)}
+        yield {
+            "type": "error",
+            "message": str(exc),
+            "validation_report": getattr(ctx, "validation_report", None)
+        }
         return
 
     # Emit engine payload up-front so the UI can render dashboards immediately.

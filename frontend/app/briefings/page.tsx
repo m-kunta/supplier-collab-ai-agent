@@ -58,7 +58,18 @@ export default function BriefingsPage() {
                 <Link key={row.id} className={styles.card} href={`/briefings/${row.id}`}>
                   <div className={styles.row}>
                     <p className={styles.id}>{row.vendor ?? row.vendor_id ?? "Unknown vendor"}</p>
-                    <span className={styles.badge}>{row.status ?? "unknown"}</span>
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      {row.validation_report && (
+                        <span className={styles.badge} style={{ 
+                          backgroundColor: row.validation_report.errors?.length > 0 ? "#fee2e2" : (row.validation_report.warnings?.length > 0 ? "#fef3c7" : "#dcfce7"),
+                          color: row.validation_report.errors?.length > 0 ? "#991b1b" : (row.validation_report.warnings?.length > 0 ? "#92400e" : "#166534"),
+                          borderColor: row.validation_report.errors?.length > 0 ? "#fca5a5" : (row.validation_report.warnings?.length > 0 ? "#fde68a" : "#bbf7d0")
+                        }}>
+                          {row.validation_report.errors?.length > 0 ? "⚠️ Invalid Data" : (row.validation_report.warnings?.length > 0 ? "⚠️ Data Warnings" : "✅ Valid Data")}
+                        </span>
+                      )}
+                      <span className={styles.badge}>{row.status ?? "unknown"}</span>
+                    </div>
                   </div>
                   <p className={styles.meta}>
                     Meeting: {row.meeting_date ?? "-"} | Created: {formatDate(row.created_at)}

@@ -16,6 +16,7 @@ import { ScorecardPanel } from "./ScorecardPanel";
 import { PoRiskPanel } from "./PoRiskPanel";
 import { OosPanel } from "./OosPanel";
 import { PromoPanel } from "./PromoPanel";
+import { ValidationBanner } from "../../../components/ValidationBanner";
 import styles from "./detail.module.css";
 
 type Tab = "narrative" | "scorecard" | "po_risk" | "oos" | "promo";
@@ -126,6 +127,8 @@ export default function BriefingDetailPage() {
           </aside>
 
           <article className={styles.panel}>
+            <ValidationBanner report={briefing?.validation_report} />
+
             <nav className={styles.tabs} aria-label="Briefing sections">
               {TABS.map((t) => (
                 <button

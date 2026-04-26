@@ -108,15 +108,18 @@ Completed after scaffold. Implemented two compute engines with TDD.
 - `POST /api/briefings/stream` SSE endpoint in `api/main.py`.
 - Frontend live-preview streaming flow via `createBriefingStreaming()` and `BriefingCreateForm`.
 
-### Phase 7 (in progress)
+### Phase 7 (complete)
 
 - Pydantic-backed schema contract validation in `src/data_validator.py`.
 - Dataset validation stage in `src/agent.py` for sync and streaming paths with required-file failure and optional-file degradation.
 - Structured `validation_report` added to briefing summaries and API responses.
 - Validation report persisted as `validation_report_path` alongside rendered output artifacts.
-- Production landing-zone scaffold added under `data/inbound/prod/` with a loadable manifest and header-only required CSV templates.
+- Frontend error hardening with `ValidationBanner` to display pipeline failure reports.
+- Production data loader hardened against `EmptyDataError`, mixed types (via `low_memory=False`), and `utf-8-sig` encodings.
+- Manifest `row_count` mismatch checking implemented.
+- Production landing-zone scaffold at `data/inbound/prod/` fully operational.
 
 ### Verification Snapshot
 
-- Backend: `.venv/bin/pytest tests/ -q` → `238 passed`
+- Backend: `.venv/bin/pytest tests/ -q` → `241 passed`
 - Frontend: `cd frontend && npm test` → `47 passed`

@@ -19,7 +19,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from api.deps import resolve_data_dir
 from api.schemas import BriefingCreate
 from api.store import BriefingStore
-from src.agent import summarize_request, summarize_request_stream
+from src.agent import AgentPipelineError, summarize_request, summarize_request_stream
 from src.data_loader import load_manifest
 
 app = FastAPI(
@@ -108,8 +108,18 @@ async def create_briefing(body: BriefingCreate) -> dict[str, Any]:
                 llm_model=body.llm_model,
             ),
         )
+    except AgentPipelineError as exc:
+        raise HTTPException(
+            status_code=400, 
+            detail={
+                "message": str(exc), 
+                "validation_report": exc.validation_report
+            }
+        ) from exc
     except (ValueError, FileNotFoundError, KeyError) as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(status_code=400, detail={"message": str(exc)}) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail={"message": f"Internal Error: {str(exc)}"}) from exc
 
     briefing_id, created_at = briefing_store.save(summary)
     return _merge_briefing_response(briefing_id, created_at, summary)

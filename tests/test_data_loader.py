@@ -78,5 +78,60 @@ class DataLoaderTests(unittest.TestCase):
         with self.assertRaises(yaml.YAMLError):
             load_manifest(self.data_dir)
 
+    def test_load_dataset_parquet(self):
+        from src.data_loader import load_dataset
+        import pandas as pd
+        from unittest.mock import patch
+        
+        self._write_manifest(
+            "version: '1.0'\n"
+            "files:\n"
+            "  vendor_master:\n"
+            "    filename: vendor_master.parquet\n"
+        )
+        manifest = load_manifest(self.data_dir)
+        
+        with patch("pandas.read_parquet", return_value=pd.DataFrame({"col": [1, 2, 3]})):
+            loaded = load_dataset(manifest, "vendor_master")
+            
+        self.assertEqual(len(loaded), 3)
+
+    def test_load_dataset_empty_csv(self):
+        from src.data_loader import load_dataset
+        
+        self._write_manifest(
+            "version: '1.0'\n"
+            "files:\n"
+            "  vendor_master:\n"
+            "    filename: vendor_master.csv\n"
+        )
+        manifest = load_manifest(self.data_dir)
+        (self.data_dir / "vendor_master.csv").write_text("", encoding="utf-8")
+        
+        loaded = load_dataset(manifest, "vendor_master")
+        self.assertTrue(loaded.empty)
+
+    def test_load_dataset_row_count_warning(self):
+        from src.data_loader import load_dataset
+        import pandas as pd
+        import logging
+        
+        self._write_manifest(
+            "version: '1.0'\n"
+            "files:\n"
+            "  vendor_master:\n"
+            "    filename: vendor_master.csv\n"
+            "    row_count: 5\n"
+        )
+        manifest = load_manifest(self.data_dir)
+        df = pd.DataFrame({"col": [1, 2, 3]})
+        df.to_csv(self.data_dir / "vendor_master.csv", index=False)
+        
+        with self.assertLogs("src.data_loader", level=logging.WARNING) as log:
+            loaded = load_dataset(manifest, "vendor_master")
+            
+        self.assertEqual(len(loaded), 3)
+        self.assertTrue(any("row count mismatch" in record.getMessage() for record in log.records))
+
 if __name__ == "__main__":
     unittest.main()

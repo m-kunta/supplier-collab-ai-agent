@@ -1,0 +1,39 @@
+.banner {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.error {
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+}
+
+.warning {
+  background-color: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.title {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.section {
+  margin-top: 0.5rem;
+}
+
+.section ul {
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+  padding-left: 1.5rem;
+}
+
+.section li {
+  margin-bottom: 0.25rem;
+}

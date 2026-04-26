@@ -1,0 +1,26 @@
+version: '1.0'
+generated_at: '2026-04-03T08:00:00'
+source_system: Mock Generator
+environment: mock
+data_directory: ./
+files:
+  vendor_master:
+    filename: vendor_master.csv
+    row_count: 10
+    required: true
+  purchase_orders:
+    filename: purchase_orders.csv
+    row_count: 30
+    required: true
+  vendor_performance:
+    filename: vendor_performance.csv
+    row_count: 650
+    required: true
+  oos_events:
+    filename: oos_events.csv
+    row_count: 20
+    required: false
+  promo_calendar:
+    filename: promo_calendar.csv
+    row_count: 10
+    required: false

@@ -148,9 +148,9 @@ describe("frontend api client", () => {
         persona_emphasis: "both",
         include_benchmarks: true,
         output_format: "md",
-        category_filter: null
+        category_filter: null,
       })
-    ).rejects.toThrow("Failed to create briefing: 400 Bad Request");
+    ).rejects.toThrowError("Failed to create briefing: bad request");
   });
 
   it("throws helpful error when listBriefings returns non-2xx", async () => {
@@ -244,7 +244,7 @@ describe("frontend api client", () => {
       },
       { onError }
     );
-    expect(onError).toHaveBeenCalledWith("boom");
+    expect(onError).toHaveBeenCalledWith("boom", undefined);
   });
 
   it("createBriefingStreaming handles chunked SSE with split event boundaries", async () => {

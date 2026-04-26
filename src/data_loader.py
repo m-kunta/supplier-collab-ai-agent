@@ -78,7 +78,28 @@ def load_dataset(manifest: dict[str, Any], dataset_name: str) -> pd.DataFrame:
     csv_path = data_dir / filename
 
     logger.debug("Loading dataset '%s' from %s", dataset_name, csv_path)
-    df = pd.read_csv(csv_path)
+    
+    if csv_path.suffix.lower() == ".parquet":
+        df = pd.read_parquet(csv_path)
+    else:
+        try:
+            df = pd.read_csv(
+                csv_path,
+                low_memory=False,
+                encoding="utf-8-sig",
+            )
+        except pd.errors.EmptyDataError:
+            df = pd.DataFrame()
+
+    expected_rows = files[dataset_name].get("row_count")
+    if expected_rows is not None and len(df) != expected_rows:
+        logger.warning(
+            "Manifest row count mismatch for '%s': expected %d, got %d",
+            dataset_name,
+            expected_rows,
+            len(df),
+        )
+
     logger.debug("Dataset '%s' loaded: %d rows, %d columns", dataset_name, len(df), len(df.columns))
     return df
 

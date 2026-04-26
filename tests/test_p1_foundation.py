@@ -16,7 +16,7 @@ from unittest.mock import patch
 import pandas as pd
 import yaml
 
-from src.agent import summarize_request
+from src.agent import AgentPipelineError, summarize_request
 from src.config import load_config
 from src.data_loader import (
     load_dataset,
@@ -505,7 +505,7 @@ class PipelineIntegrationTests(unittest.TestCase):
         )
 
     def test_summarize_request_rejects_unknown_vendor(self):
-        with self.assertRaisesRegex(ValueError, "Vendor 'UnknownCo' not found"):
+        with self.assertRaisesRegex(AgentPipelineError, "Vendor 'UnknownCo' not found"):
             summarize_request(
                 vendor="UnknownCo",
                 meeting_date="2026-04-03",
@@ -518,21 +518,21 @@ class PipelineIntegrationTests(unittest.TestCase):
             )
 
     def test_summarize_request_fails_when_vendor_master_missing_from_manifest(self):
+        # Create a bad manifest that omits vendor_master completely
+        bad_manifest = {"version": "1.0", "environment": "test", "files": {}}
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
-            (tmp_path / "manifest.yaml").write_text(
-                "version: '1.0'\n"
-                "environment: test\n"
-                "files:\n"
-                "  purchase_orders:\n"
-                "    filename: purchase_orders.csv\n",
-                encoding="utf-8",
-            )
-            with self.assertRaisesRegex(ValueError, "vendor_master"):
+            bad_data_dir = tmp_path / "bad_manifest_dir"
+            bad_data_dir.mkdir()
+            with open(bad_data_dir / "manifest.yaml", "w") as f:
+                yaml.dump(bad_manifest, f)
+
+            # The pipeline should fail entirely before creating any brief
+            with self.assertRaisesRegex(AgentPipelineError, "Manifest validation failed"):
                 summarize_request(
                     vendor="Northstar Foods Co",
                     meeting_date="2026-04-03",
-                    data_dir=tmp_path,
+                    data_dir=bad_data_dir,
                     lookback_weeks=13,
                     persona_emphasis="both",
                     include_benchmarks=True,
@@ -549,7 +549,7 @@ class PipelineIntegrationTests(unittest.TestCase):
             )
             vendor_master_path.write_text(broken_contents, encoding="utf-8")
 
-            with self.assertRaisesRegex(ValueError, "vendor_master"):
+            with self.assertRaisesRegex(AgentPipelineError, "vendor_master"):
                 self._run_pipeline(data_dir=data_dir)
 
     def test_summarize_request_skips_optional_dataset_with_validation_warning(self):
@@ -585,7 +585,7 @@ class PipelineIntegrationTests(unittest.TestCase):
             (schema_dir / "vendor_master.schema.yaml").unlink()
 
             with patch("src.data_validator.SCHEMA_DIR", schema_dir):
-                with self.assertRaisesRegex(ValueError, "vendor_master"):
+                with self.assertRaisesRegex(AgentPipelineError, "vendor_master"):
                     self._run_pipeline(data_dir=data_dir)
 
     def test_summarize_request_skips_optional_dataset_when_schema_is_missing(self):

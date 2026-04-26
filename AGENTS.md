@@ -47,13 +47,13 @@ make dev
 
 ## Project Status
 
-**Current phase:** Phase 7 — **Data Contracts + Production Landing Zone — In Progress.** Phases 1–6 are complete.
+**Current phase:** Phase 7 — **Data Contracts + Production Landing Zone — Complete.** Phases 1–7 are complete.
 
 **Phase 6 (complete):** `generate_text_stream()` in `src/llm_providers.py` (Anthropic `messages.stream()`, single-chunk fallback for others). `summarize_request_stream()` in `src/agent.py` — compute engines → `engines` event → LLM token stream → persist → `done` event. `POST /api/briefings/stream` FastAPI SSE endpoint (async `asyncio.Queue` bridge). `createBriefingStreaming()` frontend client (`fetch()` + `ReadableStream`). `BriefingCreateForm` wired with live token preview pane, blinking cursor, auto-scroll, three-phase status labels.
 
-**Phase 7 (in progress):** Pydantic-backed dataset schema validation in `src/data_validator.py` (schema model validation, row-model validation, numeric/date/nullability/enum checks, dataset-specific cross-field rules). Dataset validation gate in `src/agent.py` for both sync and streaming flows with required-vs-optional handling. Structured `validation_report` included in pipeline summaries and API responses. Persisted validation report artifact via `validation_report_path` in `output_files`. Production landing-zone scaffold now lives in `data/inbound/prod/` with a loadable manifest and header-only required CSV templates.
+**Phase 7 (complete):** Pydantic-backed dataset schema validation in `src/data_validator.py` (schema model validation, row-model validation, numeric/date/nullability/enum checks, dataset-specific cross-field rules). Dataset validation gate in `src/agent.py` for both sync and streaming flows with required-vs-optional handling. Structured `validation_report` included in pipeline summaries and API responses. Persisted validation report artifact via `validation_report_path` in `output_files`. Frontend error hardening with a `ValidationBanner` component surfacing `validation_report` API payload errors gracefully via Next.js components. Built robust data ingestion with `pd.read_csv` memory limits, `utf-8-sig` encoding, explicit empty file handling, and manifest `row_count` verification. Production landing-zone support is fully operational.
 
-**Next work (remaining Phase 7 / Sprint 3):** Surface validation reporting in the frontend/history UI, continue error-handling hardening, and deepen production landing-zone support beyond the current scaffold/template.
+**Next work:** To be determined by user (potentially Phase 8 / Sprint 4).
 
 **Reference:** `docs/implementation_plan.md`, `docs/supplier-collab-ai-scope-v1.0.md` section 13.
 
@@ -200,7 +200,7 @@ Current test coverage:
 - Frontend `createBriefingStreaming` — `frontend/lib/api.test.ts`: 4 tests — callback dispatch, error events, chunked SSE boundary handling, HTTP error rejection.
 - Frontend `BriefingCreateForm` — `frontend/components/BriefingCreateForm.test.tsx`: 10 tests — payload shape, phase labels, live preview tokens, `onDone` navigation, `onError`, network retry.
 
-Full backend suite: `.venv/bin/pytest tests/ -q` (**238 tests**). Frontend: `cd frontend && npm test` (**47 tests**). **Total: 285 tests, 0 failures.**
+Full backend suite: `.venv/bin/pytest tests/ -q` (**241 tests**). Frontend: `cd frontend && npm test` (**47 tests**). **Total: 288 tests, 0 failures.**
 
 ---
 

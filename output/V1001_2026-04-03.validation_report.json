@@ -1,0 +1,37 @@
+{
+  "datasets": {
+    "oos_events": {
+      "errors": [],
+      "status": "passed",
+      "warnings": []
+    },
+    "promo_calendar": {
+      "errors": [],
+      "status": "passed",
+      "warnings": []
+    },
+    "purchase_orders": {
+      "errors": [],
+      "status": "passed",
+      "warnings": []
+    },
+    "vendor_master": {
+      "errors": [],
+      "status": "passed",
+      "warnings": []
+    },
+    "vendor_performance": {
+      "errors": [],
+      "status": "passed",
+      "warnings": []
+    }
+  },
+  "error_count": 0,
+  "manifest": {
+    "errors": [],
+    "status": "passed",
+    "warnings": []
+  },
+  "overall_status": "passed",
+  "warning_count": 0
+}

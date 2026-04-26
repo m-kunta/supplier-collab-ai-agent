@@ -9,9 +9,11 @@ import {
   listVendors,
   type BriefingCreatePayload,
   type VendorRecord,
+  type ValidationReport,
 } from "../lib/api";
 import styles from "./briefing-create-form.module.css";
 import { AppHeader } from "./AppHeader";
+import { ValidationBanner } from "./ValidationBanner";
 
 const DATA_DIR = "data/inbound/mock";
 
@@ -42,6 +44,7 @@ export function BriefingCreateForm({ heading, subheading }: Props) {
   const [phase, setPhase] = useState<"idle" | "engines" | "streaming" | "done" | "error">("idle");
   const [streamPreview, setStreamPreview] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [errorReport, setErrorReport] = useState<ValidationReport | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
   const submitting = phase === "engines" || phase === "streaming";
@@ -77,6 +80,7 @@ export function BriefingCreateForm({ heading, subheading }: Props) {
     setPhase("engines");
     setStreamPreview("");
     setSubmitError(null);
+    setErrorReport(null);
 
     await createBriefingStreaming(payload, {
       onEngines: () => {
@@ -90,9 +94,10 @@ export function BriefingCreateForm({ heading, subheading }: Props) {
         setPhase("done");
         router.push(`/briefings/${briefing.id}`);
       },
-      onError: (message) => {
+      onError: (message, report) => {
         setPhase("error");
         setSubmitError(message);
+        if (report) setErrorReport(report);
       },
     });
   }
@@ -115,6 +120,10 @@ export function BriefingCreateForm({ heading, subheading }: Props) {
       await runStream(payload);
     } catch (err: unknown) {
       const raw = err instanceof Error ? err.message : "Failed to generate briefing";
+
+      if (raw === "API_ERROR_HANDLED") {
+        return;
+      }
 
       // Network failure — try to auto-start the backend then retry once
       if (raw === "Failed to fetch") {
@@ -153,6 +162,8 @@ export function BriefingCreateForm({ heading, subheading }: Props) {
           <h1 className={styles.heading}>{heading}</h1>
           <p className={styles.subheading}>{subheading}</p>
         </section>
+
+        {errorReport && <ValidationBanner report={errorReport} />}
 
         <form className={styles.card} onSubmit={handleSubmit}>
           <div className={styles.field}>

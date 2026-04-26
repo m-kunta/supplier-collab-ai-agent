@@ -89,6 +89,12 @@ export interface PromoReadiness {
   events: PromoEvent[];
 }
 
+export interface ValidationReport {
+  errors: string[];
+  warnings: string[];
+  is_valid: boolean;
+}
+
 export interface BriefingResponse {
   id: string;
   created_at: string;
@@ -101,6 +107,7 @@ export interface BriefingResponse {
   po_risk?: PoRiskData;
   oos_attribution?: OosAttribution;
   promo_readiness?: PromoReadiness;
+  validation_report?: ValidationReport;
   [key: string]: unknown;
 }
 
@@ -111,6 +118,7 @@ export interface BriefingListItem {
   vendor_id?: string;
   vendor?: string;
   meeting_date?: string;
+  validation_report?: ValidationReport;
 }
 
 export interface BriefingListResponse {
@@ -118,9 +126,33 @@ export interface BriefingListResponse {
   total: number;
 }
 
+export class ApiError extends Error {
+  public validation_report?: ValidationReport;
+  constructor(message: string, validation_report?: ValidationReport) {
+    super(message);
+    this.name = "ApiError";
+    this.validation_report = validation_report;
+  }
+}
+
 async function readJson<T>(res: Response, context: string): Promise<T> {
   if (!res.ok) {
-    throw new Error(`${context}: ${res.status} ${res.statusText}`);
+    const text = await res.text().catch(() => "");
+    try {
+      if (text) {
+        const data = JSON.parse(text);
+        if (data && data.detail) {
+          if (typeof data.detail === "string") {
+            throw new ApiError(`${context}: ${data.detail}`);
+          } else if (data.detail.message) {
+            throw new ApiError(`${context}: ${data.detail.message}`, data.detail.validation_report);
+          }
+        }
+      }
+    } catch (e) {
+      if (e instanceof ApiError) throw e;
+    }
+    throw new ApiError(`${context}: ${res.status} ${res.statusText}`);
   }
   return res.json() as Promise<T>;
 }
@@ -155,13 +187,13 @@ export type StreamEvent =
       created_at: string;
       summary: BriefingResponse;
     }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string; validation_report?: ValidationReport };
 
 export interface StreamCallbacks {
   onEngines?: (engines: Record<string, unknown>) => void;
   onToken?: (chunk: string) => void;
   onDone?: (briefing: BriefingResponse & { id: string; created_at: string }) => void;
-  onError?: (message: string) => void;
+  onError?: (message: string, validation_report?: ValidationReport) => void;
 }
 
 /**
@@ -181,8 +213,34 @@ export async function createBriefingStreaming(
   });
 
   if (!res.ok || !res.body) {
+    let errMessage = `Stream request failed (${res.status})`;
+    let errReport: ValidationReport | undefined;
     const text = await res.text().catch(() => "");
-    throw new Error(text || `Stream request failed (${res.status})`);
+    if (text) errMessage = text;
+    
+    try {
+      if (text) {
+        const data = JSON.parse(text);
+        if (data && data.detail) {
+          if (typeof data.detail === "string") {
+            errMessage = data.detail;
+          } else if (data.detail.message) {
+            errMessage = data.detail.message;
+            errReport = data.detail.validation_report;
+          }
+        }
+      }
+    } catch {
+      // not json, keep text
+    }
+    
+    // We can call onError directly here to surface the validation report
+    // if the initial connection fails with a 400.
+    if (errReport && callbacks.onError) {
+      callbacks.onError(errMessage, errReport);
+      throw new Error("API_ERROR_HANDLED"); // Dummy error to halt execution without unhandled rejections
+    }
+    throw new Error(errMessage);
   }
 
   const reader = res.body.getReader();
@@ -209,7 +267,7 @@ export async function createBriefingStreaming(
         callbacks.onDone?.({ ...evt.summary, id: evt.id, created_at: evt.created_at });
         break;
       case "error":
-        callbacks.onError?.(evt.message);
+        callbacks.onError?.(evt.message, evt.validation_report);
         break;
     }
   };
