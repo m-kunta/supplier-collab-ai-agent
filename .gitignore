@@ -7,6 +7,10 @@ __pycache__/
 output/*.md
 output/*.docx
 
+# Keep the production landing-zone directory structure without publishing local snapshots
+data/inbound/prod/*
+!data/inbound/prod/.gitkeep
+
 # Next.js
 frontend/.next/
 frontend/node_modules/
