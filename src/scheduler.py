@@ -88,37 +88,39 @@ class BriefingScheduler:
             
     def _trigger_briefing(self, meeting: dict, phase: str):
         logger.info(f"*** AUTO-TRIGGER *** Generating {phase} briefing for: {meeting['summary']}")
-        
+
         # Extract vendor name from meeting title, e.g., "Vendor Review: Northstar Foods Co"
         summary = meeting.get('summary', '')
-        vendor_name = "Northstar Foods Co" # Default fallback
+        vendor_name = "Northstar Foods Co"  # Default fallback
         if ":" in summary:
             vendor_name = summary.split(":", 1)[1].strip()
-            
+
         logger.info(f"Resolved vendor name: {vendor_name}. Calling agent pipeline...")
-        
-        # Here we connect to the agent.py pipeline
-        from src.agent import run_pipeline, summarize_request
+
+        from pathlib import Path
+
+        from src.agent import summarize_request
         from src.config import load_config
-        
+
         config = load_config()
-        # Ensure we use prod data for automated briefings
-        config['defaults']['data_dir'] = 'data/inbound/prod'
-        
-        # Assuming the meeting date is the target reference date
+        defaults = config.get('defaults', {})
         meeting_date = meeting['start_time'][:10]
-        
+
         try:
-            # We run it synchronously since this is a background worker thread
-            context = run_pipeline(
-                vendor_id=vendor_name,
-                reference_date_str=meeting_date,
-                config=config
+            result = summarize_request(
+                vendor=vendor_name,
+                meeting_date=meeting_date,
+                data_dir=Path('data/inbound/prod'),
+                lookback_weeks=defaults.get('lookback_weeks', 13),
+                persona_emphasis=defaults.get('persona_emphasis', 'both'),
+                include_benchmarks=defaults.get('include_benchmarks', True),
+                output_format=defaults.get('output_format', 'md'),
+                category_filter=None,
             )
-            result = summarize_request(context)
-            logger.info(f"Successfully generated briefing! Saved to: {result['output_files']['md_path']}")
-            
+            output_path = (result.get('output_files') or {}).get('md_path') or (result.get('output_files') or {}).get('docx_path', 'unknown')
+            logger.info(f"Successfully generated briefing! Saved to: {output_path}")
+
             # FUTURE: Send Email / Teams notification here with the file attached
-            
+
         except Exception as e:
             logger.error(f"Failed to generate scheduled briefing for {vendor_name}: {e}")

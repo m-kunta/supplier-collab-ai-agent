@@ -11,6 +11,10 @@ output/*.docx
 data/inbound/prod/*
 !data/inbound/prod/.gitkeep
 
+# Google OAuth credentials — never commit these
+config/credentials.json
+config/token.json
+
 # Next.js
 frontend/.next/
 frontend/node_modules/
