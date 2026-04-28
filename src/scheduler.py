@@ -99,18 +99,18 @@ class BriefingScheduler:
             
     def _trigger_briefing(self, meeting: dict, phase: str):
         logger.info(f"*** AUTO-TRIGGER *** Generating {phase} briefing for: {meeting['summary']}")
-        
+
         # Extract vendor name from meeting title, e.g., "Vendor Review: Northstar Foods Co"
         summary = meeting.get('summary', '')
-        vendor_name = "Northstar Foods Co" # Default fallback
+        vendor_name = "Northstar Foods Co"  # Default fallback
         if ":" in summary:
             vendor_name = summary.split(":", 1)[1].strip()
-            
+
         logger.info(f"Resolved vendor name: {vendor_name}. Calling agent pipeline...")
         
         # Assuming the meeting date is the target reference date
         meeting_date = meeting['start_time'][:10]
-        
+
         try:
             result = summarize_request(
                 vendor=vendor_name,
@@ -127,6 +127,6 @@ class BriefingScheduler:
             logger.info(f"Successfully generated briefing! Saved to: {saved_path}")
             
             # FUTURE: Send Email / Teams notification here with the file attached
-            
+
         except Exception as e:
             logger.error(f"Failed to generate scheduled briefing for {vendor_name}: {e}")
