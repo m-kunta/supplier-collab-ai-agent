@@ -32,3 +32,8 @@ class SchedulerTriggerTests(unittest.TestCase):
             output_format=scheduler.default_output_format,
             category_filter=None,
         )
+
+    def test_trigger_briefing_uses_repo_anchored_prod_data_dir(self) -> None:
+        scheduler = BriefingScheduler()
+        self.assertTrue(scheduler.prod_data_dir.is_absolute())
+        self.assertTrue(str(scheduler.prod_data_dir).endswith("data/inbound/prod"))

@@ -18,7 +18,7 @@ class BriefingScheduler:
         self.processed_jobs = set()
         config = load_config()
         defaults = config.get("defaults", {})
-        self.prod_data_dir = Path("data/inbound/prod")
+        self.prod_data_dir = Path(__file__).resolve().parent.parent / "data" / "inbound" / "prod"
         self.default_lookback_weeks = defaults.get("lookback_weeks", 13)
         self.default_persona_emphasis = defaults.get("persona_emphasis", "both")
         self.default_include_benchmarks = defaults.get("include_benchmarks", True)
