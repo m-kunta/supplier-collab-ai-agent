@@ -3,18 +3,35 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
+
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, StreamingResponse
+
+from src.scheduler import BriefingScheduler
+
+logger = logging.getLogger(__name__)
+scheduler = BriefingScheduler()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logger.info("Starting FastAPI application and background scheduler...")
+    scheduler.start()
+    yield
+    # Shutdown
+    logger.info("Shutting down FastAPI application...")
+    scheduler.stop()
 
 import pandas as pd
 from dotenv import load_dotenv
 
 # Load .env before importing the agent stack (LLM provider env vars).
 load_dotenv(override=True)
-
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
 
 from api.deps import resolve_data_dir
 from api.schemas import BriefingCreate
@@ -26,6 +43,7 @@ app = FastAPI(
     title="Supplier Collab AI API",
     version="0.1.0",
     description="REST API for pre-meeting supplier briefing generation.",
+    lifespan=lifespan
 )
 
 briefing_store = BriefingStore()
