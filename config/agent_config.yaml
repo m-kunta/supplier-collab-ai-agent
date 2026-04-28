@@ -2,7 +2,7 @@ defaults:
   lookback_weeks: 13
   persona_emphasis: both
   include_benchmarks: true
-  output_format: md
+  output_format: docx
   data_dir: data/inbound/mock
 
 llm:

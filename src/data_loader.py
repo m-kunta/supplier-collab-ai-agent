@@ -154,7 +154,30 @@ def load_vendor_data(
     return result
 
 
-def resolve_vendor_id(vendor_input: str, vendor_master_df: pd.DataFrame) -> str:
+def _vendor_matches_category(row: pd.Series, category_filter: str) -> bool:
+    requested = category_filter.strip().lower()
+    categories: list[str] = []
+
+    primary = row.get("primary_category")
+    if pd.notna(primary):
+        categories.append(str(primary).strip().lower())
+
+    secondary = row.get("secondary_categories")
+    if pd.notna(secondary):
+        categories.extend(
+            part.strip().lower()
+            for part in str(secondary).split("|")
+            if part.strip()
+        )
+
+    return requested in categories
+
+
+def resolve_vendor_id(
+    vendor_input: str,
+    vendor_master_df: pd.DataFrame,
+    category_filter: str | None = None,
+) -> str:
     """Resolve a vendor name or canonical ID to a canonical ``vendor_id``.
 
     Accepts either the raw vendor ID (e.g. ``'V1001'``) or a vendor name
@@ -179,6 +202,11 @@ def resolve_vendor_id(vendor_input: str, vendor_master_df: pd.DataFrame) -> str:
 
     # Direct vendor_id match (exact, case-sensitive — IDs are canonical)
     if stripped in vendor_master_df["vendor_id"].values:
+        direct_match = vendor_master_df[vendor_master_df["vendor_id"] == stripped]
+        if category_filter and not _vendor_matches_category(direct_match.iloc[0], category_filter):
+            raise ValueError(
+                f"Vendor '{stripped}' does not match category_filter '{category_filter}'."
+            )
         logger.debug("vendor_input '%s' resolved as direct vendor_id match.", stripped)
         return stripped
 
@@ -188,7 +216,12 @@ def resolve_vendor_id(vendor_input: str, vendor_master_df: pd.DataFrame) -> str:
     matches = vendor_master_df[name_col == lower_input]
 
     if len(matches) == 1:
-        resolved = matches.iloc[0]["vendor_id"]
+        matched_row = matches.iloc[0]
+        if category_filter and not _vendor_matches_category(matched_row, category_filter):
+            raise ValueError(
+                f"Vendor '{stripped}' does not match category_filter '{category_filter}'."
+            )
+        resolved = matched_row["vendor_id"]
         logger.debug(
             "vendor_input '%s' resolved by name match → vendor_id='%s'.",
             stripped, resolved,

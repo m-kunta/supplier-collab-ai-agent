@@ -13,7 +13,7 @@
 
 The **Supplier Collaboration Briefing Agent** is an intelligence tool that automates pre-meeting preparation for category buyers and supply planners. It ingests exported vendor performance data (standardized CSV files declared in a `manifest.yaml`), runs a suite of deterministic compute engines, and synthesizes everything into a structured, role-specific briefing document via an LLM — in under 60 seconds instead of the 30–60 minutes of manual spreadsheet work the meeting would otherwise require.
 
-*Current capabilities: the full pipeline (compute engines + LLM briefing + markdown output to `output/`) runs from the CLI and from a **FastAPI** layer in `api/`. The API supports true token-level SSE streaming during generation, `.md` downloads, vendor listing, and `llm_provider`/`llm_model` overrides. A **Next.js web UI** in `frontend/` provides a premium dark-mode interface with a **live token-by-token streaming preview** while a briefing is generating, briefing history, `.md` download, and four engine data dashboards (Scorecard, PO Risk, OOS Attribution, Promo Readiness) with tab navigation. Phases 1–6 are complete.*
+*Current capabilities: the full pipeline (compute engines + LLM briefing + `.md`/`.docx` output to `output/`) runs from the CLI and from a **FastAPI** layer in `api/`. The API supports true token-level SSE streaming during generation, downloads, vendor listing, validation-report responses, and `llm_provider`/`llm_model` overrides. A **Next.js web UI** in `frontend/` provides a live token-by-token streaming preview, briefing history, downloads, validation banners, and four engine data dashboards (Scorecard, PO Risk, OOS Attribution, Promo Readiness). Phases 1–7 are complete; the main remaining roadmap work is optional-domain expansion and deeper calendar/notification automation.*
 
 ---
 
@@ -189,11 +189,11 @@ Phase 1 completion notes:
 - Foundation tests cover CLI contract, provider selection, YAML edge cases, and mock data/schema integrity.
 
 ### Phase 2: Data Validation & Ingestion Layer
-- [ ] Implement `pydantic` models for strict data contract validation.
-- [ ] Refactor `src/data_validator.py` to use Pydantic models for incoming CSV schema checks.
-- [ ] Build graceful degradation logic for missing optional domain files.
-- [ ] Set up a comprehensive Python logging framework (`logging`) replacing `print()` statements.
-- [ ] Generate comprehensive Data Validation Reports via CLI output.
+- [x] Implement `pydantic` models for strict data contract validation.
+- [x] Refactor `src/data_validator.py` to use Pydantic models for incoming CSV schema checks.
+- [x] Build graceful degradation logic for missing optional domain files.
+- [x] Set up a comprehensive Python logging framework (`logging`) replacing `print()` statements.
+- [x] Generate structured validation reports in CLI/API output and persist them alongside rendered artifacts.
 
 ### Phase 3: Intelligence & Synthesis Pipelines (Engine Layer)
 - [x] Implement `src/scorecard_engine.py` (calc 4-week, 13-week moving averages and trends).
@@ -208,7 +208,7 @@ Phase 1 completion notes:
 - [x] Integrate cross-domain analytical points into the generative prompt context (inject engine outputs from `BriefingContext` via `src/prompt_builder.py`).
 - [x] Call `generate_text()` in `src/llm_providers.py` and assemble the briefing narrative in `src/agent.py` (Anthropic SDK with exponential back-off retry).
 - [x] Render the LLM generated output to `md` output format (`src/output_renderer.py` with YAML front-matter).
-- [ ] Render the LLM generated output to `docx` format (Sprint 3).
+- [x] Render the LLM generated output to `docx` format (Sprint 3).
 - [x] Hook up end-to-end integration test confirming `cli.py` writes or prints the final briefing document.
 
 ### Phase 5: Web Frontend (Complete)
@@ -226,6 +226,16 @@ Phase 1 completion notes:
 - [x] **Frontend `createBriefingStreaming()`** — `fetch()` + `ReadableStream` SSE client with `onEngines`, `onToken`, `onDone`, `onError` callbacks (in `frontend/lib/api.ts`).
 - [x] **`BriefingCreateForm` wired to streaming** — live token-by-token preview pane with blinking cursor and auto-scroll; three-phase status labels (engines → streaming → done); navigates to briefing detail on `done`.
 - [x] **Test coverage** — 8 backend streaming tests (`tests/test_streaming.py`), 4 frontend `createBriefingStreaming` tests (`frontend/lib/api.test.ts`), 10 `BriefingCreateForm` streaming tests (`frontend/components/BriefingCreateForm.test.tsx`).
+
+### Phase 7: Data Contracts + Production Landing Zone ✅
+- [x] Pydantic-backed schema contract validation in `src/data_validator.py`.
+- [x] Required-vs-optional dataset gating in sync and streaming paths.
+- [x] Persisted `validation_report` JSON artifact alongside rendered output files.
+- [x] Production landing-zone scaffold in `data/inbound/prod/` with production-labeled manifest and header-only required templates.
+
+### Phase 8: Next Focus
+- [ ] Expand briefing logic to consume the remaining optional domains: `inventory_position`, `asn_receipts`, `demand_forecast`, `chargebacks`, `trade_funds`.
+- [ ] Deepen calendar automation beyond scheduler polling into delivery workflows (email/Teams or equivalent notification integration).
 
 ## 🛠️ Key modules
 
@@ -249,7 +259,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 cd frontend && npm install && cd ..
 python cli.py --help
-pytest
+.venv/bin/pytest tests/ -q
 # Optional — HTTP API (from repo root)
 uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
 # Optional — run API + UI together
@@ -270,9 +280,9 @@ python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir data/
 
 | Layer | Runner | Count |
 |---|---|---|
-| Backend (Python) | `pytest tests/ -q` | **220 tests** |
-| Frontend (TypeScript) | `cd frontend && npm test` | **47 tests** |
-| **Total** | | **267 tests** |
+| Backend (Python) | `.venv/bin/pytest tests/ -q` | **254 tests** |
+| Frontend (TypeScript) | `cd frontend && npm test` | **57 tests** |
+| **Total** | | **311 tests** |
 
 ---
 

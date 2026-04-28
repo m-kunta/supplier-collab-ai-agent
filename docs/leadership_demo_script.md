@@ -36,11 +36,11 @@
 *Action:* Show the Buyer vs. Planner sections.
 *Script:* "The Buyer gets negotiation talking points and trade fund compliance. The Supply Planner gets lead time variability and safety stock impacts. Same data, different lenses."
 
-## Step 5: The "Proactive" Future (Calendar Integration)
-*Script:* "But we don't want buyers to even have to click 'Generate'. The agent is integrated into their calendar."
+## Step 5: The "Proactive" Next Step (Calendar Integration)
+*Script:* "But we also want to reduce even the 'click Generate' step over time. The project already includes calendar polling and scheduled kickoff scaffolding, and the next step is delivery automation."
 
 *Action:* Show the terminal logs where the `BriefingScheduler` is running.
-*Script:* "The agent polls Google Calendar/Outlook. When it sees a vendor meeting tomorrow, it auto-triggers this exact pipeline and emails the briefing 24 hours in advance. No clicks required."
+*Script:* "The agent can already poll for vendor-like meetings and kick off the briefing pipeline on a schedule. Notification delivery is the remaining productization step, so this is best shown as an implemented foundation with a clear next milestone rather than as a fully deployed email workflow."
 
 ## The Close
 *Script:* "This agent shifts our teams from data-gathering to decision-making, saving ~45 minutes per vendor meeting and driving more assertive, data-backed negotiations."

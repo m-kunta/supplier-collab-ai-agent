@@ -24,7 +24,7 @@ python cli.py --help
 
 **Run tests:**
 ```bash
-pytest tests/ -v
+.venv/bin/pytest tests/ -q
 ```
 
 **Run the HTTP API** (from repo root):
@@ -37,13 +37,13 @@ Interactive docs: `http://127.0.0.1:8000/docs`
 
 ## Project Status
 
-**Current phase:** Phase 6 — **True LLM Streaming — Complete.** All phases 1–6 are done.
+**Current phase:** Phase 7 — **Data Contracts + Production Landing Zone — Complete.** Phases 1–7 are complete.
 
 **Phase 6 (complete):** `generate_text_stream()` added to `src/llm_providers.py` using the Anthropic SDK `messages.stream()` context manager for true token-level streaming. `summarize_request_stream()` added to `src/agent.py` — runs all compute engines, emits an `engines` event (full engine payload) so the UI can paint dashboards immediately, then streams LLM token chunks via `generate_text_stream()`, persists the briefing, and emits `done`. `POST /api/briefings/stream` FastAPI endpoint bridges the sync generator to an async `StreamingResponse` via `asyncio.Queue`. `createBriefingStreaming()` in `frontend/lib/api.ts` consumes the SSE stream via `fetch()` + `ReadableStream`. `BriefingCreateForm` is wired to the streaming endpoint with a live token preview pane (blinking cursor, auto-scroll), three-phase status labels, and navigates to the briefing detail page on `done`.
 
-**Phase 5 (complete):** **FastAPI** in `api/` exposes: `GET /api/health`, `POST /api/briefings` (`llm_provider`/`llm_model` overrides), `GET /api/briefings` (history), `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay of stored text in 25-char chunks), `GET /api/briefings/{id}/download` (`.md` attachment, 410 on missing file), `GET /api/vendors` (vendor list from landing zone). In-memory store (resets on restart). The **Next.js UI** (`frontend/`) includes the App Shell, Briefing History, Download, SSE replay with `react-markdown` + `remark-gfm`, and four engine dashboards (Scorecard, PO Risk, OOS, Promo Readiness) with tab navigation. A Dev Launcher (`scripts/dev.sh`, `Makefile`) starts API + UI with one command.
+**Phase 7 (complete):** Pydantic-backed dataset schema validation in `src/data_validator.py` (schema model validation, row-model validation, numeric/date/nullability/enum checks, dataset-specific cross-field rules). Dataset validation gate in `src/agent.py` for both sync and streaming flows with required-vs-optional handling. Structured `validation_report` included in pipeline summaries and API responses. Persisted validation report artifact via `validation_report_path` in `output_files`. Frontend error hardening with a `ValidationBanner` component surfacing `validation_report` API payload errors gracefully via Next.js components. Production landing-zone support is fully operational.
 
-**Next work (Phase 7 / Sprint 3):** Pydantic data contract validation, production data landing zone support.
+**Next work (Phase 8):** Scope and implement briefing support for `inventory_position`, `asn_receipts`, `demand_forecast`, `chargebacks`, and `trade_funds`, then extend calendar work into delivery/notification automation.
 
 ---
 
@@ -71,7 +71,7 @@ data_validator  benchmark_engine       ↓
               │
               ▼
          Output Layer
-         output/ (md, future docx)
+         output/ (md, docx, validation artifacts)
 ```
 
 ### Module responsibilities
@@ -81,8 +81,8 @@ data_validator  benchmark_engine       ↓
 | `cli.py` | CLI entry point. Parses `--vendor`, `--date`, `--data-dir`, `--lookback-weeks`, `--persona-emphasis`, `--include-benchmarks`, `--output-format`, `--category-filter`. | Working |
 | `src/agent.py` | Orchestrator. Loads config, manifest, validates, resolves vendor and LLM provider, loads vendor data, runs compute engines, prompt assembly, `generate_text()`, `write_output()`. `summarize_request()` returns JSON including `briefing_text`, `output_files`, `status`. | Working |
 | `src/config.py` | Loads `config/agent_config.yaml` with YAML parsing and validates that the top-level document is a mapping. Returns dict. | Working |
-| `src/data_loader.py` | `resolve_data_dir()` and `load_manifest()` — reads `manifest.yaml` from the data landing zone with strict YAML mapping validation. | Working |
-| `src/data_validator.py` | `validate_manifest_shape()` — checks required top-level manifest keys. Will expand to full schema validation. | Minimal stub |
+| `src/data_loader.py` | `resolve_data_dir()`, `load_manifest()`, dataset loading, vendor/category resolution, and vendor-scoped dataset filtering. | Working |
+| `src/data_validator.py` | Manifest validation plus Pydantic-backed dataset contract validation: schema loading, row-model validation, type/nullability/enum/constraint checks, and dataset-specific rules. | Working |
 | `src/scorecard_engine.py` | Scorecard metric computation: current value, 4w/13w trends, trend classification. | Working |
 | `src/benchmark_engine.py` | Peer avg, BIC, gap-to-BIC, dollar-impact translation. | Working |
 | `src/po_risk_engine.py` | PO risk tiering (red/yellow/green) based on days late vs. requested delivery date. Open/shipped assessed against the meeting date (`--date`); received POs assessed against actual receipt date when present. | Working |
@@ -91,8 +91,8 @@ data_validator  benchmark_engine       ↓
 | `src/llm_providers.py` | Provider-agnostic LLM wrapper. `resolve_provider()` returns a `ProviderSelection` dataclass. `generate_text()` (blocking, with exponential back-off retry) and `generate_text_stream()` (true token streaming via Anthropic `messages.stream()`; single-chunk fallback for OpenAI/Google/Groq). All four providers wired. | All four live |
 | `src/prompt_builder.py` | `build_prompt(ctx)` — loads versioned prompt template from `prompts/`, serialises all engine outputs to JSON, substitutes `{{DATA_PAYLOAD}}`, `{{PERSONA_EMPHASIS}}`, `{{VENDOR_ID}}`, `{{MEETING_DATE}}`. | Working |
 | `src/output_renderer.py` | `render_markdown(ctx)` — prepends YAML front-matter + appends footer. `render_docx(ctx)` — generates formatted Word document. `write_output(ctx, output_dir, output_format)` — dispatches to md/docx renderer and writes file(s). | Markdown & DOCX working |
-| `api/` | FastAPI app. `GET /api/health`, `POST /api/briefings` (blocking, thread-pool), **`POST /api/briefings/stream`** (true SSE streaming via `asyncio.Queue`), `GET /api/briefings`, `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay), `GET /api/briefings/{id}/download`, `GET /api/vendors`. In-memory store. | Working |
-| `frontend/` | **[Phase 5–6 — Complete]** Next.js web app. App shell, briefings history, briefing detail with SSE replay + tab dashboards (Scorecard, PO Risk, OOS, Promo). `BriefingCreateForm` wired to `POST /api/briefings/stream` with live token preview, blinking cursor, auto-scroll, and three-phase status labels. | Working |
+| `api/` | FastAPI app. `GET /api/health`, `POST /api/briefings` (blocking, thread-pool), **`POST /api/briefings/stream`** (true SSE streaming via `asyncio.Queue`), `GET /api/briefings`, `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay), `GET /api/briefings/{id}/download`, `GET /api/vendors`. In-memory store and background scheduler startup. | Working |
+| `frontend/` | **[Phase 5–7 — Complete]** Next.js web app. App shell, briefings history, briefing detail with SSE replay + tab dashboards (Scorecard, PO Risk, OOS, Promo), validation banner, download/history flows, and live streaming preview. | Working |
 
 ### Key implementation details
 
@@ -114,7 +114,7 @@ Each landing zone contains:
 - `manifest.yaml` — declares available files, freshness, row counts, environment
 - CSV files per the 10-file schema inventory (3 required, 7 optional)
 
-**Schemas:** `data/schemas/*.schema.yaml` — YAML schema definitions with `primary_key`, `required_columns`, and `column_types`.
+**Schemas:** `data/schemas/*.schema.yaml` — YAML schema definitions with `primary_key`, `required_columns`, `column_types`, nullability, enums, and constraints.
 
 **Mock data:** Generated via `scripts/generate_mock_csvs.py` for 1 vendor (Northstar Foods Co) and 5 tables (13-week performance history, POs, OOS, Promo) seated in `data/inbound/mock/` to emulate pipeline injection.
 
@@ -161,6 +161,8 @@ Production prompts currently inject pre-computed structured data and request sec
 | **Sprint 4** | Calendar integration + demo | Auto-trigger, leadership demo, pilot plan |
 | **Phase 5** | Web Frontend | Next.js UI, FastAPI, SSE replay, engine dashboards (Scorecard, PO Risk, OOS, Promo), download, history |
 | **Phase 6** | True LLM Streaming ✅ | `generate_text_stream()`, streaming orchestrator, `POST /api/briefings/stream`, live token preview in `BriefingCreateForm` |
+| **Phase 7** | Data Contracts + Prod Landing Zone ✅ | Pydantic validation, structured validation reports, persisted validation artifacts, prod landing-zone scaffold |
+| **Phase 8** | Optional domain expansion | Wire `inventory_position`, `asn_receipts`, `demand_forecast`, `chargebacks`, and `trade_funds` into briefing logic |
 
 ---
 
@@ -181,17 +183,18 @@ Current test coverage:
 - OOS attribution engine: 35 tests covering primary classification by root_cause_code, PO cancellation cross-reference fallback, bucket counts, vendor_controllable_pct, total_units_lost, recurring SKU detection, top SKU ranking, and edge cases (`tests/test_oos_attribution.py`)
 - Promo readiness engine: 10 tests covering coverage tiers, cancelled/late PO handling, multi-SKU and multi-event weighting (`tests/test_promo_readiness.py`)
 - Pipeline integration: `summarize_request` against mock landing zone with mocked `generate_text` and `write_output` (`tests/test_p1_foundation.py`)
-- LLM providers: 12 tests covering provider resolution, Anthropic happy path, retry logic on rate limits, and multi-provider paths (`tests/test_llm_providers.py`)
+- LLM providers: coverage across provider resolution, retry logic, multi-provider paths, and streaming fallback/import branches (`tests/test_llm_providers.py`, `tests/test_llm_providers_additional.py`)
 - FastAPI (`tests/test_api.py`): 13 tests — health, POST/GET briefings, list + limit pagination, 404s, SSE stream (content-type + sentinel), download 410 on missing file, `GET /api/vendors` (Northstar Foods Co present, bad-dir 404), `llm_provider` override reflected in response.
 - Prompt builder: 12 tests covering template loading, variable substitution, JSON payload integrity, null optional data, and persona variants (`tests/test_prompt_builder.py`)
 - Phase 4 E2E: 2 integration tests with mocked LLM call verifying `status=complete`, `briefing_text` populated, and `write_output` called correctly (`tests/test_p1_foundation.py`)
 
-- Streaming (Phase 6): 8 backend tests (`tests/test_streaming.py`) — Anthropic text-delta yielding, empty-chunk skipping, param pass-through, non-Anthropic fallback, orchestrator `engines`/`token`/`done` events, error event, SSE endpoint e2e, error forwarding.
-- DOCX Output Renderer: 5 backend tests (`tests/test_output_renderer.py`) — generation, missing text exceptions, and formatting validation.
-- Frontend `createBriefingStreaming`: 4 tests in `frontend/lib/api.test.ts` — callback dispatch, error events, chunked SSE boundary handling, HTTP error rejection.
+- Streaming (Phase 6): 9 backend tests (`tests/test_streaming.py`) — Anthropic text-delta yielding, empty-chunk skipping, param pass-through, non-Anthropic fallback, orchestrator `engines`/`token`/`done` events, error event, pre-engine dataset-validation failure, SSE endpoint e2e, error forwarding.
+- DOCX Output Renderer: 5 backend tests (`tests/test_output_renderer.py`) — generation, missing text exceptions, persisted validation report artifact, and formatting validation.
+- Frontend `createBriefingStreaming` and API helpers: 11 tests in `frontend/lib/api.test.ts`.
 - Frontend `BriefingCreateForm`: 10 tests in `frontend/components/BriefingCreateForm.test.tsx` — payload shape, phase labels, live preview tokens, `onDone` navigation, `onError`, network retry, generic exception.
+- Additional frontend coverage: startup API route, root layout, home redirect, new-briefing page, validation banner.
 
-Full backend suite: run `pytest tests/ -q` (**220 tests**). Frontend: `cd frontend && npm test` (**47 tests**). **Total: 267 tests, 0 failures.**
+Full backend suite: run `.venv/bin/pytest tests/ -q` (**254 tests**). Frontend: `cd frontend && npm test` (**57 tests**). **Total: 311 tests, 0 failures.**
 
 ---
 

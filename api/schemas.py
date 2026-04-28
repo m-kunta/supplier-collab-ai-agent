@@ -21,7 +21,7 @@ class BriefingCreate(BaseModel):
     lookback_weeks: int = Field(default=13, ge=1, le=52)
     persona_emphasis: Literal["buyer", "planner", "both"] = "both"
     include_benchmarks: bool = True
-    output_format: Literal["md", "docx", "both"] = "md"
+    output_format: Literal["md", "docx", "both"] = "docx"
     category_filter: Optional[str] = None
     llm_provider: Optional[str] = Field(default=None, description="Override default LLM provider (anthropic/openai/google/groq).")
     llm_model: Optional[str] = Field(default=None, description="Override default LLM model string.")

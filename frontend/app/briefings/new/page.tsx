@@ -1,3 +1,4 @@
+import React from "react";
 import { BriefingCreateForm } from "../../../components/BriefingCreateForm";
 
 export default function NewBriefingPage() {

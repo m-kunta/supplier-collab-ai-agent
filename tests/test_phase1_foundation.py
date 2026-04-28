@@ -26,7 +26,7 @@ class CliContractTests(unittest.TestCase):
         self.assertEqual(args.lookback_weeks, 13)
         self.assertEqual(args.persona_emphasis, "both")
         self.assertTrue(args.include_benchmarks)
-        self.assertEqual(args.output_format, "md")
+        self.assertEqual(args.output_format, "docx")
         self.assertIsNone(args.category_filter)
 
     def test_parser_supports_disabling_benchmarks(self):

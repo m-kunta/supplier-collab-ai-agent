@@ -1,7 +1,7 @@
 version: '1.0'
 generated_at: '2026-04-03T08:00:00'
-source_system: Mock Generator
-environment: mock
+source_system: Production Landing Zone Scaffold
+environment: production
 data_directory: ./
 files:
   vendor_master:

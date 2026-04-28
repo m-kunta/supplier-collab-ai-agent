@@ -47,7 +47,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--output-format",
         choices=["md", "docx", "both"],
-        default="md",
+        default="docx",
         help="Intended output format.",
     )
     parser.add_argument(

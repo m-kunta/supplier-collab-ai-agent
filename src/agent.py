@@ -298,7 +298,11 @@ def _stage_resolve_provider(ctx: BriefingContext) -> BriefingContext:
 
 def _stage_resolve_vendor_id(ctx: BriefingContext) -> BriefingContext:
     vendor_master_df = load_dataset(ctx.manifest, "vendor_master")
-    ctx.vendor_id = resolve_vendor_id(ctx.vendor_input, vendor_master_df)
+    ctx.vendor_id = resolve_vendor_id(
+        ctx.vendor_input,
+        vendor_master_df,
+        category_filter=ctx.category_filter,
+    )
     logger.info(
         "Resolved vendor input '%s' to vendor_id '%s'.",
         ctx.vendor_input,

@@ -1,9 +1,13 @@
 import datetime
 import logging
+from pathlib import Path
+
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
+from src.agent import summarize_request
 from src.calendar_trigger import GoogleCalendarClient
+from src.config import load_config
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +16,13 @@ class BriefingScheduler:
         self.scheduler = BackgroundScheduler()
         self.calendar = GoogleCalendarClient()
         self.processed_jobs = set()
+        config = load_config()
+        defaults = config.get("defaults", {})
+        self.prod_data_dir = Path("data/inbound/prod")
+        self.default_lookback_weeks = defaults.get("lookback_weeks", 13)
+        self.default_persona_emphasis = defaults.get("persona_emphasis", "both")
+        self.default_include_benchmarks = defaults.get("include_benchmarks", True)
+        self.default_output_format = defaults.get("output_format", "docx")
         
     def start(self):
         # Poll calendar every 15 minutes to find new meetings
@@ -97,26 +108,23 @@ class BriefingScheduler:
             
         logger.info(f"Resolved vendor name: {vendor_name}. Calling agent pipeline...")
         
-        # Here we connect to the agent.py pipeline
-        from src.agent import run_pipeline, summarize_request
-        from src.config import load_config
-        
-        config = load_config()
-        # Ensure we use prod data for automated briefings
-        config['defaults']['data_dir'] = 'data/inbound/prod'
-        
         # Assuming the meeting date is the target reference date
         meeting_date = meeting['start_time'][:10]
         
         try:
-            # We run it synchronously since this is a background worker thread
-            context = run_pipeline(
-                vendor_id=vendor_name,
-                reference_date_str=meeting_date,
-                config=config
+            result = summarize_request(
+                vendor=vendor_name,
+                meeting_date=meeting_date,
+                data_dir=self.prod_data_dir,
+                lookback_weeks=self.default_lookback_weeks,
+                persona_emphasis=self.default_persona_emphasis,
+                include_benchmarks=self.default_include_benchmarks,
+                output_format=self.default_output_format,
+                category_filter=None,
             )
-            result = summarize_request(context)
-            logger.info(f"Successfully generated briefing! Saved to: {result['output_files']['md_path']}")
+            output_files = result.get("output_files") or {}
+            saved_path = output_files.get("md_path") or output_files.get("docx_path")
+            logger.info(f"Successfully generated briefing! Saved to: {saved_path}")
             
             # FUTURE: Send Email / Teams notification here with the file attached
             

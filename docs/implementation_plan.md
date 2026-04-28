@@ -94,12 +94,12 @@ Completed after scaffold. Implemented two compute engines with TDD.
 
 - Prompt assembly from `BriefingContext` / engine outputs (`src/prompt_builder.py`).
 - `generate_text()` with provider SDKs and retries (`src/llm_providers.py`).
-- Markdown write to `output/` (`src/output_renderer.py`). DOCX remains deferred.
+- Markdown and DOCX write to `output/` (`src/output_renderer.py`).
 
-### Phase 5 (in progress)
+### Phase 5 (complete)
 
 - **FastAPI (`api/`):** All REST endpoints complete — `GET /api/health`, `POST /api/briefings` (async, thread-pool executor, `llm_provider`/`llm_model` overrides, broad exception handling), `GET /api/briefings` (paginated list), `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay), `GET /api/briefings/{id}/download` (FileResponse, 410 on missing file), `GET /api/vendors` (reads `vendor_master.csv` from any landing zone). CORS configurable via `CORS_ORIGINS` env var. In-memory `BriefingStore` (process-local).
-- **Next:** Next.js frontend dashboard polish/completion (`frontend/`). Combined dev launcher is now available via `make dev` / `scripts/dev.sh`; `frontend/npm run dev` runs UI-only.
+- Next.js frontend dashboard/history/detail views are complete. Combined dev launcher is available via `make dev`; `frontend/npm run dev` runs UI-only.
 
 ### Phase 6 (complete)
 
@@ -119,7 +119,17 @@ Completed after scaffold. Implemented two compute engines with TDD.
 - Manifest `row_count` mismatch checking implemented.
 - Production landing-zone scaffold at `data/inbound/prod/` fully operational.
 
+### Phase 8 (next)
+
+- Remaining scope gap is not validation but **utilization** of optional domains already modeled in schemas:
+  - `inventory_position`
+  - `asn_receipts`
+  - `demand_forecast`
+  - `chargebacks`
+  - `trade_funds`
+- Calendar polling / scheduled kickoff exists, but delivery notifications remain future work.
+
 ### Verification Snapshot
 
-- Backend: `.venv/bin/pytest tests/ -q` → `241 passed`
-- Frontend: `cd frontend && npm test` → `47 passed`
+- Backend: `.venv/bin/pytest tests/ -q` → `254 passed`
+- Frontend: `cd frontend && npm test` → `57 passed`

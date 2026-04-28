@@ -16,7 +16,7 @@ Deploy the Briefing Agent to a targeted pilot group of Buyers and Supply Planner
 
 ## 4. Phase 2: User Enablement (Week 1)
 - **Training Session (30 mins):** Walk users through the UI, explain how the AI synthesizes data (Deterministic Compute + AI Narrative), and set expectations.
-- **Calendar Hookup:** Connect the pilot users' calendars to the agent's scheduler so T-24h automated briefings begin flowing.
+- **Calendar Hookup (optional pilot extension):** Connect pilot calendars to the scheduler only if the team is also prepared to finish notification delivery. Otherwise, run the pilot with manual or UI-triggered briefing generation.
 - **Feedback Loop Setup:** Create a dedicated Teams/Slack channel (`#pilot-supplier-agent`) for immediate feedback. 
 
 ## 5. Phase 3: Active Pilot (Weeks 2-4)
@@ -34,4 +34,4 @@ To justify Phase 2 (Enterprise Rollout), we will measure:
 Upon successful pilot completion, the path to scale includes:
 - Hooking up the remaining 5 optional data domains (Chargebacks, ASNs, etc.).
 - Transitioning data ingestion from flat files to API/database direct connectors (if desired, though flat files scale fine).
-- Expanding the calendar integration to support enterprise SSO (Microsoft Graph API).
+- Completing delivery/notification workflows for scheduled briefings, then expanding calendar integration to support enterprise SSO (Microsoft Graph API).

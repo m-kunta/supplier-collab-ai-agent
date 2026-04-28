@@ -24,7 +24,7 @@ python cli.py --help
 
 **Run tests:**
 ```bash
-pytest tests/ -v
+.venv/bin/pytest tests/ -q
 ```
 
 **Run the HTTP API** (from repo root):
@@ -53,7 +53,13 @@ make dev
 
 **Phase 7 (complete):** Pydantic-backed dataset schema validation in `src/data_validator.py` (schema model validation, row-model validation, numeric/date/nullability/enum checks, dataset-specific cross-field rules). Dataset validation gate in `src/agent.py` for both sync and streaming flows with required-vs-optional handling. Structured `validation_report` included in pipeline summaries and API responses. Persisted validation report artifact via `validation_report_path` in `output_files`. Frontend error hardening with a `ValidationBanner` component surfacing `validation_report` API payload errors gracefully via Next.js components. Built robust data ingestion with `pd.read_csv` memory limits, `utf-8-sig` encoding, explicit empty file handling, and manifest `row_count` verification. Production landing-zone support is fully operational.
 
-**Next work:** To be determined by user (potentially Phase 8 / Sprint 4).
+**Next work:** Active fix batch underway for requirements gaps found in code review.
+
+**Current to-do list:**
+- [x] Fix calendar auto-trigger path so scheduled T-24h/T-2h briefings call the current pipeline API correctly.
+- [x] Implement `category_filter` so it affects vendor/category selection instead of being request metadata only.
+- [x] Align `output_format` defaults between scope, config, CLI, and API.
+- [ ] Scope and implement Phase 8 follow-up for optional data domains not yet used in briefing generation: `inventory_position`, `asn_receipts`, `demand_forecast`, `chargebacks`, `trade_funds`.
 
 **Reference:** `docs/implementation_plan.md`, `docs/supplier-collab-ai-scope-v1.0.md` section 13.
 
@@ -83,7 +89,7 @@ data_validator  benchmark_engine       ↓
               │
               ▼
          Output Layer
-         output/ (md, future docx)
+         output/ (md, docx, validation artifacts)
 ```
 
 ### Module responsibilities
@@ -91,11 +97,11 @@ data_validator  benchmark_engine       ↓
 | File | Role | Status |
 |---|---|---|
 | `cli.py` | CLI entry point. Parses `--vendor`, `--date`, `--data-dir`, `--lookback-weeks`, `--persona-emphasis`, `--include-benchmarks`, `--output-format`, `--category-filter`. | Working |
-| `api/` | FastAPI: health, `POST /api/briefings` (blocking), **`POST /api/briefings/stream`** (true SSE via `asyncio.Queue`), list/get briefings, `GET /api/briefings/{id}/stream` (SSE replay), download, `GET /api/vendors`. | Working |
-| `frontend/` | **[Phase 5–6 complete]** Next.js UI. App shell, history, briefing detail with SSE replay + tab dashboards. `BriefingCreateForm` wired to streaming endpoint with live token preview. | Working |
+| `api/` | FastAPI: health, `POST /api/briefings` (blocking), **`POST /api/briefings/stream`** (true SSE via `asyncio.Queue`), list/get briefings, `GET /api/briefings/{id}/stream` (SSE replay), download, `GET /api/vendors`. Background scheduler starts with the app, but notification delivery remains future work. | Working |
+| `frontend/` | **[Phase 5–7 complete]** Next.js UI. App shell, history, briefing detail with SSE replay + tab dashboards. `BriefingCreateForm` wired to streaming endpoint with live token preview; validation banner and download/history flows are working. | Working |
 | `src/agent.py` | Full pipeline including LLM and markdown write; `summarize_request()` returns JSON for CLI and API. | Working |
 | `src/config.py` | Loads `config/agent_config.yaml` with YAML parsing and validates that the top-level document is a mapping. Returns dict. | Working |
-| `src/data_loader.py` | `resolve_data_dir()` and `load_manifest()` — reads `manifest.yaml` from the data landing zone with strict YAML mapping validation. | Working |
+| `src/data_loader.py` | `resolve_data_dir()`, `load_manifest()`, dataset loading, vendor/category resolution, and vendor-scoped dataset filtering. | Working |
 | `src/data_validator.py` | Manifest validation plus Pydantic-backed dataset contract validation: schema loading, row-model validation, type/nullability/enum/constraint checks, and dataset-specific rules. | Working |
 | `src/scorecard_engine.py` | Scorecard metric computation: current value, 4w/13w trends, trend classification. | Working |
 | `src/benchmark_engine.py` | Peer avg, BIC, gap-to-BIC, dollar-impact translation. | Working |
@@ -103,6 +109,7 @@ data_validator  benchmark_engine       ↓
 | `src/oos_attribution.py` | OOS root-cause attribution: vendor-controllable vs. demand-driven, with PO cancellation cross-reference fallback for null cause codes. Returns counts, pct, units lost, recurring SKUs, top SKUs. | Working |
 | `src/promo_readiness.py` | Promo readiness: on-time PO quantity vs. promoted volume per event; overall and per-event scores; red/yellow/green vs. config thresholds. | Working |
 | `src/llm_providers.py` | Provider-agnostic LLM wrapper. `generate_text()` (blocking, retry) and `generate_text_stream()` (true Anthropic token streaming; single-chunk fallback for OpenAI/Google/Groq). All four providers wired. | All four live |
+| `src/scheduler.py` / `src/calendar_trigger.py` | Calendar polling and scheduled briefing kickoff. Auto-triggering is wired to the current pipeline API, but delivery/notification integration is still future work. | Partial |
 
 ### Key implementation details
 
@@ -173,7 +180,8 @@ Production prompts currently inject pre-computed structured data and request sec
 | **Sprint 4** | Calendar integration + demo | Auto-trigger, leadership demo, pilot plan |
 | **Phase 5** | Web Frontend ✅ | Next.js UI, FastAPI, SSE replay, engine dashboards, download, history |
 | **Phase 6** | True LLM Streaming ✅ | `generate_text_stream()`, streaming orchestrator, `POST /api/briefings/stream`, live token preview |
-| **Phase 7** | Data Contracts + Prod Landing Zone 🚧 | Pydantic validation, structured validation reports, persisted validation artifacts, prod landing-zone scaffold |
+| **Phase 7** | Data Contracts + Prod Landing Zone ✅ | Pydantic validation, structured validation reports, persisted validation artifacts, prod landing-zone scaffold |
+| **Phase 8** | Optional domain expansion | Wire `inventory_position`, `asn_receipts`, `demand_forecast`, `chargebacks`, and `trade_funds` into briefing logic |
 
 ---
 
@@ -197,10 +205,12 @@ Current test coverage:
 - FastAPI (`tests/test_api.py`): 13 tests — health, POST/GET briefings, list + limit pagination, 404s, SSE stream (content-type + sentinel), download 410 on missing file, `GET /api/vendors`, `llm_provider` override reflected in response, validation report presence.
 - Streaming (Phase 6/7) — `tests/test_streaming.py`: 9 tests — Anthropic text-delta yielding, empty-chunk skipping, param pass-through, non-Anthropic fallback, orchestrator `engines`/`token`/`done` events, error event, pre-engine dataset-validation failure, SSE endpoint e2e, error forwarding.
 - Output Renderer — `tests/test_output_renderer.py`: 5 tests — markdown front-matter, docx table generation and color mapping, `write_output` dispatcher logic, persisted validation report artifact.
-- Frontend `createBriefingStreaming` — `frontend/lib/api.test.ts`: 4 tests — callback dispatch, error events, chunked SSE boundary handling, HTTP error rejection.
+- Additional backend coverage: API data-dir helper, calendar-trigger fallback/filtering, category-filter vendor resolution, scheduler integration, provider streaming fallback/import branches.
+- Frontend `createBriefingStreaming` — `frontend/lib/api.test.ts`: 11 tests — callback dispatch, error events, chunked SSE boundary handling, HTTP error rejection, request helpers, and URL builders.
 - Frontend `BriefingCreateForm` — `frontend/components/BriefingCreateForm.test.tsx`: 10 tests — payload shape, phase labels, live preview tokens, `onDone` navigation, `onError`, network retry.
+- Additional frontend coverage: startup API route, root layout, home redirect, new-briefing page, validation banner.
 
-Full backend suite: `.venv/bin/pytest tests/ -q` (**241 tests**). Frontend: `cd frontend && npm test` (**47 tests**). **Total: 288 tests, 0 failures.**
+Full backend suite: `.venv/bin/pytest tests/ -q` (**254 tests**). Frontend: `cd frontend && npm test` (**57 tests**). **Total: 311 tests, 0 failures.**
 
 ---
 
