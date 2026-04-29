@@ -37,13 +37,13 @@ Interactive docs: `http://127.0.0.1:8000/docs`
 
 ## Project Status
 
-**Current phase:** Phase 7 — **Data Contracts + Production Landing Zone — Complete.** Phases 1–7 are complete.
+**Current phase:** Phase 8 — **Optional Domain Expansion + UI Surfacing — Complete.** Phases 1–8 are complete.
 
 **Phase 6 (complete):** `generate_text_stream()` added to `src/llm_providers.py` using the Anthropic SDK `messages.stream()` context manager for true token-level streaming. `summarize_request_stream()` added to `src/agent.py` — runs all compute engines, emits an `engines` event (full engine payload) so the UI can paint dashboards immediately, then streams LLM token chunks via `generate_text_stream()`, persists the briefing, and emits `done`. `POST /api/briefings/stream` FastAPI endpoint bridges the sync generator to an async `StreamingResponse` via `asyncio.Queue`. `createBriefingStreaming()` in `frontend/lib/api.ts` consumes the SSE stream via `fetch()` + `ReadableStream`. `BriefingCreateForm` is wired to the streaming endpoint with a live token preview pane (blinking cursor, auto-scroll), three-phase status labels, and navigates to the briefing detail page on `done`.
 
 **Phase 7 (complete):** Pydantic-backed dataset schema validation in `src/data_validator.py` (schema model validation, row-model validation, numeric/date/nullability/enum checks, dataset-specific cross-field rules). Dataset validation gate in `src/agent.py` for both sync and streaming flows with required-vs-optional handling. Structured `validation_report` included in pipeline summaries and API responses. Persisted validation report artifact via `validation_report_path` in `output_files`. Frontend error hardening with a `ValidationBanner` component surfacing `validation_report` API payload errors gracefully via Next.js components. Production landing-zone support is fully operational.
 
-**Next work (Phase 8):** Scope and implement briefing support for `inventory_position`, `asn_receipts`, `demand_forecast`, `chargebacks`, and `trade_funds`, then extend calendar work into delivery/notification automation.
+**Next work:** Deepen calendar work into delivery/notification automation, plus any richer production onboarding or deeper Phase 8 refinements.
 
 ---
 
@@ -92,7 +92,12 @@ data_validator  benchmark_engine       ↓
 | `src/prompt_builder.py` | `build_prompt(ctx)` — loads versioned prompt template from `prompts/`, serialises all engine outputs to JSON, substitutes `{{DATA_PAYLOAD}}`, `{{PERSONA_EMPHASIS}}`, `{{VENDOR_ID}}`, `{{MEETING_DATE}}`. | Working |
 | `src/output_renderer.py` | `render_markdown(ctx)` — prepends YAML front-matter + appends footer. `render_docx(ctx)` — generates formatted Word document. `write_output(ctx, output_dir, output_format)` — dispatches to md/docx renderer and writes file(s). | Markdown & DOCX working |
 | `api/` | FastAPI app. `GET /api/health`, `POST /api/briefings` (blocking, thread-pool), **`POST /api/briefings/stream`** (true SSE streaming via `asyncio.Queue`), `GET /api/briefings`, `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay), `GET /api/briefings/{id}/download`, `GET /api/vendors`. In-memory store and background scheduler startup. | Working |
-| `frontend/` | **[Phase 5–7 — Complete]** Next.js web app. App shell, briefings history, briefing detail with SSE replay + tab dashboards (Scorecard, PO Risk, OOS, Promo), validation banner, download/history flows, and live streaming preview. | Working |
+| `frontend/` | **[Phase 5–8 — Complete]** Next.js web app. App shell, briefings history, briefing detail with SSE replay + tab dashboards, validation banner, download/history flows, live streaming preview, and a consolidated `Phase 8 Insights` tab for optional-domain outputs. | Working |
+| `src/inventory_insights.py` | Inventory coverage rollups: low-days-of-supply SKUs, aggregate inventory totals, and promo-at-risk context from current inventory vs. commitments. | Working |
+| `src/forecast_insights.py` | Forecast rollups: accuracy, bias, underforecast counts, and largest shortfall SKUs for demand-side context. | Working |
+| `src/asn_insights.py` | ASN/receipt execution rollups: overdue shipment counts, receipt lag, on-time receipt %, fill-in accuracy, and top overdue ASN lines. | Working |
+| `src/chargeback_insights.py` | Chargeback rollups: total/open/disputed dollars, top chargeback types, and recent unresolved compliance items. | Working |
+| `src/trade_fund_insights.py` | Trade fund rollups: committed/spend/balance totals, compliance %, expiring funds, and at-risk fund summaries. | Working |
 
 ### Key implementation details
 
@@ -162,7 +167,7 @@ Production prompts currently inject pre-computed structured data and request sec
 | **Phase 5** | Web Frontend | Next.js UI, FastAPI, SSE replay, engine dashboards (Scorecard, PO Risk, OOS, Promo), download, history |
 | **Phase 6** | True LLM Streaming ✅ | `generate_text_stream()`, streaming orchestrator, `POST /api/briefings/stream`, live token preview in `BriefingCreateForm` |
 | **Phase 7** | Data Contracts + Prod Landing Zone ✅ | Pydantic validation, structured validation reports, persisted validation artifacts, prod landing-zone scaffold |
-| **Phase 8** | Optional domain expansion | Wire `inventory_position`, `asn_receipts`, `demand_forecast`, `chargebacks`, and `trade_funds` into briefing logic |
+| **Phase 8** | Optional domain expansion + UI surfacing ✅ | Wire `inventory_position`, `asn_receipts`, `demand_forecast`, `chargebacks`, and `trade_funds` into briefing logic and surface them in the briefing detail UI |
 
 ---
 
@@ -182,6 +187,11 @@ Current test coverage:
 - PO risk engine: 19 tests covering red/yellow/green tiering, open vs. received PO date logic, config threshold overrides, multi-line aggregation, missing columns, and case-insensitive status handling (`tests/test_po_risk_engine.py`)
 - OOS attribution engine: 35 tests covering primary classification by root_cause_code, PO cancellation cross-reference fallback, bucket counts, vendor_controllable_pct, total_units_lost, recurring SKU detection, top SKU ranking, and edge cases (`tests/test_oos_attribution.py`)
 - Promo readiness engine: 10 tests covering coverage tiers, cancelled/late PO handling, multi-SKU and multi-event weighting (`tests/test_promo_readiness.py`)
+- Inventory insights engine: 3 tests covering low-days-of-supply rollups, promo-at-risk detection, and empty-input handling (`tests/test_inventory_insights.py`)
+- Forecast insights engine: 3 tests covering accuracy/bias rollups, precomputed-field precedence, and future-only/empty handling (`tests/test_forecast_insights.py`)
+- ASN insights engine: 2 tests covering overdue/timeliness/fill-in rollups and empty-input handling (`tests/test_asn_insights.py`)
+- Chargeback insights engine: 2 tests covering amount/type/unresolved rollups and empty-input handling (`tests/test_chargeback_insights.py`)
+- Trade fund insights engine: 2 tests covering compliance/expiry/at-risk rollups and empty-input handling (`tests/test_trade_fund_insights.py`)
 - Pipeline integration: `summarize_request` against mock landing zone with mocked `generate_text` and `write_output` (`tests/test_p1_foundation.py`)
 - LLM providers: coverage across provider resolution, retry logic, multi-provider paths, and streaming fallback/import branches (`tests/test_llm_providers.py`, `tests/test_llm_providers_additional.py`)
 - FastAPI (`tests/test_api.py`): 13 tests — health, POST/GET briefings, list + limit pagination, 404s, SSE stream (content-type + sentinel), download 410 on missing file, `GET /api/vendors` (Northstar Foods Co present, bad-dir 404), `llm_provider` override reflected in response.
@@ -192,9 +202,9 @@ Current test coverage:
 - DOCX Output Renderer: 5 backend tests (`tests/test_output_renderer.py`) — generation, missing text exceptions, persisted validation report artifact, and formatting validation.
 - Frontend `createBriefingStreaming` and API helpers: 11 tests in `frontend/lib/api.test.ts`.
 - Frontend `BriefingCreateForm`: 10 tests in `frontend/components/BriefingCreateForm.test.tsx` — payload shape, phase labels, live preview tokens, `onDone` navigation, `onError`, network retry, generic exception.
-- Additional frontend coverage: startup API route, root layout, home redirect, new-briefing page, validation banner.
+- Additional frontend coverage: startup API route, root layout, home redirect, new-briefing page, validation banner, and briefing-detail `Phase 8 Insights` tab rendering.
 
-Full backend suite: run `.venv/bin/pytest tests/ -q` (**254 tests**). Frontend: `cd frontend && npm test` (**57 tests**). **Total: 311 tests, 0 failures.**
+Full backend suite: run `.venv/bin/pytest tests/ -q` (**270 tests**). Frontend: `cd frontend && npm test` (**59 tests**). **Total: 329 tests, 0 failures.**
 
 ---
 

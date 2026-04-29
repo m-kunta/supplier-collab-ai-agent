@@ -132,6 +132,11 @@ class TestSummarizeRequestStream(unittest.TestCase):
         engines_event = next(e for e in events if e["type"] == "engines")
         self.assertIn("scorecard", engines_event["engines"])
         self.assertIn("po_risk", engines_event["engines"])
+        self.assertIn("inventory_insights", engines_event["engines"])
+        self.assertIn("forecast_insights", engines_event["engines"])
+        self.assertIn("asn_insights", engines_event["engines"])
+        self.assertIn("chargeback_insights", engines_event["engines"])
+        self.assertIn("trade_fund_insights", engines_event["engines"])
 
         token_events = [e for e in events if e["type"] == "token"]
         joined = "".join(e["content"] for e in token_events)

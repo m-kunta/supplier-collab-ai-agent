@@ -214,7 +214,7 @@ Phase 1 completion notes:
 ### Phase 5: Web Frontend (Complete)
 - [x] **FastAPI backend** (`api/`) — async `POST /api/briefings` (thread-pool, `llm_provider`/`llm_model` overrides); `GET /api/briefings` (paginated); `GET /api/briefings/{id}`; `GET /api/health`; in-memory store.
 - [x] **FastAPI** — SSE replay (`GET /api/briefings/{id}/stream`), file download (`GET /api/briefings/{id}/download`), `GET /api/vendors`.
-- [x] **Next.js frontend** (`frontend/`) — premium dark-mode web UI with vendor selector, briefing form, SSE replay, and four engine data dashboards (Scorecard, PO Risk, OOS Attribution, Promo Readiness) with tab navigation.
+- [x] **Next.js frontend** (`frontend/`) — premium dark-mode web UI with vendor selector, briefing form, SSE replay, the original engine dashboards, and a consolidated `Phase 8 Insights` tab for optional-domain outputs.
 - [x] **Dev launcher** (`scripts/dev.sh`, `Makefile`) — single command starts both API and UI.
 - [x] **SSE replay in UI** — browser receives stored briefing text in 25-char chunks via Server-Sent Events.
 - [x] **Download & history (UI)** — `.md` download button wired to download endpoint; history page consuming list API.
@@ -233,8 +233,10 @@ Phase 1 completion notes:
 - [x] Persisted `validation_report` JSON artifact alongside rendered output files.
 - [x] Production landing-zone scaffold in `data/inbound/prod/` with production-labeled manifest and header-only required templates.
 
-### Phase 8: Next Focus
-- [ ] Expand briefing logic to consume the remaining optional domains: `inventory_position`, `asn_receipts`, `demand_forecast`, `chargebacks`, `trade_funds`.
+### Phase 8: Optional Domains + UI Surfacing ✅
+- [x] Expand briefing logic to consume optional domains: `inventory_position`, `asn_receipts`, `demand_forecast`, `chargebacks`, `trade_funds`.
+- [x] Add deterministic backend insight engines for all five optional domains and expose them in sync + streaming API payloads.
+- [x] Surface the new optional-domain outputs in the briefing detail UI with a consolidated `Phase 8 Insights` tab.
 - [ ] Deepen calendar automation beyond scheduler polling into delivery workflows (email/Teams or equivalent notification integration).
 
 ## 🛠️ Key modules
@@ -249,6 +251,11 @@ Phase 1 completion notes:
 - `src/po_risk_engine.py`: Pipeline and late-PO risk classification pipeline.
 - `src/oos_attribution.py`: OOS event analysis and root-cause handling.
 - `src/promo_readiness.py`: Promo readiness scoring (on-time PO coverage vs. promoted volume).
+- `src/inventory_insights.py`: Inventory coverage and promo-at-risk insights.
+- `src/forecast_insights.py`: Forecast accuracy, bias, and underforecast insights.
+- `src/asn_insights.py`: ASN timeliness and receipt execution insights.
+- `src/chargeback_insights.py`: Chargeback and compliance cost insights.
+- `src/trade_fund_insights.py`: Trade fund execution and at-risk funding insights.
 - `src/llm_providers.py`: Model wrappers — `generate_text()` (blocking) and `generate_text_stream()` (true token streaming, Anthropic; fallback for others).
 
 ## 💻 Quick Start
@@ -280,9 +287,9 @@ python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir data/
 
 | Layer | Runner | Count |
 |---|---|---|
-| Backend (Python) | `.venv/bin/pytest tests/ -q` | **254 tests** |
-| Frontend (TypeScript) | `cd frontend && npm test` | **57 tests** |
-| **Total** | | **311 tests** |
+| Backend (Python) | `.venv/bin/pytest tests/ -q` | **270 tests** |
+| Frontend (TypeScript) | `cd frontend && npm test` | **59 tests** |
+| **Total** | | **329 tests** |
 
 ---
 

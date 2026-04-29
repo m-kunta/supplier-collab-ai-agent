@@ -119,17 +119,19 @@ Completed after scaffold. Implemented two compute engines with TDD.
 - Manifest `row_count` mismatch checking implemented.
 - Production landing-zone scaffold at `data/inbound/prod/` fully operational.
 
-### Phase 8 (next)
+### Phase 8 (complete)
 
-- Remaining scope gap is not validation but **utilization** of optional domains already modeled in schemas:
-  - `inventory_position`
-  - `asn_receipts`
-  - `demand_forecast`
-  - `chargebacks`
-  - `trade_funds`
+- Optional domains are now **utilized** in deterministic backend engines and exposed in the briefing pipeline:
+  - `inventory_position` → `src/inventory_insights.py`
+  - `demand_forecast` → `src/forecast_insights.py`
+  - `asn_receipts` → `src/asn_insights.py`
+  - `chargebacks` → `src/chargeback_insights.py`
+  - `trade_funds` → `src/trade_fund_insights.py`
+- Prompt payload and briefing generation now incorporate all five optional domain outputs.
+- Briefing detail UI now includes a consolidated `Phase 8 Insights` tab for these optional-domain summaries.
 - Calendar polling / scheduled kickoff exists, but delivery notifications remain future work.
 
 ### Verification Snapshot
 
-- Backend: `.venv/bin/pytest tests/ -q` → `254 passed`
-- Frontend: `cd frontend && npm test` → `57 passed`
+- Backend: `.venv/bin/pytest tests/ -q` → `270 passed`
+- Frontend: `cd frontend && npm test` → `59 passed`

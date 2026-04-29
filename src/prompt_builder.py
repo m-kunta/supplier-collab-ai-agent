@@ -77,6 +77,11 @@ def _serialise_engine_outputs(ctx: BriefingContext) -> dict[str, Any]:  # type: 
         "po_risk": ctx.po_risk,
         "oos_attribution": ctx.oos_attribution,
         "promo_readiness": ctx.promo_readiness,
+        "inventory_insights": ctx.inventory_insights,
+        "forecast_insights": ctx.forecast_insights,
+        "asn_insights": ctx.asn_insights,
+        "chargeback_insights": ctx.chargeback_insights,
+        "trade_fund_insights": ctx.trade_fund_insights,
         "pipeline_notes": ctx.pipeline_notes,
     }
 

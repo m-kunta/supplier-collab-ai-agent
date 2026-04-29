@@ -89,6 +89,64 @@ export interface PromoReadiness {
   events: PromoEvent[];
 }
 
+export interface InventoryInsightSku {
+  sku: string;
+  days_of_supply?: number;
+  qty_on_hand?: number;
+}
+
+export interface InventoryInsights {
+  low_days_of_supply_sku_count: number;
+  promo_at_risk_count: number;
+  low_days_of_supply_skus: InventoryInsightSku[];
+}
+
+export interface ForecastUnderSku {
+  sku: string;
+  shortfall_qty: number;
+}
+
+export interface ForecastInsights {
+  avg_forecast_accuracy_pct: number | null;
+  underforecasted_week_count: number;
+  largest_underforecast_skus: ForecastUnderSku[];
+}
+
+export interface AsnOverdue {
+  asn_number: string;
+  days_overdue: number;
+}
+
+export interface AsnInsights {
+  overdue_shipment_count: number;
+  on_time_receipt_pct: number | null;
+  top_overdue_asns: AsnOverdue[];
+}
+
+export interface ChargebackTypeSummary {
+  chargeback_type: string;
+  count: number;
+  amount: number;
+}
+
+export interface ChargebackInsights {
+  total_chargeback_amount: number;
+  open_chargeback_amount: number;
+  top_chargeback_types: ChargebackTypeSummary[];
+}
+
+export interface AtRiskFund {
+  fund_id: string;
+  committed_amount: number;
+  actual_spend: number;
+}
+
+export interface TradeFundInsights {
+  spend_compliance_pct: number | null;
+  expiring_soon_count: number;
+  at_risk_funds: AtRiskFund[];
+}
+
 export interface ValidationReport {
   errors: string[];
   warnings: string[];
@@ -107,6 +165,11 @@ export interface BriefingResponse {
   po_risk?: PoRiskData;
   oos_attribution?: OosAttribution;
   promo_readiness?: PromoReadiness;
+  inventory_insights?: InventoryInsights;
+  forecast_insights?: ForecastInsights;
+  asn_insights?: AsnInsights;
+  chargeback_insights?: ChargebackInsights;
+  trade_fund_insights?: TradeFundInsights;
   validation_report?: ValidationReport;
   [key: string]: unknown;
 }

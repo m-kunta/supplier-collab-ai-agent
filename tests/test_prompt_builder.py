@@ -22,6 +22,11 @@ def _make_ctx(
     po_risk: dict | None = None,
     oos_attribution: dict | None = None,
     promo_readiness: dict | None = None,
+    inventory_insights: dict | None = None,
+    forecast_insights: dict | None = None,
+    asn_insights: dict | None = None,
+    chargeback_insights: dict | None = None,
+    trade_fund_insights: dict | None = None,
     pipeline_notes: list | None = None,
 ):
     """Return a minimal mock BriefingContext with the given engine outputs."""
@@ -35,6 +40,11 @@ def _make_ctx(
     ctx.po_risk = po_risk
     ctx.oos_attribution = oos_attribution
     ctx.promo_readiness = promo_readiness
+    ctx.inventory_insights = inventory_insights
+    ctx.forecast_insights = forecast_insights
+    ctx.asn_insights = asn_insights
+    ctx.chargeback_insights = chargeback_insights
+    ctx.trade_fund_insights = trade_fund_insights
     ctx.pipeline_notes = pipeline_notes or []
     return ctx
 
@@ -106,11 +116,24 @@ class TestBuildPromptDataPayload(unittest.TestCase):
         """Missing optional data must appear as JSON null, not be omitted."""
         from src.prompt_builder import build_prompt
 
-        ctx = _make_ctx(oos_attribution=None, promo_readiness=None)
+        ctx = _make_ctx(
+            oos_attribution=None,
+            promo_readiness=None,
+            inventory_insights=None,
+            forecast_insights=None,
+            asn_insights=None,
+            chargeback_insights=None,
+            trade_fund_insights=None,
+        )
         result = build_prompt(ctx)
         # The JSON payload should contain null keys, not be absent
         self.assertIn('"oos_attribution": null', result)
         self.assertIn('"promo_readiness": null', result)
+        self.assertIn('"inventory_insights": null', result)
+        self.assertIn('"forecast_insights": null', result)
+        self.assertIn('"asn_insights": null', result)
+        self.assertIn('"chargeback_insights": null', result)
+        self.assertIn('"trade_fund_insights": null', result)
 
     def test_payload_is_valid_json_when_extracted(self):
         from src.prompt_builder import build_prompt

@@ -16,10 +16,11 @@ import { ScorecardPanel } from "./ScorecardPanel";
 import { PoRiskPanel } from "./PoRiskPanel";
 import { OosPanel } from "./OosPanel";
 import { PromoPanel } from "./PromoPanel";
+import { Phase8InsightsPanel } from "./Phase8InsightsPanel";
 import { ValidationBanner } from "../../../components/ValidationBanner";
 import styles from "./detail.module.css";
 
-type Tab = "narrative" | "scorecard" | "po_risk" | "oos" | "promo";
+type Tab = "narrative" | "scorecard" | "po_risk" | "oos" | "promo" | "phase8";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "narrative", label: "Narrative" },
@@ -27,6 +28,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "po_risk", label: "PO Risk" },
   { id: "oos", label: "OOS" },
   { id: "promo", label: "Promo" },
+  { id: "phase8", label: "Phase 8 Insights" },
 ];
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -98,6 +100,11 @@ export default function BriefingDetailPage() {
   const poRisk = briefing?.po_risk;
   const oos = briefing?.oos_attribution;
   const promo = briefing?.promo_readiness;
+  const inventory = briefing?.inventory_insights;
+  const forecast = briefing?.forecast_insights;
+  const asn = briefing?.asn_insights;
+  const chargebacks = briefing?.chargeback_insights;
+  const tradeFunds = briefing?.trade_fund_insights;
 
   return (
     <main className={styles.page}>
@@ -168,6 +175,16 @@ export default function BriefingDetailPage() {
 
             {activeTab === "promo" && (
               <PromoPanel data={promo} />
+            )}
+
+            {activeTab === "phase8" && (
+              <Phase8InsightsPanel
+                inventory={inventory}
+                forecast={forecast}
+                asn={asn}
+                chargebacks={chargebacks}
+                tradeFunds={tradeFunds}
+              />
             )}
           </article>
         </section>

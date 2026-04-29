@@ -10,6 +10,8 @@ from typing import Any
 import pandas as pd
 
 from src.benchmark_engine import compute_benchmarks
+from src.asn_insights import compute_asn_insights
+from src.chargeback_insights import compute_chargeback_insights
 from src.config import load_config
 from src.data_loader import load_dataset, load_manifest, load_vendor_data, resolve_vendor_id
 from src.data_validator import (
@@ -18,6 +20,8 @@ from src.data_validator import (
     validate_dataset_frame,
     validate_manifest_shape,
 )
+from src.forecast_insights import compute_forecast_insights
+from src.inventory_insights import compute_inventory_insights
 from src.llm_providers import ProviderSelection, generate_text, generate_text_stream, resolve_provider
 from src.oos_attribution import compute_oos_attribution
 from src.output_renderer import write_output
@@ -25,6 +29,7 @@ from src.po_risk_engine import compute_po_risk
 from src.prompt_builder import build_prompt
 from src.promo_readiness import compute_promo_readiness
 from src.scorecard_engine import compute_scorecard
+from src.trade_fund_insights import compute_trade_fund_insights
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +85,11 @@ class BriefingContext:
     po_risk: dict[str, Any] | None = None
     oos_attribution: dict[str, Any] | None = None
     promo_readiness: dict[str, Any] | None = None
+    inventory_insights: dict[str, Any] | None = None
+    forecast_insights: dict[str, Any] | None = None
+    asn_insights: dict[str, Any] | None = None
+    chargeback_insights: dict[str, Any] | None = None
+    trade_fund_insights: dict[str, Any] | None = None
 
     # --- Phase 4 output ---
     prompt: str = ""
@@ -402,6 +412,82 @@ def _stage_compute_promo_readiness(ctx: BriefingContext) -> BriefingContext:
     return ctx
 
 
+def _stage_compute_inventory_insights(ctx: BriefingContext) -> BriefingContext:
+    if "inventory_position" not in ctx.vendor_data:
+        ctx.add_note("Inventory insights skipped: inventory_position not in landing zone.")
+        ctx.inventory_insights = None
+        return ctx
+    inventory_df = ctx.vendor_data["inventory_position"]
+    promo_df = ctx.vendor_data.get("promo_calendar", pd.DataFrame())
+    ref = _meeting_date_as_date(ctx.meeting_date)
+    ctx.inventory_insights = compute_inventory_insights(
+        ctx.vendor_id,
+        inventory_df,
+        promo_df,
+        reference_date=ref,
+    )
+    return ctx
+
+
+def _stage_compute_forecast_insights(ctx: BriefingContext) -> BriefingContext:
+    if "demand_forecast" not in ctx.vendor_data:
+        ctx.add_note("Forecast insights skipped: demand_forecast not in landing zone.")
+        ctx.forecast_insights = None
+        return ctx
+    forecast_df = ctx.vendor_data["demand_forecast"]
+    ref = _meeting_date_as_date(ctx.meeting_date)
+    ctx.forecast_insights = compute_forecast_insights(
+        ctx.vendor_id,
+        forecast_df,
+        reference_date=ref,
+    )
+    return ctx
+
+
+def _stage_compute_asn_insights(ctx: BriefingContext) -> BriefingContext:
+    if "asn_receipts" not in ctx.vendor_data:
+        ctx.add_note("ASN insights skipped: asn_receipts not in landing zone.")
+        ctx.asn_insights = None
+        return ctx
+    ref = _meeting_date_as_date(ctx.meeting_date)
+    ctx.asn_insights = compute_asn_insights(
+        ctx.vendor_id,
+        ctx.vendor_data["asn_receipts"],
+        reference_date=ref,
+    )
+    return ctx
+
+
+def _stage_compute_chargeback_insights(ctx: BriefingContext) -> BriefingContext:
+    if "chargebacks" not in ctx.vendor_data:
+        ctx.add_note("Chargeback insights skipped: chargebacks not in landing zone.")
+        ctx.chargeback_insights = None
+        return ctx
+    ref = _meeting_date_as_date(ctx.meeting_date)
+    ctx.chargeback_insights = compute_chargeback_insights(
+        ctx.vendor_id,
+        ctx.vendor_data["chargebacks"],
+        reference_date=ref,
+    )
+    return ctx
+
+
+def _stage_compute_trade_fund_insights(ctx: BriefingContext) -> BriefingContext:
+    if "trade_funds" not in ctx.vendor_data:
+        ctx.add_note("Trade fund insights skipped: trade_funds not in landing zone.")
+        ctx.trade_fund_insights = None
+        return ctx
+    ref = _meeting_date_as_date(ctx.meeting_date)
+    promo_df = ctx.vendor_data.get("promo_calendar", pd.DataFrame())
+    ctx.trade_fund_insights = compute_trade_fund_insights(
+        ctx.vendor_id,
+        ctx.vendor_data["trade_funds"],
+        promo_df,
+        reference_date=ref,
+    )
+    return ctx
+
+
 def _stage_assemble_prompt(ctx: BriefingContext) -> BriefingContext:
     """Build the full LLM prompt from engine outputs and the prompt template."""
     ctx.prompt = build_prompt(ctx)
@@ -479,6 +565,11 @@ def run_pipeline(ctx: BriefingContext) -> BriefingContext:
     ctx = _stage_compute_po_risk(ctx)
     ctx = _stage_compute_oos_attribution(ctx)
     ctx = _stage_compute_promo_readiness(ctx)
+    ctx = _stage_compute_inventory_insights(ctx)
+    ctx = _stage_compute_forecast_insights(ctx)
+    ctx = _stage_compute_asn_insights(ctx)
+    ctx = _stage_compute_chargeback_insights(ctx)
+    ctx = _stage_compute_trade_fund_insights(ctx)
 
     ctx = _stage_assemble_prompt(ctx)
     ctx = _stage_generate_briefing(ctx)
@@ -565,6 +656,11 @@ def summarize_request(
         "po_risk": ctx.po_risk,
         "oos_attribution": ctx.oos_attribution,
         "promo_readiness": ctx.promo_readiness,
+        "inventory_insights": ctx.inventory_insights,
+        "forecast_insights": ctx.forecast_insights,
+        "asn_insights": ctx.asn_insights,
+        "chargeback_insights": ctx.chargeback_insights,
+        "trade_fund_insights": ctx.trade_fund_insights,
         "briefing_text": ctx.briefing_text,
         "output_files": ctx.output_files,
     }
@@ -612,6 +708,11 @@ def _serialize_ctx_summary(ctx: BriefingContext) -> dict[str, Any]:
         "po_risk": ctx.po_risk,
         "oos_attribution": ctx.oos_attribution,
         "promo_readiness": ctx.promo_readiness,
+        "inventory_insights": ctx.inventory_insights,
+        "forecast_insights": ctx.forecast_insights,
+        "asn_insights": ctx.asn_insights,
+        "chargeback_insights": ctx.chargeback_insights,
+        "trade_fund_insights": ctx.trade_fund_insights,
         "briefing_text": ctx.briefing_text,
         "output_files": ctx.output_files,
     }
@@ -676,6 +777,11 @@ def summarize_request_stream(
         ctx = _stage_compute_po_risk(ctx)
         ctx = _stage_compute_oos_attribution(ctx)
         ctx = _stage_compute_promo_readiness(ctx)
+        ctx = _stage_compute_inventory_insights(ctx)
+        ctx = _stage_compute_forecast_insights(ctx)
+        ctx = _stage_compute_asn_insights(ctx)
+        ctx = _stage_compute_chargeback_insights(ctx)
+        ctx = _stage_compute_trade_fund_insights(ctx)
 
         ctx = _stage_assemble_prompt(ctx)
     except Exception as exc:  # noqa: BLE001
@@ -697,6 +803,11 @@ def summarize_request_stream(
             "po_risk": ctx.po_risk,
             "oos_attribution": ctx.oos_attribution,
             "promo_readiness": ctx.promo_readiness,
+            "inventory_insights": ctx.inventory_insights,
+            "forecast_insights": ctx.forecast_insights,
+            "asn_insights": ctx.asn_insights,
+            "chargeback_insights": ctx.chargeback_insights,
+            "trade_fund_insights": ctx.trade_fund_insights,
             "llm_selection": {
                 "provider": ctx.provider.provider if ctx.provider else None,
                 "model": ctx.provider.model if ctx.provider else None,

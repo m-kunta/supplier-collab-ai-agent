@@ -90,6 +90,8 @@ Summarise the PO risk profile with a brief text paragraph then a table:
 Then:
 - 🔴 List any **critical** (red-tier) POs with delivery dates or specific flags.
 - 🟡 List any **watch** (yellow-tier) POs with context.
+- If `asn_insights` is available, use it to mention overdue shipments, receipt lag,
+  or receipt accuracy where that changes the risk picture.
 - ✅ Note if the pipeline is healthy overall.
 
 If PO data is unavailable, state: *"Purchase order data not available for this run."*
@@ -102,6 +104,8 @@ Summarise out-of-stock events:
 - Total OOS events and units lost.
 - Vendor-controllable vs. demand-driven split (%).
 - Top 3 recurring SKUs if available.
+- If `forecast_insights` is available, use forecast accuracy/bias to explain whether
+  misses look supplier-driven, demand-driven, or mixed.
 - 1–2 sentences on what is driving the vendor-controllable portion and the recommended
   ask for the meeting.
 
@@ -118,6 +122,8 @@ Report overall and per-event promo readiness scores:
 
 Then:
 - Flag any **red-tier** events as critical risks to promo execution.
+- If `inventory_insights` is available, use low-cover SKU and promo-at-risk context to
+  explain whether the issue is current inventory, inbound timing, or both.
 - Recommend a specific mitigation if a red-tier event is within 4 weeks of the meeting date.
 
 If promo calendar data is unavailable, state: *"Promo calendar data not available for this run."*
@@ -134,6 +140,10 @@ Focus areas for the category buyer:
 - New item sell-through and SKU rationalisation opportunities surfaced by the data.
 - Any compliance or quality issues visible in the scorecard.
 - Benchmark gap narrative: frame the gap-to-BIC as a commercial negotiation lever where applicable.
+- Use `chargeback_insights` when available to quantify current compliance cost or
+  unresolved deductions.
+- Use `trade_fund_insights` when available to explain under-collected or soon-expiring
+  vendor funding.
 
 ---
 
@@ -147,6 +157,10 @@ Focus areas for the supply planner:
 - OOS attribution discussion — what to ask the vendor to commit to fix.
 - DC throughput or receiving capacity signals (if data available).
 - Promo inventory build plan: is there enough coverage buffer ahead of each event?
+- Use `inventory_insights` when available to call out lowest-cover SKUs and promo exposure.
+- Use `forecast_insights` when available to call out persistent under-forecast or bias.
+- Use `asn_insights` when available to call out receipt execution, overdue ASNs, and
+  shipped-vs-received accuracy concerns.
 - Recommended safety stock or order-push actions based on the risk profile.
 
 ---
@@ -165,6 +179,11 @@ Provide prioritised, role-specific talking points for the meeting:
 ### Specific Ask & Proposed Resolution
 - **Ask:** *(Concrete, time-bound request)*
 - **Resolution:** *(What a good-faith vendor response looks like)*
+
+When relevant optional data is present, anchor asks to those facts:
+- `chargeback_insights` for deductions or compliance remediation.
+- `trade_fund_insights` for funding recovery, usage, or reconciliation.
+- `asn_insights` for receipt discipline or ASN execution fixes.
 
 ---
 

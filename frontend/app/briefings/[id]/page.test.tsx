@@ -206,6 +206,7 @@ describe("BriefingDetailPage", () => {
     expect(screen.getByRole("button", { name: "PO Risk" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "OOS" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Promo" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Phase 8 Insights" })).toBeInTheDocument();
   });
 
   it("narrative tab is active by default", async () => {
@@ -257,6 +258,67 @@ describe("BriefingDetailPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText("No promo readiness data available.")).toBeInTheDocument();
+    });
+  });
+
+  it("switching to Phase 8 Insights shows no-data when all new insight payloads are absent", async () => {
+    render(<BriefingDetailPage />);
+    await screen.findByText("ID: brief-123");
+
+    fireEvent.click(screen.getByRole("button", { name: "Phase 8 Insights" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("No Phase 8 insight data available.")).toBeInTheDocument();
+    });
+  });
+
+  it("switching to Phase 8 Insights renders supply and commercial insight sections", async () => {
+    vi.mocked(getBriefing).mockResolvedValue({
+      id: "brief-123",
+      created_at: "2026-04-17T12:00:00Z",
+      status: "complete",
+      request: { vendor: "Northstar Foods Co", meeting_date: "2026-04-03" },
+      briefing_text: "Fallback text body",
+      inventory_insights: {
+        low_days_of_supply_sku_count: 2,
+        promo_at_risk_count: 1,
+        low_days_of_supply_skus: [{ sku: "SKU1", days_of_supply: 3 }]
+      },
+      forecast_insights: {
+        avg_forecast_accuracy_pct: 0.82,
+        underforecasted_week_count: 4,
+        largest_underforecast_skus: [{ sku: "SKU1", shortfall_qty: 45 }]
+      },
+      asn_insights: {
+        overdue_shipment_count: 1,
+        on_time_receipt_pct: 0.5,
+        top_overdue_asns: [{ asn_number: "ASN-1", days_overdue: 3 }]
+      },
+      chargeback_insights: {
+        total_chargeback_amount: 260,
+        open_chargeback_amount: 120,
+        top_chargeback_types: [{ chargeback_type: "compliance", count: 2, amount: 180 }]
+      },
+      trade_fund_insights: {
+        spend_compliance_pct: 0.5,
+        expiring_soon_count: 1,
+        at_risk_funds: [{ fund_id: "F1", committed_amount: 1000, actual_spend: 300 }]
+      }
+    });
+
+    render(<BriefingDetailPage />);
+    await screen.findByText("ID: brief-123");
+
+    fireEvent.click(screen.getByRole("button", { name: "Phase 8 Insights" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Supply-Side Insights")).toBeInTheDocument();
+      expect(screen.getByText("Commercial Insights")).toBeInTheDocument();
+      expect(screen.getByText("Low DOS SKUs")).toBeInTheDocument();
+      expect(screen.getByText("Forecast Accuracy")).toBeInTheDocument();
+      expect(screen.getByText("Overdue ASNs")).toBeInTheDocument();
+      expect(screen.getByText("Chargebacks")).toBeInTheDocument();
+      expect(screen.getByText("Trade Fund Compliance")).toBeInTheDocument();
     });
   });
 
