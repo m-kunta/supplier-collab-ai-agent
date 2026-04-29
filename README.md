@@ -13,7 +13,33 @@
 
 The **Supplier Collaboration Briefing Agent** is an intelligence tool that automates pre-meeting preparation for category buyers and supply planners. It ingests exported vendor performance data (standardized CSV files declared in a `manifest.yaml`), runs a suite of deterministic compute engines, and synthesizes everything into a structured, role-specific briefing document via an LLM — in under 60 seconds instead of the 30–60 minutes of manual spreadsheet work the meeting would otherwise require.
 
-*Current capabilities: the full pipeline (compute engines + LLM briefing + `.md`/`.docx` output to `output/`) runs from the CLI and from a **FastAPI** layer in `api/`. The API supports true token-level SSE streaming during generation, downloads, vendor listing, validation-report responses, and `llm_provider`/`llm_model` overrides. A **Next.js web UI** in `frontend/` provides a live token-by-token streaming preview, briefing history, downloads, validation banners, and four engine data dashboards (Scorecard, PO Risk, OOS Attribution, Promo Readiness). Phases 1–7 are complete; the main remaining roadmap work is optional-domain expansion and deeper calendar/notification automation.*
+*Current capabilities: the full pipeline (compute engines + LLM briefing + `.md`/`.docx` output to `output/`) runs from the CLI and from a **FastAPI** layer in `api/`. The API supports true token-level SSE streaming during generation, downloads, vendor listing, validation-report responses, and `llm_provider`/`llm_model` overrides. A **Next.js web UI** in `frontend/` provides a live token-by-token streaming preview, briefing history, downloads, validation banners, replayable narrative output, and a consolidated `Phase 8 Insights` experience spanning scorecard, PO risk, OOS, promo, inventory, forecast, ASN, chargeback, and trade-fund signals. Phases 1–8 are complete; the main remaining roadmap work is deeper calendar/notification automation.*
+
+## 🖼️ UI Screenshots
+
+### 1. Live AI briefing generation
+
+The create flow shows the core product value immediately: deterministic engines run first, then the LLM briefing streams into the UI token by token so the user can watch the narrative take shape in real time.
+
+![Live streaming supplier briefing generation](docs/images/ui-streaming-generation.png)
+
+### 2. Replayable narrative briefing with validation context
+
+Each generated briefing opens into a detail view with stream replay, saved narrative output, downloadable markdown, and surfaced validation warnings so users can trust the data feeding the AI summary.
+
+![Briefing detail page with replayable AI narrative and validation banner](docs/images/ui-briefing-detail-narrative.png)
+
+### 3. Consolidated Phase 8 insights
+
+Beyond narrative generation, the UI exposes the highest-impact optional-domain analysis in one place: inventory pressure, forecast misses, overdue ASN execution, chargebacks, and at-risk trade funds.
+
+![Phase 8 insights tab with inventory, forecast, ASN, chargeback, and trade fund signals](docs/images/ui-phase8-insights.png)
+
+### 4. Briefing history and data quality states
+
+The history screen gives teams a working log of completed runs while making data validation state obvious at a glance, which is especially important when operating across mixed-quality supplier extracts.
+
+![Briefing history with validation-state badges](docs/images/ui-briefing-history.png)
 
 ---
 
