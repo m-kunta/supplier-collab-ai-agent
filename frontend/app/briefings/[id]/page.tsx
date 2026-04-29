@@ -28,7 +28,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "po_risk", label: "PO Risk" },
   { id: "oos", label: "OOS" },
   { id: "promo", label: "Promo" },
-  { id: "phase8", label: "Phase 8 Insights" },
+  { id: "phase8", label: "Insights" },
 ];
 
 function asRecord(value: unknown): Record<string, unknown> {

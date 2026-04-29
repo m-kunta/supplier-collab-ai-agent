@@ -35,7 +35,19 @@ Beyond narrative generation, the UI exposes the highest-impact optional-domain a
 
 ![Phase 8 insights tab with inventory, forecast, ASN, chargeback, and trade fund signals](docs/images/ui-phase8-insights.png)
 
-### 4. Briefing history and data quality states
+### 4. Scorecard benchmarking tab
+
+The scorecard tab keeps the deterministic metric layer visible, including current performance, short- and long-term trend movement, and benchmark context against peers and best-in-class targets.
+
+![Scorecard tab with trend and benchmark metrics](docs/images/ui-scorecard-tab.png)
+
+### 5. PO risk execution tab
+
+The PO risk tab surfaces the operational exception layer: red/yellow/green counts up top, then the exact late or at-risk PO lines a planner needs to work through before the meeting.
+
+![PO risk tab with risk summary cards and late PO lines](docs/images/ui-po-risk-tab.png)
+
+### 6. Briefing history and data quality states
 
 The history screen gives teams a working log of completed runs while making data validation state obvious at a glance, which is especially important when operating across mixed-quality supplier extracts.
 

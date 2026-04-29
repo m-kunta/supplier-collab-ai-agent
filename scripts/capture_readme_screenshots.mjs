@@ -50,7 +50,7 @@ const briefingResponse = {
   validation_report: {
     is_valid: true,
     errors: [],
-    warnings: ["Optional domains loaded with partial mock coverage for trade funds."],
+    warnings: [],
   },
   scorecard: {
     fill_rate: {
@@ -343,10 +343,70 @@ async function capturePhase8Detail(page) {
   });
 
   await page.goto(`${FRONTEND_URL}/briefings/${briefingId}`, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: "Phase 8 Insights" }).click();
+  await page.getByRole("button", { name: "Insights" }).click();
   await page.getByText("Supply-Side Insights").waitFor();
   await page.screenshot({
     path: path.join(SCREENSHOT_DIR, "ui-phase8-insights.png"),
+    fullPage: true,
+  });
+}
+
+async function captureScorecardDetail(page) {
+  await installCommonRoutes(page);
+  await page.route(`**/api/briefings/${briefingId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(briefingResponse),
+    });
+  });
+
+  await page.route(`**/api/briefings/${briefingId}/stream`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+      },
+      body: `data: ${JSON.stringify({ type: "done" })}\n\n`,
+    });
+  });
+
+  await page.goto(`${FRONTEND_URL}/briefings/${briefingId}`, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Scorecard" }).click();
+  await page.getByRole("columnheader", { name: "Metric" }).waitFor();
+  await page.screenshot({
+    path: path.join(SCREENSHOT_DIR, "ui-scorecard-tab.png"),
+    fullPage: true,
+  });
+}
+
+async function capturePoRiskDetail(page) {
+  await installCommonRoutes(page);
+  await page.route(`**/api/briefings/${briefingId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(briefingResponse),
+    });
+  });
+
+  await page.route(`**/api/briefings/${briefingId}/stream`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+      },
+      body: `data: ${JSON.stringify({ type: "done" })}\n\n`,
+    });
+  });
+
+  await page.goto(`${FRONTEND_URL}/briefings/${briefingId}`, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "PO Risk" }).click();
+  await page.getByText("Total POs").waitFor();
+  await page.screenshot({
+    path: path.join(SCREENSHOT_DIR, "ui-po-risk-tab.png"),
     fullPage: true,
   });
 }
@@ -386,6 +446,12 @@ async function main() {
     await page.unrouteAll({ behavior: "ignoreErrors" });
 
     await capturePhase8Detail(page);
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+
+    await captureScorecardDetail(page);
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+
+    await capturePoRiskDetail(page);
     await page.unrouteAll({ behavior: "ignoreErrors" });
 
     await captureHistory(page);
