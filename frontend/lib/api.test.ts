@@ -297,3 +297,59 @@ describe("frontend api client", () => {
     ).rejects.toThrow("backend down");
   });
 });
+
+describe("getSettings", () => {
+  beforeEach(() => { vi.stubGlobal("fetch", vi.fn()); });
+  afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });
+
+  it("returns parsed settings from /api/settings", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({
+        slack_webhook_url: "https://hooks.slack.com/X",
+        teams_webhook_url: "",
+        email_enabled: false,
+        email_smtp_host: "",
+        email_smtp_port: 587,
+        email_smtp_user: "",
+        email_smtp_password: "",
+        email_from: "",
+        email_to: [],
+      }), { status: 200 })
+    );
+    const { getSettings } = await import("./api");
+    const settings = await getSettings();
+    expect(settings.slack_webhook_url).toBe("https://hooks.slack.com/X");
+  });
+});
+
+describe("updateSettings", () => {
+  beforeEach(() => { vi.stubGlobal("fetch", vi.fn()); });
+  afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });
+
+  it("sends PUT with partial payload and returns updated settings", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ slack_webhook_url: "new-url", email_enabled: true }), { status: 200 })
+    );
+    const { updateSettings } = await import("./api");
+    const result = await updateSettings({ slack_webhook_url: "new-url" });
+    expect(result.slack_webhook_url).toBe("new-url");
+    const [url, opts] = vi.mocked(fetch).mock.calls[0];
+    expect(url).toContain("/api/settings");
+    expect((opts as RequestInit).method).toBe("PUT");
+  });
+});
+
+describe("getSchedule", () => {
+  beforeEach(() => { vi.stubGlobal("fetch", vi.fn()); });
+  afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });
+
+  it("returns job list from /api/schedule", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ jobs: [{ id: "poll_calendar", name: "Poll", next_run: null }] }), { status: 200 })
+    );
+    const { getSchedule } = await import("./api");
+    const schedule = await getSchedule();
+    expect(schedule.jobs).toHaveLength(1);
+    expect(schedule.jobs[0].id).toBe("poll_calendar");
+  });
+});

@@ -398,3 +398,53 @@ export async function checkHealth(): Promise<boolean> {
     return false;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Notification Settings (Phase 9 — prototype)
+// ---------------------------------------------------------------------------
+
+export interface NotificationSettings {
+  slack_webhook_url: string;
+  teams_webhook_url: string;
+  email_enabled: boolean;
+  email_smtp_host: string;
+  email_smtp_port: number;
+  email_smtp_user: string;
+  email_smtp_password: string;
+  email_from: string;
+  email_to: string[];
+}
+
+export interface ScheduledJob {
+  id: string;
+  name: string;
+  next_run: string | null;
+}
+
+export interface ScheduleResponse {
+  jobs: ScheduledJob[];
+}
+
+export async function getSettings(): Promise<NotificationSettings> {
+  const res = await fetch(`${API_BASE}/api/settings`);
+  if (!res.ok) throw new Error(`Failed to load settings: ${res.status}`);
+  return res.json();
+}
+
+export async function updateSettings(
+  partial: Partial<NotificationSettings>
+): Promise<NotificationSettings> {
+  const res = await fetch(`${API_BASE}/api/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(partial),
+  });
+  if (!res.ok) throw new Error(`Failed to update settings: ${res.status}`);
+  return res.json();
+}
+
+export async function getSchedule(): Promise<ScheduleResponse> {
+  const res = await fetch(`${API_BASE}/api/schedule`);
+  if (!res.ok) throw new Error(`Failed to load schedule: ${res.status}`);
+  return res.json();
+}
