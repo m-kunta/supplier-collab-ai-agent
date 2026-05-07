@@ -22,6 +22,23 @@
 5. [x] **DOCX Output Formatting**
    - Address the TODO in `src/output_renderer.py` for passing explicit tier metadata alongside text for a more robust solution in DOCX table colour-coding (instead of relying on string-matching "red", "yellow", "green").
 
+## Phase 9: Calendar & Notification Automation
+
+1. **Calendar Ingestion Layer**
+   - Create a service to parse upcoming meetings (e.g., via a mock JSON schedule or basic API integration like Google Calendar/Outlook).
+   - Extract `vendor_id` and `meeting_date` from calendar invites to map to the correct data inputs.
+
+2. **Automated Pipeline Triggering**
+   - Implement a background scheduler (e.g., using `APScheduler` or a cron task in FastAPI) to automatically run the generation pipeline 24-48 hours before the scheduled meeting.
+
+3. **Notification Delivery Workflows**
+   - Build a new delivery module (`src/delivery.py`) to dispatch outputs.
+   - **Chat Integration**: Add Slack/Teams webhooks to post a high-level summary and a direct link to the web UI dashboard.
+   - **Email Integration**: Add SMTP or SendGrid/Mailgun capabilities to email the briefing with the rendered `.docx` output attached.
+
+4. **Web UI Settings Dashboard**
+   - Create a configuration page in the frontend to manage notification preferences.
+   - Allow users to enable/disable automated triggers, set their webhook URLs, and configure target email addresses.
+
 ## Next Roadmap Items
-- **Calendar & Notification Automation**: Deepen calendar work into delivery workflows (email/Teams/Slack or equivalent notification integrations) beyond simple scheduler polling.
 - **Production Onboarding**: Add richer features for production onboarding of new suppliers or categories.
