@@ -38,6 +38,8 @@ from api.schemas import BriefingCreate
 from api.store import BriefingStore
 from src.agent import AgentPipelineError, summarize_request, summarize_request_stream
 from src.data_loader import load_manifest
+from src.delivery import NotificationSettings
+from src.settings_store import SettingsStore
 
 app = FastAPI(
     title="Supplier Collab AI API",
@@ -47,6 +49,7 @@ app = FastAPI(
 )
 
 briefing_store = BriefingStore()
+settings_store = SettingsStore()
 
 _cors_origins = [
     o.strip()
@@ -343,3 +346,33 @@ def list_vendors(
         "total": len(df),
         "data_dir": str(resolved),
     }
+
+
+# ---------------------------------------------------------------------------
+# Notification Settings (Phase 9 — prototype)
+# ---------------------------------------------------------------------------
+
+@app.get("/api/settings")
+def get_settings() -> dict:
+    """Return current notification settings."""
+    return settings_store.load().model_dump()
+
+
+@app.put("/api/settings")
+def update_settings(payload: dict) -> dict:
+    """Partial-update notification settings and persist."""
+    updated = settings_store.update(payload)
+    return updated.model_dump()
+
+
+@app.get("/api/schedule")
+def get_schedule() -> dict:
+    """Return upcoming scheduled briefing jobs (from APScheduler)."""
+    jobs = []
+    for job in scheduler.scheduler.get_jobs():
+        jobs.append({
+            "id": job.id,
+            "name": job.name,
+            "next_run": job.next_run_time.isoformat() if job.next_run_time else None,
+        })
+    return {"jobs": jobs}
