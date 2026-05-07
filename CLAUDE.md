@@ -43,7 +43,9 @@ Interactive docs: `http://127.0.0.1:8000/docs`
 
 **Phase 7 (complete):** Pydantic-backed dataset schema validation in `src/data_validator.py` (schema model validation, row-model validation, numeric/date/nullability/enum checks, dataset-specific cross-field rules). Dataset validation gate in `src/agent.py` for both sync and streaming flows with required-vs-optional handling. Structured `validation_report` included in pipeline summaries and API responses. Persisted validation report artifact via `validation_report_path` in `output_files`. Frontend error hardening with a `ValidationBanner` component surfacing `validation_report` API payload errors gracefully via Next.js components. Production landing-zone support is fully operational.
 
-**Next work:** Deepen calendar work into delivery/notification automation, plus any richer production onboarding or deeper Phase 8 refinements.
+**Phase 8 (complete):** Optional domain expansion (Inventory, Forecasts, ASNs, Chargebacks, Trade Funds). Refinements applied including frontend visual polish (progress bars/badges), robust backend aggregations (excess stock, ASN volumes), dynamic DOCX table styling, and LLM prompt integration.
+
+**Next work:** Phase 9 — Deepen calendar work into delivery/notification automation (email/Teams/Slack), plus richer production onboarding for new suppliers.
 
 ---
 

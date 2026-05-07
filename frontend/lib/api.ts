@@ -99,6 +99,8 @@ export interface InventoryInsights {
   low_days_of_supply_sku_count: number;
   promo_at_risk_count: number;
   low_days_of_supply_skus: InventoryInsightSku[];
+  excess_days_of_supply_sku_count: number;
+  excess_days_of_supply_skus: InventoryInsightSku[];
 }
 
 export interface ForecastUnderSku {
@@ -119,6 +121,9 @@ export interface AsnOverdue {
 
 export interface AsnInsights {
   overdue_shipment_count: number;
+  total_shipped_qty: number;
+  total_received_qty: number;
+  total_overdue_qty: number;
   on_time_receipt_pct: number | null;
   top_overdue_asns: AsnOverdue[];
 }

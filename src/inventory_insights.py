@@ -30,6 +30,8 @@ def _empty_result() -> dict[str, Any]:
         "total_on_order_qty": 0.0,
         "low_days_of_supply_sku_count": 0,
         "low_days_of_supply_skus": [],
+        "excess_days_of_supply_sku_count": 0,
+        "excess_days_of_supply_skus": [],
         "promo_at_risk_count": 0,
         "promo_at_risk_events": [],
     }
@@ -85,6 +87,19 @@ def compute_inventory_insights(
         for _, row in low_cover.head(5).iterrows()
     ]
 
+    excess_cover = (
+        sku_summary[sku_summary["days_of_supply"].notna() & (sku_summary["days_of_supply"] > 60)]
+        .sort_values(["days_of_supply", "sku"], ascending=[False, True])
+    )
+    excess_cover_skus = [
+        {
+            "sku": str(row["sku"]),
+            "days_of_supply": float(row["days_of_supply"]),
+            "qty_on_hand": float(row["qty_on_hand"]),
+        }
+        for _, row in excess_cover.head(5).iterrows()
+    ]
+
     promo_at_risk_events: list[dict[str, Any]] = []
     if not promo_df.empty and "sku" in promo_df.columns:
         promo = promo_df.copy()
@@ -137,6 +152,8 @@ def compute_inventory_insights(
         "total_on_order_qty": float(inventory["qty_on_order"].sum()),
         "low_days_of_supply_sku_count": int(len(low_cover)),
         "low_days_of_supply_skus": low_cover_skus,
+        "excess_days_of_supply_sku_count": int(len(excess_cover)),
+        "excess_days_of_supply_skus": excess_cover_skus,
         "promo_at_risk_count": int(len(promo_at_risk_events)),
         "promo_at_risk_events": promo_at_risk_events,
     }

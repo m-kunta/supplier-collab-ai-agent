@@ -123,20 +123,25 @@ def render_docx(ctx: BriefingContext, output_path: Path) -> Path:  # type: ignor
         table = doc.add_table(rows=len(table_data), cols=len(table_data[0]))
         table.style = 'Table Grid'
         
+        headers = [c.lower().strip() for c in table_data[0]]
+        tier_col_idx = -1
+        for i, h in enumerate(headers):
+            if "tier" in h or "risk" in h or "direction" in h:
+                tier_col_idx = i
+                break
+
         for i, row_data in enumerate(table_data):
             row = table.rows[i]
-            row_text_lower = " ".join(row_data).lower()
             
             bg_color = None
-            if i > 0: # Not header row
-                # Heuristic: colour rows based on risk-tier keywords present in cell text.
-                # Works correctly for current briefing output shapes (OTIF, PO risk, OOS tables).
-                # TODO: pass explicit tier metadata alongside text for a robust solution.
-                if 'red' in row_text_lower and 'yellow' not in row_text_lower and 'green' not in row_text_lower:
+            if i > 0 and tier_col_idx >= 0 and tier_col_idx < len(row_data):
+                # Robustly look specifically at the tier column instead of entire row text
+                tier_val = row_data[tier_col_idx].lower()
+                if 'red' in tier_val or 'declining' in tier_val:
                     bg_color = RGBColor(255, 230, 230)
-                elif 'yellow' in row_text_lower and 'green' not in row_text_lower:
+                elif 'yellow' in tier_val:
                     bg_color = RGBColor(255, 255, 200)
-                elif 'green' in row_text_lower:
+                elif 'green' in tier_val or 'improving' in tier_val:
                     bg_color = RGBColor(230, 255, 230)
                     
             for j, cell_text in enumerate(row_data):

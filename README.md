@@ -275,6 +275,9 @@ Phase 1 completion notes:
 - [x] Expand briefing logic to consume optional domains: `inventory_position`, `asn_receipts`, `demand_forecast`, `chargebacks`, `trade_funds`.
 - [x] Add deterministic backend insight engines for all five optional domains and expose them in sync + streaming API payloads.
 - [x] Surface the new optional-domain outputs in the briefing detail UI with a consolidated `Phase 8 Insights` tab.
+- [x] Refine insights presentation with visual progress bars/badges and advanced aggregation logic (e.g., explicit excess stock metrics).
+
+### Phase 9: Calendar & Notification Automation
 - [ ] Deepen calendar automation beyond scheduler polling into delivery workflows (email/Teams or equivalent notification integration).
 
 ## 🛠️ Key modules

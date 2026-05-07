@@ -90,7 +90,7 @@ Summarise the PO risk profile with a brief text paragraph then a table:
 Then:
 - 🔴 List any **critical** (red-tier) POs with delivery dates or specific flags.
 - 🟡 List any **watch** (yellow-tier) POs with context.
-- If `asn_insights` is available, use it to mention overdue shipments, receipt lag,
+- If `asn_insights` is available, use it to mention overdue shipments (citing `total_overdue_qty` if significant), receipt lag,
   or receipt accuracy where that changes the risk picture.
 - ✅ Note if the pipeline is healthy overall.
 
@@ -157,7 +157,7 @@ Focus areas for the supply planner:
 - OOS attribution discussion — what to ask the vendor to commit to fix.
 - DC throughput or receiving capacity signals (if data available).
 - Promo inventory build plan: is there enough coverage buffer ahead of each event?
-- Use `inventory_insights` when available to call out lowest-cover SKUs and promo exposure.
+- Use `inventory_insights` when available to call out both lowest-cover SKUs and explicitly flag any excess stock (`excess_days_of_supply_skus` with > 60 days of supply) to manage working capital.
 - Use `forecast_insights` when available to call out persistent under-forecast or bias.
 - Use `asn_insights` when available to call out receipt execution, overdue ASNs, and
   shipped-vs-received accuracy concerns.
@@ -183,7 +183,7 @@ Provide prioritised, role-specific talking points for the meeting:
 When relevant optional data is present, anchor asks to those facts:
 - `chargeback_insights` for deductions or compliance remediation.
 - `trade_fund_insights` for funding recovery, usage, or reconciliation.
-- `asn_insights` for receipt discipline or ASN execution fixes.
+- `asn_insights` for receipt discipline, citing specific overdue quantities (`total_overdue_qty`) or ASN execution fixes.
 
 ---
 

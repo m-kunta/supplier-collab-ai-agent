@@ -229,3 +229,29 @@ Full backend suite: `.venv/bin/pytest tests/ -q` (**270 tests**). Frontend: `cd 
 
 Local folder: `supplier_collab_ai_agent` (underscore, for workspace consistency).
 GitHub remote: `supplier-collab-ai-agent` (hyphen).
+
+---
+
+## Claude Code Skills
+
+When working in this project with **Claude Code**, the following skills are active via `.claude/settings.json`. Invoke them with the `Skill` tool before relevant tasks:
+
+| Skill | Trigger |
+|---|---|
+| `superpowers:brainstorming` | Before any new feature or architecture change |
+| `superpowers:writing-plans` | Before multi-step implementation tasks |
+| `superpowers:executing-plans` | When executing a written plan |
+| `superpowers:systematic-debugging` | When encountering any bug or test failure |
+| `superpowers:test-driven-development` | Before writing implementation code |
+| `superpowers:requesting-code-review` | Before merging or after major changes |
+| `superpowers:verification-before-completion` | Before claiming work is done |
+| `ralph-loop:ralph-loop` | To start an autonomous development loop (`ralph --monitor`) |
+| `commit-commands:commit` | When committing changes |
+| `commit-commands:commit-push-pr` | When pushing and opening a PR |
+| `feature-dev:feature-dev` | When implementing a new feature end-to-end |
+| `octo:debug` | Deep debugging workflows |
+| `octo:tdd` | Test-driven development cycles |
+| `octo:review` | Code review |
+| `security-guidance:security-review` | Security audit before shipping |
+| `claude-mem:make-plan` | Create a phased implementation plan |
+| `claude-mem:mem-search` | Search cross-session memory for prior work |

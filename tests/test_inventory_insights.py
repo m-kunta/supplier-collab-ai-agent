@@ -40,7 +40,7 @@ class TestComputeInventoryInsights(unittest.TestCase):
                     "qty_allocated": 1,
                     "qty_in_transit": 0,
                     "qty_on_order": 10,
-                    "days_of_supply": 12,
+                    "days_of_supply": 70,
                     "snapshot_date": "2026-04-20",
                 },
                 {
@@ -72,6 +72,11 @@ class TestComputeInventoryInsights(unittest.TestCase):
         self.assertEqual(
             [row["sku"] for row in result["low_days_of_supply_skus"]],
             ["SKU3", "SKU1"],
+        )
+        self.assertEqual(result["excess_days_of_supply_sku_count"], 1)
+        self.assertEqual(
+            [row["sku"] for row in result["excess_days_of_supply_skus"]],
+            ["SKU2"],
         )
         self.assertEqual(result["promo_at_risk_count"], 0)
         self.assertEqual(result["promo_at_risk_events"], [])
@@ -157,6 +162,8 @@ class TestComputeInventoryInsights(unittest.TestCase):
         self.assertEqual(result["location_count"], 0)
         self.assertEqual(result["low_days_of_supply_sku_count"], 0)
         self.assertEqual(result["low_days_of_supply_skus"], [])
+        self.assertEqual(result["excess_days_of_supply_sku_count"], 0)
+        self.assertEqual(result["excess_days_of_supply_skus"], [])
         self.assertEqual(result["promo_at_risk_count"], 0)
 
 

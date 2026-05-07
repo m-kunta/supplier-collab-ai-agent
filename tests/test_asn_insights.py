@@ -61,6 +61,9 @@ class TestComputeAsnInsights(unittest.TestCase):
         self.assertEqual(result["shipment_count"], 3)
         self.assertEqual(result["received_shipment_count"], 2)
         self.assertEqual(result["overdue_shipment_count"], 1)
+        self.assertEqual(result["total_shipped_qty"], 350.0)
+        self.assertEqual(result["total_received_qty"], 275.0)
+        self.assertEqual(result["total_overdue_qty"], 50.0)
         self.assertAlmostEqual(result["avg_receipt_lag_days"], 0.5, places=4)
         self.assertAlmostEqual(result["on_time_receipt_pct"], 0.5, places=4)
         self.assertAlmostEqual(result["fill_in_accuracy_pct"], 0.925, places=4)
@@ -70,6 +73,9 @@ class TestComputeAsnInsights(unittest.TestCase):
     def test_empty_input_returns_valid_empty_summary(self):
         result = compute_asn_insights("V1001", pd.DataFrame(), reference_date=date(2026, 4, 10))
         self.assertEqual(result["shipment_count"], 0)
+        self.assertEqual(result["total_shipped_qty"], 0.0)
+        self.assertEqual(result["total_received_qty"], 0.0)
+        self.assertEqual(result["total_overdue_qty"], 0.0)
         self.assertIsNone(result["avg_receipt_lag_days"])
         self.assertEqual(result["top_overdue_asns"], [])
 

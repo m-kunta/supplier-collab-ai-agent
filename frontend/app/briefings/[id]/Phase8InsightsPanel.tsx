@@ -97,7 +97,11 @@ export function Phase8InsightsPanel({
                 {inventory.low_days_of_supply_skus.map((item) => (
                   <tr key={item.sku}>
                     <td className={styles.td}>{item.sku}</td>
-                    <td className={`${styles.td} ${styles.declining}`}>{item.days_of_supply ?? "-"}</td>
+                    <td className={styles.td}>
+                      <span className={`${styles.badge} ${item.days_of_supply !== null && item.days_of_supply < 7 ? styles.red : styles.yellow}`}>
+                        {item.days_of_supply ?? "-"} days
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -116,12 +120,23 @@ export function Phase8InsightsPanel({
                 </tr>
               </thead>
               <tbody>
-                {forecast.largest_underforecast_skus.map((item) => (
-                  <tr key={item.sku}>
-                    <td className={styles.td}>{item.sku}</td>
-                    <td className={`${styles.td} ${styles.declining}`}>{item.shortfall_qty}</td>
-                  </tr>
-                ))}
+                {forecast.largest_underforecast_skus.map((item) => {
+                  const maxShortfall = Math.max(...forecast.largest_underforecast_skus.map(f => f.shortfall_qty));
+                  const pct = maxShortfall > 0 ? (item.shortfall_qty / maxShortfall) * 100 : 0;
+                  return (
+                    <tr key={item.sku}>
+                      <td className={styles.td}>{item.sku}</td>
+                      <td className={styles.td}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span className={styles.declining}>{item.shortfall_qty}</span>
+                          <div className={styles.barWrap} style={{ width: '60px', margin: 0, height: '6px' }}>
+                            <div className={styles.barFill} style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -141,7 +156,11 @@ export function Phase8InsightsPanel({
                 {asn.top_overdue_asns.map((item) => (
                   <tr key={item.asn_number}>
                     <td className={styles.td}>{item.asn_number}</td>
-                    <td className={`${styles.td} ${styles.declining}`}>{item.days_overdue}</td>
+                    <td className={styles.td}>
+                      <span className={`${styles.badge} ${item.days_overdue > 7 ? styles.red : styles.yellow}`}>
+                        {item.days_overdue} days
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -161,13 +180,24 @@ export function Phase8InsightsPanel({
                 </tr>
               </thead>
               <tbody>
-                {chargebacks.top_chargeback_types.map((item) => (
-                  <tr key={item.chargeback_type}>
-                    <td className={styles.td}>{item.chargeback_type}</td>
-                    <td className={styles.td}>{item.count}</td>
-                    <td className={`${styles.td} ${styles.declining}`}>${Math.round(item.amount)}</td>
-                  </tr>
-                ))}
+                {chargebacks.top_chargeback_types.map((item) => {
+                  const maxChargeback = Math.max(...chargebacks.top_chargeback_types.map(c => c.amount));
+                  const pct = maxChargeback > 0 ? (item.amount / maxChargeback) * 100 : 0;
+                  return (
+                    <tr key={item.chargeback_type}>
+                      <td className={styles.td}>{item.chargeback_type}</td>
+                      <td className={styles.td}>{item.count}</td>
+                      <td className={styles.td}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span className={styles.declining}>${Math.round(item.amount)}</span>
+                          <div className={styles.barWrap} style={{ width: '60px', margin: 0, height: '6px' }}>
+                            <div className={styles.barFill} style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -185,13 +215,23 @@ export function Phase8InsightsPanel({
                 </tr>
               </thead>
               <tbody>
-                {tradeFunds.at_risk_funds.map((item) => (
-                  <tr key={item.fund_id}>
-                    <td className={styles.td}>{item.fund_id}</td>
-                    <td className={styles.td}>${Math.round(item.committed_amount)}</td>
-                    <td className={`${styles.td} ${styles.declining}`}>${Math.round(item.actual_spend)}</td>
-                  </tr>
-                ))}
+                {tradeFunds.at_risk_funds.map((item) => {
+                  const spendPct = item.committed_amount > 0 ? Math.min(100, (item.actual_spend / item.committed_amount) * 100) : 0;
+                  return (
+                    <tr key={item.fund_id}>
+                      <td className={styles.td}>{item.fund_id}</td>
+                      <td className={styles.td}>${Math.round(item.committed_amount)}</td>
+                      <td className={styles.td}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span className={styles.declining}>${Math.round(item.actual_spend)}</span>
+                          <div className={styles.barWrap} style={{ width: '60px', margin: 0, height: '6px' }}>
+                            <div className={styles.barFill} style={{ width: `${spendPct}%`, background: '#ffc846' }} />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
