@@ -125,8 +125,24 @@ class BriefingScheduler:
             output_files = result.get("output_files") or {}
             saved_path = output_files.get("md_path") or output_files.get("docx_path")
             logger.info(f"Successfully generated briefing! Saved to: {saved_path}")
-            
-            # FUTURE: Send Email / Teams notification here with the file attached
+
+            from src.delivery import NotificationDispatcher
+            from src.settings_store import SettingsStore
+            settings = SettingsStore().load()
+            dispatcher = NotificationDispatcher(settings)
+            briefing_payload = {
+                "vendor": vendor_name,
+                "meeting_date": meeting_date,
+                "briefing_id": result.get("briefing_id", ""),
+                "briefing_text": result.get("briefing_text", ""),
+                "output_files": output_files,
+            }
+            delivery_results = dispatcher.dispatch(briefing_payload)
+            for dr in delivery_results:
+                if dr.success:
+                    logger.info(f"Notified [{dr.channel}] successfully.")
+                else:
+                    logger.warning(f"Notification [{dr.channel}] failed: {dr.error}")
 
         except Exception as e:
             logger.error(f"Failed to generate scheduled briefing for {vendor_name}: {e}")
