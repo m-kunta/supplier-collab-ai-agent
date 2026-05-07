@@ -18,6 +18,9 @@ export function AppHeader() {
         <Link href="/briefings" className={styles.link}>
           Briefing History
         </Link>
+        <Link href="/settings" className={styles.link}>
+          Settings
+        </Link>
       </nav>
     </header>
   );
