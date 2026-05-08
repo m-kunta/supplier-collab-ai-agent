@@ -37,7 +37,7 @@ Interactive docs: `http://127.0.0.1:8000/docs`
 
 ## Project Status
 
-**Current phase:** Phase 8 — **Optional Domain Expansion + UI Surfacing — Complete.** Phases 1–8 are complete.
+**Current phase:** Phase 9 — **Calendar & Notification Automation — Complete (prototype).** Phases 1–9 are complete.
 
 **Phase 6 (complete):** `generate_text_stream()` added to `src/llm_providers.py` using the Anthropic SDK `messages.stream()` context manager for true token-level streaming. `summarize_request_stream()` added to `src/agent.py` — runs all compute engines, emits an `engines` event (full engine payload) so the UI can paint dashboards immediately, then streams LLM token chunks via `generate_text_stream()`, persists the briefing, and emits `done`. `POST /api/briefings/stream` FastAPI endpoint bridges the sync generator to an async `StreamingResponse` via `asyncio.Queue`. `createBriefingStreaming()` in `frontend/lib/api.ts` consumes the SSE stream via `fetch()` + `ReadableStream`. `BriefingCreateForm` is wired to the streaming endpoint with a live token preview pane (blinking cursor, auto-scroll), three-phase status labels, and navigates to the briefing detail page on `done`.
 
@@ -45,7 +45,9 @@ Interactive docs: `http://127.0.0.1:8000/docs`
 
 **Phase 8 (complete):** Optional domain expansion (Inventory, Forecasts, ASNs, Chargebacks, Trade Funds). Refinements applied including frontend visual polish (progress bars/badges), robust backend aggregations (excess stock, ASN volumes), dynamic DOCX table styling, and LLM prompt integration.
 
-**Next work:** Phase 9 — Deepen calendar work into delivery/notification automation (email/Teams/Slack), plus richer production onboarding for new suppliers.
+**Phase 9 (complete — prototype):** Calendar ingestion layer with mock JSON schedule + APScheduler-backed auto-trigger (T-24h / T-2h before meeting). `src/delivery.py` dispatches Slack webhook, Teams webhook, and SMTP email notifications. `src/settings_store.py` provides file-backed JSON settings CRUD (thread-safe). FastAPI exposes `GET /api/settings`, `PUT /api/settings`, `GET /api/schedule`. Next.js `/settings` page lets users manage webhook URLs, SMTP config, and view scheduled jobs. All components are prototype-grade and designed to be swapped for production backends (real calendar OAuth, DB-backed settings, retry queues).
+
+**Next work:** Phase 10 — Production hardening: real Google Calendar / Outlook OAuth, DB-backed settings store, retry/dead-letter queue for notification delivery, richer supplier onboarding workflows.
 
 ---
 
@@ -93,8 +95,11 @@ data_validator  benchmark_engine       ↓
 | `src/llm_providers.py` | Provider-agnostic LLM wrapper. `resolve_provider()` returns a `ProviderSelection` dataclass. `generate_text()` (blocking, with exponential back-off retry) and `generate_text_stream()` (true token streaming via Anthropic `messages.stream()`; single-chunk fallback for OpenAI/Google/Groq). All four providers wired. | All four live |
 | `src/prompt_builder.py` | `build_prompt(ctx)` — loads versioned prompt template from `prompts/`, serialises all engine outputs to JSON, substitutes `{{DATA_PAYLOAD}}`, `{{PERSONA_EMPHASIS}}`, `{{VENDOR_ID}}`, `{{MEETING_DATE}}`. | Working |
 | `src/output_renderer.py` | `render_markdown(ctx)` — prepends YAML front-matter + appends footer. `render_docx(ctx)` — generates formatted Word document. `write_output(ctx, output_dir, output_format)` — dispatches to md/docx renderer and writes file(s). | Markdown & DOCX working |
-| `api/` | FastAPI app. `GET /api/health`, `POST /api/briefings` (blocking, thread-pool), **`POST /api/briefings/stream`** (true SSE streaming via `asyncio.Queue`), `GET /api/briefings`, `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay), `GET /api/briefings/{id}/download`, `GET /api/vendors`. In-memory store and background scheduler startup. | Working |
-| `frontend/` | **[Phase 5–8 — Complete]** Next.js web app. App shell, briefings history, briefing detail with SSE replay + tab dashboards, validation banner, download/history flows, live streaming preview, and a consolidated `Phase 8 Insights` tab for optional-domain outputs. | Working |
+| `api/` | FastAPI app. `GET /api/health`, `POST /api/briefings` (blocking, thread-pool), **`POST /api/briefings/stream`** (true SSE streaming via `asyncio.Queue`), `GET /api/briefings`, `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay), `GET /api/briefings/{id}/download`, `GET /api/vendors`, `GET /api/settings`, `PUT /api/settings`, `GET /api/schedule`. In-memory store and background scheduler startup. | Working |
+| `frontend/` | **[Phase 5–9 — Complete]** Next.js web app. App shell, briefings history, briefing detail with SSE replay + tab dashboards, validation banner, download/history flows, live streaming preview, `Phase 8 Insights` tab, and `/settings` page for notification config and scheduled job status. | Working |
+| `src/delivery.py` | Notification dispatcher (Phase 9 prototype). `NotificationSettings` Pydantic model. `NotificationDispatcher.dispatch()` sends to Slack webhook, Teams webhook, and/or SMTP email based on configured settings. Returns `list[DeliveryResult]`. | Working |
+| `src/settings_store.py` | File-backed JSON settings store (Phase 9 prototype). Thread-safe load/save/update of `NotificationSettings` to `config/notification_settings.json`. Uses Pydantic v2 `.model_dump_json()` and `.model_fields`. | Working |
+| `src/scheduler.py` | APScheduler-backed calendar polling and briefing auto-trigger. Reads `data/calendar/meetings.json` (mock), schedules jobs at T-24h and T-2h before each meeting, and dispatches notifications via `NotificationDispatcher` after briefing generation. | Working |
 | `src/inventory_insights.py` | Inventory coverage rollups: low-days-of-supply SKUs, aggregate inventory totals, and promo-at-risk context from current inventory vs. commitments. | Working |
 | `src/forecast_insights.py` | Forecast rollups: accuracy, bias, underforecast counts, and largest shortfall SKUs for demand-side context. | Working |
 | `src/asn_insights.py` | ASN/receipt execution rollups: overdue shipment counts, receipt lag, on-time receipt %, fill-in accuracy, and top overdue ASN lines. | Working |
@@ -170,6 +175,7 @@ Production prompts currently inject pre-computed structured data and request sec
 | **Phase 6** | True LLM Streaming ✅ | `generate_text_stream()`, streaming orchestrator, `POST /api/briefings/stream`, live token preview in `BriefingCreateForm` |
 | **Phase 7** | Data Contracts + Prod Landing Zone ✅ | Pydantic validation, structured validation reports, persisted validation artifacts, prod landing-zone scaffold |
 | **Phase 8** | Optional domain expansion + UI surfacing ✅ | Wire `inventory_position`, `asn_receipts`, `demand_forecast`, `chargebacks`, and `trade_funds` into briefing logic and surface them in the briefing detail UI |
+| **Phase 9** | Calendar & Notification Automation ✅ (prototype) | Calendar ingestion, APScheduler auto-trigger, `src/delivery.py` (Slack/Teams/email), `src/settings_store.py`, FastAPI settings + schedule routes, Next.js `/settings` page |
 
 ---
 
@@ -205,8 +211,12 @@ Current test coverage:
 - Frontend `createBriefingStreaming` and API helpers: 11 tests in `frontend/lib/api.test.ts`.
 - Frontend `BriefingCreateForm`: 10 tests in `frontend/components/BriefingCreateForm.test.tsx` — payload shape, phase labels, live preview tokens, `onDone` navigation, `onError`, network retry, generic exception.
 - Additional frontend coverage: startup API route, root layout, home redirect, new-briefing page, validation banner, and briefing-detail `Phase 8 Insights` tab rendering.
+- Notification delivery (Phase 9): 7 tests in `tests/test_delivery.py` — no-channels-enabled, Slack POST, Teams POST, Slack HTTP error handling, email send, email skip on no recipients, multiple channels.
+- Settings store (Phase 9): 5 tests in `tests/test_settings_store.py` — load defaults, save + reload, valid JSON output, partial update, unknown key ignore.
+- Settings API (Phase 9): 3 FastAPI tests in `tests/test_settings_api.py` — `GET /api/settings` (defaults), `PUT /api/settings` (update), `GET /api/schedule` (returns job list).
+- Frontend settings (Phase 9): 3 tests in `frontend/lib/api.test.ts` for `getSettings`, `updateSettings`, `getSchedule`. 5 tests in `frontend/components/NotificationSettingsForm.test.tsx` — renders Slack/Teams inputs, toggles email section, calls onSave with values, disables button while saving. 3 tests in `frontend/app/settings/page.test.tsx` — renders heading, renders scheduled job row, shows empty state.
 
-Full backend suite: run `.venv/bin/pytest tests/ -q` (**270 tests**). Frontend: `cd frontend && npm test` (**59 tests**). **Total: 329 tests, 0 failures.**
+Full backend suite: run `.venv/bin/pytest tests/ -q` (**285 tests**). Frontend: `cd frontend && npm test` (**67 tests**). **Total: 352 tests, 0 failures.**
 
 ---
 

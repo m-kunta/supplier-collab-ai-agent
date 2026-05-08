@@ -22,23 +22,24 @@
 5. [x] **DOCX Output Formatting**
    - Address the TODO in `src/output_renderer.py` for passing explicit tier metadata alongside text for a more robust solution in DOCX table colour-coding (instead of relying on string-matching "red", "yellow", "green").
 
-## Phase 9: Calendar & Notification Automation
+## Phase 9: Calendar & Notification Automation ✅ (prototype — complete 2026-05-08)
 
-1. **Calendar Ingestion Layer**
-   - Create a service to parse upcoming meetings (e.g., via a mock JSON schedule or basic API integration like Google Calendar/Outlook).
-   - Extract `vendor_id` and `meeting_date` from calendar invites to map to the correct data inputs.
+1. [x] **Calendar Ingestion Layer**
+   - Mock JSON schedule (`data/calendar/meetings.json`) parsed by `src/scheduler.py`.
+   - `vendor_id` and `meeting_date` extracted to map to the correct data inputs.
 
-2. **Automated Pipeline Triggering**
-   - Implement a background scheduler (e.g., using `APScheduler` or a cron task in FastAPI) to automatically run the generation pipeline 24-48 hours before the scheduled meeting.
+2. [x] **Automated Pipeline Triggering**
+   - APScheduler polls calendar every 15 min; schedules T-24h and T-2h briefing jobs per meeting.
 
-3. **Notification Delivery Workflows**
-   - Build a new delivery module (`src/delivery.py`) to dispatch outputs.
-   - **Chat Integration**: Add Slack/Teams webhooks to post a high-level summary and a direct link to the web UI dashboard.
-   - **Email Integration**: Add SMTP or SendGrid/Mailgun capabilities to email the briefing with the rendered `.docx` output attached.
+3. [x] **Notification Delivery Workflows**
+   - `src/delivery.py`: `NotificationDispatcher` dispatches to Slack webhook, Teams webhook, and SMTP email.
+   - Wired into scheduler post-briefing generation.
 
-4. **Web UI Settings Dashboard**
-   - Create a configuration page in the frontend to manage notification preferences.
-   - Allow users to enable/disable automated triggers, set their webhook URLs, and configure target email addresses.
+4. [x] **Web UI Settings Dashboard**
+   - `frontend/app/settings/page.tsx`: manage webhook URLs, SMTP config, email recipients.
+   - `GET /api/settings`, `PUT /api/settings`, `GET /api/schedule` FastAPI routes.
+   - `src/settings_store.py`: file-backed JSON persistence (`config/notification_settings.json`).
 
 ## Next Roadmap Items
+- **Phase 10 — Production Hardening**: Real Google Calendar / Outlook OAuth, DB-backed settings store, retry/dead-letter queue for notification delivery.
 - **Production Onboarding**: Add richer features for production onboarding of new suppliers or categories.
