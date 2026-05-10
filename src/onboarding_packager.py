@@ -35,8 +35,8 @@ Once complete, these files should be uploaded to your designated landing zone.
                     with open(schema_file, "r", encoding="utf-8") as f:
                         schema = yaml.safe_load(f)
                         
-                    # Extract columns
-                    columns = schema.get("columns", {})
+                    # Use column_types (covers all required + optional columns)
+                    columns = schema.get("column_types", {})
                     col_names = list(columns.keys())
                     
                     if col_names:
