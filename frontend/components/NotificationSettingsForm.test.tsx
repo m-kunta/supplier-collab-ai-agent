@@ -5,6 +5,7 @@ import { NotificationSettingsForm } from "./NotificationSettingsForm";
 import { NotificationSettings } from "../lib/api";
 
 const defaults: NotificationSettings = {
+  automation_enabled: true,
   slack_webhook_url: "",
   teams_webhook_url: "",
   email_enabled: false,
@@ -15,6 +16,11 @@ const defaults: NotificationSettings = {
   email_from: "",
   email_to: [],
 };
+
+it("renders automation enabled toggle", () => {
+  render(<NotificationSettingsForm settings={defaults} onSave={vi.fn()} saving={false} />);
+  expect(screen.getByLabelText(/Enable Automated Pipeline Triggers/i)).toBeInTheDocument();
+});
 
 it("renders Slack webhook input", () => {
   render(<NotificationSettingsForm settings={defaults} onSave={vi.fn()} saving={false} />);

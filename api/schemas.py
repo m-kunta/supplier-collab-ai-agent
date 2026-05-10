@@ -25,3 +25,20 @@ class BriefingCreate(BaseModel):
     category_filter: Optional[str] = None
     llm_provider: Optional[str] = Field(default=None, description="Override default LLM provider (anthropic/openai/google/groq).")
     llm_model: Optional[str] = Field(default=None, description="Override default LLM model string.")
+
+class VendorCreate(BaseModel):
+    """Payload for registering a new supplier during Production Onboarding."""
+    vendor_id: str = Field(..., description="Unique alphanumeric ID for the vendor (e.g., 'VEN123').")
+    vendor_name: str = Field(..., description="Full company name.")
+    category: str = Field(..., description="Primary category or department.")
+    tier: str = Field(..., description="Supplier tier (e.g., 'Tier 1', 'Tier 2').")
+
+class VendorResponse(BaseModel):
+    """Response returned when fetching or creating a vendor."""
+    id: str
+    vendor_id: str
+    vendor_name: str
+    category: str
+    tier: str
+    status: str
+    created_at: str

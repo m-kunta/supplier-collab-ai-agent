@@ -98,7 +98,13 @@ class BriefingScheduler:
             logger.error(f"Error polling calendar: {e}")
             
     def _trigger_briefing(self, meeting: dict, phase: str):
-        logger.info(f"*** AUTO-TRIGGER *** Generating {phase} briefing for: {meeting['summary']}")
+        from src.settings_store import SettingsStore
+        settings = SettingsStore().load()
+        if not settings.automation_enabled:
+            logger.info(f"*** AUTO-TRIGGER ABORTED *** Automation disabled for {meeting.get('summary', 'Unknown')} ({phase})")
+            return
+
+        logger.info(f"*** AUTO-TRIGGER *** Generating {phase} briefing for: {meeting.get('summary', 'Unknown')}")
 
         # Extract vendor name from meeting title, e.g., "Vendor Review: Northstar Foods Co"
         summary = meeting.get('summary', '')

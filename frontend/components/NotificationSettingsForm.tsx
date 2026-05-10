@@ -22,6 +22,22 @@ export function NotificationSettingsForm({ settings, onSave, saving }: Props) {
 
   return (
     <form onSubmit={handleSubmit} aria-label="notification settings">
+      <section style={{ marginBottom: "2rem", padding: "1rem", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8 }}>
+        <label style={{ display: "flex", alignItems: "center", fontWeight: "bold", fontSize: "1.1rem" }}>
+          <input
+            id="automation_enabled"
+            type="checkbox"
+            checked={form.automation_enabled}
+            onChange={(e) => set("automation_enabled", e.target.checked)}
+            style={{ marginRight: "0.75rem", width: 18, height: 18 }}
+          />
+          Enable Automated Pipeline Triggers
+        </label>
+        <p style={{ margin: "0.5rem 0 0 2rem", color: "#64748b", fontSize: "0.9rem" }}>
+          When enabled, the system will automatically generate briefings 24 and 2 hours before scheduled meetings.
+        </p>
+      </section>
+
       <section style={{ marginBottom: "2rem" }}>
         <h3>Slack</h3>
         <label htmlFor="slack_webhook_url">Slack Webhook URL</label>

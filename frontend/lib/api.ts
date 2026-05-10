@@ -404,6 +404,7 @@ export async function checkHealth(): Promise<boolean> {
 // ---------------------------------------------------------------------------
 
 export interface NotificationSettings {
+  automation_enabled: boolean;
   slack_webhook_url: string;
   teams_webhook_url: string;
   email_enabled: boolean;

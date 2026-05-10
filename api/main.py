@@ -40,6 +40,8 @@ from src.agent import AgentPipelineError, summarize_request, summarize_request_s
 from src.data_loader import load_manifest
 from src.delivery import NotificationSettings
 from src.settings_store import SettingsStore
+from src.vendor_store import VendorStore, VendorRecord
+from src.onboarding_packager import generate_onboarding_pack
 
 app = FastAPI(
     title="Supplier Collab AI API",
@@ -50,6 +52,7 @@ app = FastAPI(
 
 briefing_store = BriefingStore()
 settings_store = SettingsStore()
+vendor_store = VendorStore()
 
 _cors_origins = [
     o.strip()
@@ -346,6 +349,41 @@ def list_vendors(
         "total": len(df),
         "data_dir": str(resolved),
     }
+
+@app.get("/api/vendors/registered")
+def list_registered_vendors() -> dict[str, Any]:
+    """List all vendors registered via the onboarding flow."""
+    vendors = vendor_store.list_vendors()
+    return {"vendors": vendors, "total": len(vendors)}
+
+@app.post("/api/vendors")
+def register_vendor(payload: dict) -> dict[str, Any]:
+    """Register a new vendor for production onboarding."""
+    try:
+        record = VendorRecord(**payload)
+        saved = vendor_store.add_vendor(record)
+        return saved
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/vendors/{vendor_id}/onboarding-pack")
+def get_onboarding_pack(vendor_id: str):
+    """Generate and download a zip file with data templates for a vendor."""
+    vendor = vendor_store.get_vendor(vendor_id)
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found.")
+        
+    mem_zip = generate_onboarding_pack(vendor["vendor_name"], vendor["vendor_id"])
+    
+    return StreamingResponse(
+        mem_zip,
+        media_type="application/x-zip-compressed",
+        headers={
+            "Content-Disposition": f"attachment; filename=\"{vendor['vendor_id']}_onboarding_pack.zip\""
+        }
+    )
 
 
 # ---------------------------------------------------------------------------

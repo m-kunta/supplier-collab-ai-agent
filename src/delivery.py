@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class NotificationSettings(BaseModel):
+    automation_enabled: bool = True
     slack_webhook_url: str = ""
     teams_webhook_url: str = ""
     email_enabled: bool = False
@@ -128,6 +129,24 @@ class NotificationDispatcher:
             f"View: http://localhost:3000/briefings/{bid}\nID: {bid}",
             "plain",
         ))
+
+        output_files = briefing.get("output_files", {})
+        docx_path = output_files.get("docx_path")
+        if docx_path:
+            from pathlib import Path
+            p = Path(docx_path)
+            if p.exists():
+                from email.mime.base import MIMEBase
+                from email import encoders
+                with open(p, "rb") as attachment:
+                    part = MIMEBase("application", "octet-stream")
+                    part.set_payload(attachment.read())
+                encoders.encode_base64(part)
+                part.add_header(
+                    "Content-Disposition",
+                    f"attachment; filename={p.name}",
+                )
+                msg.attach(part)
 
         try:
             with smtplib.SMTP(s.email_smtp_host, s.email_smtp_port) as server:
