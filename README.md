@@ -1,6 +1,6 @@
 # Supplier Collaboration Briefing Agent (Supplier Collab AI)
 
-![Status: In Progress](https://img.shields.io/badge/status-In_Progress-yellow.svg)
+![Status: Phase 9 Complete](https://img.shields.io/badge/status-Phase_9_Complete-brightgreen.svg)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
 ![Scope](https://img.shields.io/badge/scope-v1.0-brightgreen.svg)
 ![LLM](https://img.shields.io/badge/AI-Claude%20%7C%20OpenAI-purple.svg)
@@ -13,7 +13,7 @@
 
 The **Supplier Collaboration Briefing Agent** is an intelligence tool that automates pre-meeting preparation for category buyers and supply planners. It ingests exported vendor performance data (standardized CSV files declared in a `manifest.yaml`), runs a suite of deterministic compute engines, and synthesizes everything into a structured, role-specific briefing document via an LLM — in under 60 seconds instead of the 30–60 minutes of manual spreadsheet work the meeting would otherwise require.
 
-*Current capabilities: the full pipeline (compute engines + LLM briefing + `.md`/`.docx` output to `output/`) runs from the CLI and from a **FastAPI** layer in `api/`. The API supports true token-level SSE streaming during generation, downloads, vendor listing, validation-report responses, and `llm_provider`/`llm_model` overrides. A **Next.js web UI** in `frontend/` provides a live token-by-token streaming preview, briefing history, downloads, validation banners, replayable narrative output, and a consolidated `Phase 8 Insights` experience spanning scorecard, PO risk, OOS, promo, inventory, forecast, ASN, chargeback, and trade-fund signals. Phases 1–8 are complete; the main remaining roadmap work is deeper calendar/notification automation.*
+*Current capabilities: the full pipeline (compute engines + LLM briefing + `.md`/`.docx` output to `output/`) runs from the CLI and from a **FastAPI** layer in `api/`. The API supports true token-level SSE streaming during generation, downloads, vendor listing, validation-report responses, `llm_provider`/`llm_model` overrides, notification settings management, and vendor onboarding. A **Next.js web UI** in `frontend/` provides a live token-by-token streaming preview, briefing history, downloads, validation banners, replayable narrative output, a consolidated `Phase 8 Insights` experience spanning scorecard, PO risk, OOS, promo, inventory, forecast, ASN, chargeback, and trade-fund signals, and a `/settings` page for managing Slack/Teams/email notification config and viewing scheduled jobs. Phases 1–9 are complete; the main remaining roadmap work is Phase 10 production hardening (real calendar OAuth, DB-backed settings, retry queues).*
 
 ## 🖼️ UI Screenshots
 
@@ -277,8 +277,19 @@ Phase 1 completion notes:
 - [x] Surface the new optional-domain outputs in the briefing detail UI with a consolidated `Phase 8 Insights` tab.
 - [x] Refine insights presentation with visual progress bars/badges and advanced aggregation logic (e.g., explicit excess stock metrics).
 
-### Phase 9: Calendar & Notification Automation
-- [ ] Deepen calendar automation beyond scheduler polling into delivery workflows (email/Teams or equivalent notification integration).
+### Phase 9: Calendar & Notification Automation ✅
+- [x] Calendar ingestion layer — mock JSON schedule (`data/calendar/meetings.json`) parsed by `src/scheduler.py`; APScheduler fires T-24h and T-2h briefing jobs per meeting.
+- [x] Notification delivery (`src/delivery.py`) — `NotificationDispatcher` dispatches to Slack webhook, Teams webhook, and SMTP email with optional DOCX attachment.
+- [x] Settings store (`src/settings_store.py`) — file-backed JSON persistence for `NotificationSettings` (thread-safe, Pydantic v2).
+- [x] FastAPI settings + schedule routes — `GET /api/settings`, `PUT /api/settings`, `GET /api/schedule`.
+- [x] Next.js `/settings` page — manage webhook URLs, SMTP config, automation toggle, and view scheduled jobs.
+- [x] Vendor onboarding scaffold — `src/vendor_store.py` (registry), `src/onboarding_packager.py` (zip of CSV templates from real schemas), `POST /api/vendors`, `GET /api/vendors/registered`, `GET /api/vendors/{id}/onboarding-pack`.
+
+### Phase 10: Production Hardening (Planned)
+- [ ] Real Google Calendar / Outlook OAuth integration (replace mock JSON schedule).
+- [ ] DB-backed settings store (replace file-backed JSON).
+- [ ] Retry / dead-letter queue for notification delivery.
+- [ ] Richer supplier onboarding workflows and frontend vendor management UI.
 
 ## 🛠️ Key modules
 
@@ -298,6 +309,11 @@ Phase 1 completion notes:
 - `src/chargeback_insights.py`: Chargeback and compliance cost insights.
 - `src/trade_fund_insights.py`: Trade fund execution and at-risk funding insights.
 - `src/llm_providers.py`: Model wrappers — `generate_text()` (blocking) and `generate_text_stream()` (true token streaming, Anthropic; fallback for others).
+- `src/delivery.py`: Notification dispatcher — Slack webhook, Teams webhook, SMTP email with DOCX attachment support.
+- `src/settings_store.py`: File-backed JSON settings CRUD for `NotificationSettings` (thread-safe).
+- `src/scheduler.py`: APScheduler calendar polling and T-24h/T-2h briefing auto-trigger.
+- `src/vendor_store.py`: File-backed vendor registry (`config/vendors.json`) — CRUD for `VendorRecord`.
+- `src/onboarding_packager.py`: Generates a downloadable zip with blank CSV templates derived from `data/schemas/*.schema.yaml`.
 
 ## 💻 Quick Start
 
@@ -328,9 +344,9 @@ python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir data/
 
 | Layer | Runner | Count |
 |---|---|---|
-| Backend (Python) | `.venv/bin/pytest tests/ -q` | **270 tests** |
-| Frontend (TypeScript) | `cd frontend && npm test` | **59 tests** |
-| **Total** | | **329 tests** |
+| Backend (Python) | `.venv/bin/pytest tests/ -q` | **314 tests** |
+| Frontend (TypeScript) | `cd frontend && npm test` | **67 tests** |
+| **Total** | | **381 tests** |
 
 ---
 
