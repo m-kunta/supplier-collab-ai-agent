@@ -13,7 +13,7 @@
 
 The **Supplier Collaboration Briefing Agent** is an intelligence tool that automates pre-meeting preparation for category buyers and supply planners. It ingests exported vendor performance data (standardized CSV files declared in a `manifest.yaml`), runs a suite of deterministic compute engines, and synthesizes everything into a structured, role-specific briefing document via an LLM — in under 60 seconds instead of the 30–60 minutes of manual spreadsheet work the meeting would otherwise require.
 
-*Current capabilities: the full pipeline (compute engines + LLM briefing + `.md`/`.docx` output to `output/`) runs from the CLI and from a **FastAPI** layer in `api/`. The API supports true token-level SSE streaming during generation, downloads, vendor listing, validation-report responses, `llm_provider`/`llm_model` overrides, notification settings management, and vendor onboarding. A **Next.js web UI** in `frontend/` provides a live token-by-token streaming preview, briefing history, downloads, validation banners, replayable narrative output, a consolidated `Phase 8 Insights` experience spanning scorecard, PO risk, OOS, promo, inventory, forecast, ASN, chargeback, and trade-fund signals, and a `/settings` page for managing Slack/Teams/email notification config and viewing scheduled jobs. Phases 1–9 are complete; the main remaining roadmap work is Phase 10 production hardening (real calendar OAuth, DB-backed settings, retry queues).*
+*Current capabilities: the full pipeline (compute engines + LLM briefing + `.md`/`.docx` output to `output/`) runs from the CLI and from a **FastAPI** layer in `api/`. The API supports true token-level SSE streaming during generation, downloads, vendor listing, validation-report responses, `llm_provider`/`llm_model` overrides, notification settings management, and vendor onboarding. A **Next.js web UI** in `frontend/` provides a live token-by-token streaming preview, briefing history, downloads, validation banners, replayable narrative output, a consolidated `Phase 8 Insights` experience spanning scorecard, PO risk, OOS, promo, inventory, forecast, ASN, chargeback, and trade-fund signals, a `/settings` page for managing Slack/Teams/email notification config and viewing scheduled jobs, and in-progress vendor onboarding UI foundations (`frontend/lib/api.ts` helpers plus `VendorRegisterForm`). Phases 1–9 are complete; the immediate next UI work is the `/vendors` page and nav link, followed by Phase 10 production hardening (real calendar OAuth, DB-backed settings, retry queues).*
 
 ## 🖼️ UI Screenshots
 
@@ -284,12 +284,13 @@ Phase 1 completion notes:
 - [x] FastAPI settings + schedule routes — `GET /api/settings`, `PUT /api/settings`, `GET /api/schedule`.
 - [x] Next.js `/settings` page — manage webhook URLs, SMTP config, automation toggle, and view scheduled jobs.
 - [x] Vendor onboarding scaffold — `src/vendor_store.py` (registry), `src/onboarding_packager.py` (zip of CSV templates from real schemas), `POST /api/vendors`, `GET /api/vendors/registered`, `GET /api/vendors/{id}/onboarding-pack`.
+- [x] Vendor onboarding frontend foundation — typed `frontend/lib/api.ts` helpers for registered-vendor list, registration, and onboarding-pack download; `VendorRegisterForm` controlled form with loading/error states and focused tests.
 
 ### Phase 10: Production Hardening (Planned)
 - [ ] Real Google Calendar / Outlook OAuth integration (replace mock JSON schedule).
 - [ ] DB-backed settings store (replace file-backed JSON).
 - [ ] Retry / dead-letter queue for notification delivery.
-- [ ] Richer supplier onboarding workflows and frontend vendor management UI.
+- [ ] Finish `/vendors` page and nav link, then add richer supplier onboarding workflows and frontend vendor management UI.
 
 ## 🛠️ Key modules
 
@@ -314,6 +315,8 @@ Phase 1 completion notes:
 - `src/scheduler.py`: APScheduler calendar polling and T-24h/T-2h briefing auto-trigger.
 - `src/vendor_store.py`: File-backed vendor registry (`config/vendors.json`) — CRUD for `VendorRecord`.
 - `src/onboarding_packager.py`: Generates a downloadable zip with blank CSV templates derived from `data/schemas/*.schema.yaml`.
+- `frontend/lib/api.ts`: Frontend API client including vendor onboarding helpers (`listRegisteredVendors`, `registerVendor`, `downloadOnboardingPack`).
+- `frontend/components/VendorRegisterForm.tsx`: Controlled vendor registration form for vendor_id, vendor_name, category, and tier.
 
 ## 💻 Quick Start
 
@@ -344,9 +347,10 @@ python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir data/
 
 | Layer | Runner | Count |
 |---|---|---|
-| Backend (Python) | `.venv/bin/pytest tests/ -q` | **314 tests** |
-| Frontend (TypeScript) | `cd frontend && npm test` | **67 tests** |
-| **Total** | | **381 tests** |
+| Backend (Python) | `.venv/bin/pytest tests/ -q` | **314 tests as last recorded** |
+| Vendor onboarding frontend slice | `cd frontend && npx vitest run --config vitest.config.ts components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` | **22 tests** |
+
+Known frontend full-suite note: `app/briefings/[id]/page.test.tsx` currently has an unrelated tab-label expectation mismatch (`Phase 8 Insights` expected vs. `Insights` rendered).
 
 ---
 

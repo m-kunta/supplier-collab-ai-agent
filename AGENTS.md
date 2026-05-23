@@ -55,7 +55,7 @@ make dev
 
 **Phase 9 (complete — prototype):** Calendar ingestion layer with mock JSON schedule + APScheduler-backed auto-trigger (T-24h / T-2h before meeting). `src/delivery.py` dispatches Slack webhook, Teams webhook, and SMTP email (with optional DOCX attachment). `src/settings_store.py` provides file-backed JSON settings CRUD (thread-safe, Pydantic v2). FastAPI exposes `GET /api/settings`, `PUT /api/settings`, `GET /api/schedule`. Next.js `/settings` page lets users manage webhook URLs, SMTP config, automation toggle, and view scheduled jobs. Vendor onboarding scaffold: `src/vendor_store.py`, `src/onboarding_packager.py`, and three new API routes. All components are prototype-grade and designed to be swapped for production backends.
 
-**Next work:** Phase 10 — Production hardening: real Google Calendar / Outlook OAuth, DB-backed settings store, retry/dead-letter queue for notification delivery, richer supplier onboarding workflows and frontend vendor management UI.
+**Next work:** Finish the Vendor Onboarding UI (`/vendors` page + nav link), then Phase 10 production hardening: real Google Calendar / Outlook OAuth, DB-backed settings store, retry/dead-letter queue for notification delivery, richer supplier onboarding workflows and frontend vendor management UI.
 
 **Current to-do list:**
 - [x] Fix calendar auto-trigger path so scheduled T-24h/T-2h briefings call the current pipeline API correctly.
@@ -67,6 +67,7 @@ make dev
 - [x] Add file-backed settings store and FastAPI settings routes.
 - [x] Build Next.js `/settings` page with automation toggle and scheduled job status.
 - [x] Scaffold vendor onboarding: vendor store, onboarding packager, and API routes.
+- [x] Add frontend vendor onboarding API helpers and `VendorRegisterForm` with focused Vitest coverage.
 
 **Reference:** `docs/implementation_plan.md`, `docs/supplier-collab-ai-scope-v1.0.md` section 13.
 
@@ -105,12 +106,14 @@ data_validator  benchmark_engine       ↓
 |---|---|---|
 | `cli.py` | CLI entry point. Parses `--vendor`, `--date`, `--data-dir`, `--lookback-weeks`, `--persona-emphasis`, `--include-benchmarks`, `--output-format`, `--category-filter`. | Working |
 | `api/` | FastAPI: health, `POST /api/briefings` (blocking), **`POST /api/briefings/stream`** (true SSE via `asyncio.Queue`), list/get briefings, `GET /api/briefings/{id}/stream` (SSE replay), download, `GET /api/vendors`, `GET /api/settings`, `PUT /api/settings`, `GET /api/schedule`, `GET /api/vendors/registered`, `POST /api/vendors`, `GET /api/vendors/{id}/onboarding-pack`. Background scheduler starts with the app; notification delivery is wired via `NotificationDispatcher`. | Working |
-| `frontend/` | **[Phase 5–9 complete]** Next.js UI. App shell, history, briefing detail with SSE replay + tab dashboards, `Phase 8 Insights` tab, live token preview, validation banner, download/history flows, and `/settings` page for notification config (Slack/Teams/email/automation toggle) and scheduled job status. | Working |
+| `frontend/` | **[Phase 5–9 complete; Vendor Onboarding UI in progress]** Next.js UI. App shell, history, briefing detail with SSE replay + tab dashboards, `Phase 8 Insights` tab, live token preview, validation banner, download/history flows, `/settings` page for notification config (Slack/Teams/email/automation toggle) and scheduled job status, vendor onboarding API helpers, and `VendorRegisterForm`. `/vendors` page and nav link remain next. | Working |
 | `src/delivery.py` | Notification dispatcher (Phase 9 prototype). `NotificationSettings` Pydantic model (incl. `automation_enabled`). `NotificationDispatcher.dispatch()` — Slack webhook, Teams webhook, SMTP email with optional DOCX attachment. Returns `list[DeliveryResult]`. | Working |
 | `src/settings_store.py` | File-backed JSON settings store (Phase 9 prototype). Thread-safe load/save/update of `NotificationSettings` to `config/notification_settings.json`. Uses Pydantic v2 `.model_dump_json()` and `.model_fields`. | Working |
 | `src/vendor_store.py` | File-backed vendor registry (`config/vendors.json`). CRUD for `VendorRecord` (Pydantic model: id, vendor_id, vendor_name, category, tier, status, created_at). Thread-safe read/write. | Working |
 | `src/onboarding_packager.py` | Generates a downloadable `.zip` with blank CSV templates (headers from `column_types` keys in `data/schemas/*.schema.yaml`) plus `instructions.md`. | Working |
 | `api/schemas.py` | Pydantic `VendorCreate` / `VendorResponse` models for the vendor onboarding API. | Working |
+| `frontend/lib/api.ts` | Frontend API client with briefing/history/settings helpers plus vendor onboarding helpers: `listRegisteredVendors`, `registerVendor`, and `downloadOnboardingPack`. | Working |
+| `frontend/components/VendorRegisterForm.tsx` | Controlled vendor onboarding registration form with required vendor_id/vendor_name/category/tier fields, error display, submitting state, and success callback. | Working |
 | `src/agent.py` | Full pipeline including LLM and markdown write; `summarize_request()` returns JSON for CLI and API. | Working |
 | `src/config.py` | Loads `config/agent_config.yaml` with YAML parsing and validates that the top-level document is a mapping. Returns dict. | Working |
 | `src/data_loader.py` | `resolve_data_dir()`, `load_manifest()`, dataset loading, vendor/category resolution, and vendor-scoped dataset filtering. | Working |
@@ -240,8 +243,9 @@ Current test coverage:
 - Onboarding packager (Phase 9): 6 tests in `tests/test_onboarding_packager.py` — returns BytesIO, instructions content, CSV templates present, header-only rows, buffer seeked to zero, missing schemas dir.
 - Vendor API (Phase 9): 7 tests in `tests/test_vendor_api.py` — list empty, list all, register success/409/400, onboarding-pack zip, 404 for unknown vendor.
 - Frontend settings (Phase 9): 3 tests in `frontend/lib/api.test.ts` for `getSettings`/`updateSettings`/`getSchedule`. 5 tests in `NotificationSettingsForm.test.tsx`. 3 tests in `settings/page.test.tsx`.
+- Frontend vendor onboarding (in progress): 3 tests in `frontend/lib/api.test.ts` for registered-vendor list, registration POST, and onboarding-pack download. 5 tests in `frontend/components/VendorRegisterForm.test.tsx` for field rendering, submit callback, duplicate/error display, submitting state, and successful form clear.
 
-Full backend suite: `.venv/bin/pytest tests/ -q` (**314 tests**). Frontend: `cd frontend && npm test` (**67 tests**). **Total: 381 tests, 0 failures.**
+Full backend suite: `.venv/bin/pytest tests/ -q` (**314 tests** as last recorded). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**22 tests**). Known unrelated frontend full-suite issue: `app/briefings/[id]/page.test.tsx` still expects `Phase 8 Insights` while the UI renders `Insights`.
 
 ---
 

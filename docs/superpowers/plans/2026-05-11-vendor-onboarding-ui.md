@@ -39,7 +39,7 @@
 - Modify: `frontend/lib/api.ts`
 - Test: `frontend/lib/api.test.ts`
 
-- [ ] **Step 1: Add types and helpers**
+- [x] **Step 1: Add types and helpers**
 
 Append to `frontend/lib/api.ts`:
 
@@ -99,7 +99,7 @@ export async function downloadOnboardingPack(vendor_id: string): Promise<void> {
 }
 ```
 
-- [ ] **Step 2: Write tests for the three new helpers**
+- [x] **Step 2: Write tests for the three new helpers**
 
 Append to `frontend/lib/api.test.ts`:
 
@@ -153,14 +153,14 @@ describe("downloadOnboardingPack", () => {
 });
 ```
 
-- [ ] **Step 3: Run frontend tests and confirm new tests pass**
+- [x] **Step 3: Run frontend tests and confirm new tests pass**
 
 ```bash
 cd frontend && npx vitest run --config vitest.config.ts lib/api.test.ts
 ```
 Expected: all existing + 3 new tests pass.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend/lib/api.ts frontend/lib/api.test.ts
@@ -175,7 +175,7 @@ git commit -m "feat(vendors): add listRegisteredVendors, registerVendor, downloa
 - Create: `frontend/components/VendorRegisterForm.tsx`
 - Test: `frontend/components/VendorRegisterForm.test.tsx`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Create `frontend/components/VendorRegisterForm.test.tsx`:
 
@@ -256,14 +256,14 @@ describe("VendorRegisterForm", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests and confirm they fail**
+- [x] **Step 2: Run tests and confirm they fail**
 
 ```bash
 cd frontend && npx vitest run --config vitest.config.ts components/VendorRegisterForm.test.tsx
 ```
 Expected: FAIL (component doesn't exist yet).
 
-- [ ] **Step 3: Implement `VendorRegisterForm.tsx`**
+- [x] **Step 3: Implement `VendorRegisterForm.tsx`**
 
 Create `frontend/components/VendorRegisterForm.tsx`:
 
@@ -351,14 +351,14 @@ export function VendorRegisterForm({ onRegistered }: Props) {
 }
 ```
 
-- [ ] **Step 4: Run tests and confirm all 5 pass**
+- [x] **Step 4: Run tests and confirm all 5 pass**
 
 ```bash
 cd frontend && npx vitest run --config vitest.config.ts components/VendorRegisterForm.test.tsx
 ```
 Expected: 5/5 pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/components/VendorRegisterForm.tsx frontend/components/VendorRegisterForm.test.tsx

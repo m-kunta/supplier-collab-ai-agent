@@ -42,12 +42,12 @@
 
 ## Vendor Onboarding UI (in progress — plan: `docs/superpowers/plans/2026-05-11-vendor-onboarding-ui.md`)
 
-1. [ ] **API helpers** — add `listRegisteredVendors`, `registerVendor`, `downloadOnboardingPack` to `frontend/lib/api.ts` with tests
-2. [ ] **`VendorRegisterForm` component** — controlled form (vendor_id, vendor_name, category, tier), error handling, loading state, tests
+1. [x] **API helpers** — add `listRegisteredVendors`, `registerVendor`, `downloadOnboardingPack` to `frontend/lib/api.ts` with tests
+2. [x] **`VendorRegisterForm` component** — controlled form (vendor_id, vendor_name, category, tier), error handling, loading state, tests
 3. [ ] **`/vendors` page** — register form + registered-vendors table with Download Pack button per row, tests
 4. [ ] **Nav link** — add "Vendors" to `AppHeader.tsx`
-5. [ ] **Docs update** — update `CLAUDE.md`, `AGENTS.md`, `README.md`, `TODO.md` on completion
+5. [ ] **Docs update** — update `CLAUDE.md`, `AGENTS.md`, `README.md`, `TODO.md` when the full onboarding UI is complete
 
 ## Next Roadmap Items
 - **Phase 10 — Production Hardening**: Real Google Calendar / Outlook OAuth, DB-backed settings store, retry/dead-letter queue for notification delivery.
-- **Production Onboarding**: Add richer features for production onboarding of new suppliers or categories.
+- **Production Onboarding**: Finish the `/vendors` page and nav link, then add richer supplier/category onboarding features.

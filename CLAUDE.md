@@ -47,7 +47,7 @@ Interactive docs: `http://127.0.0.1:8000/docs`
 
 **Phase 9 (complete — prototype):** Calendar ingestion layer with mock JSON schedule + APScheduler-backed auto-trigger (T-24h / T-2h before meeting). `src/delivery.py` dispatches Slack webhook, Teams webhook, and SMTP email notifications. `src/settings_store.py` provides file-backed JSON settings CRUD (thread-safe). FastAPI exposes `GET /api/settings`, `PUT /api/settings`, `GET /api/schedule`. Next.js `/settings` page lets users manage webhook URLs, SMTP config, and view scheduled jobs. All components are prototype-grade and designed to be swapped for production backends (real calendar OAuth, DB-backed settings, retry queues).
 
-**Next work:** Phase 10 — Production hardening: real Google Calendar / Outlook OAuth, DB-backed settings store, retry/dead-letter queue for notification delivery, richer supplier onboarding workflows.
+**Next work:** Finish the Vendor Onboarding UI (`/vendors` page + nav link), then Phase 10 production hardening: real Google Calendar / Outlook OAuth, DB-backed settings store, retry/dead-letter queue for notification delivery, richer supplier onboarding workflows.
 
 ---
 
@@ -96,13 +96,15 @@ data_validator  benchmark_engine       ↓
 | `src/prompt_builder.py` | `build_prompt(ctx)` — loads versioned prompt template from `prompts/`, serialises all engine outputs to JSON, substitutes `{{DATA_PAYLOAD}}`, `{{PERSONA_EMPHASIS}}`, `{{VENDOR_ID}}`, `{{MEETING_DATE}}`. | Working |
 | `src/output_renderer.py` | `render_markdown(ctx)` — prepends YAML front-matter + appends footer. `render_docx(ctx)` — generates formatted Word document. `write_output(ctx, output_dir, output_format)` — dispatches to md/docx renderer and writes file(s). | Markdown & DOCX working |
 | `api/` | FastAPI app. `GET /api/health`, `POST /api/briefings` (blocking, thread-pool), **`POST /api/briefings/stream`** (true SSE streaming via `asyncio.Queue`), `GET /api/briefings`, `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay), `GET /api/briefings/{id}/download`, `GET /api/vendors`, `GET /api/settings`, `PUT /api/settings`, `GET /api/schedule`, `GET /api/vendors/registered`, `POST /api/vendors`, `GET /api/vendors/{vendor_id}/onboarding-pack`. In-memory store and background scheduler startup. | Working |
-| `frontend/` | **[Phase 5–9 — Complete]** Next.js web app. App shell, briefings history, briefing detail with SSE replay + tab dashboards, validation banner, download/history flows, live streaming preview, `Phase 8 Insights` tab, and `/settings` page for notification config and scheduled job status. | Working |
+| `frontend/` | **[Phase 5–9 — Complete; Vendor Onboarding UI in progress]** Next.js web app. App shell, briefings history, briefing detail with SSE replay + tab dashboards, validation banner, download/history flows, live streaming preview, `Phase 8 Insights` tab, `/settings` page for notification config and scheduled job status, vendor onboarding API helpers, and `VendorRegisterForm`. `/vendors` page and nav link are next. | Working |
 | `src/delivery.py` | Notification dispatcher (Phase 9 prototype). `NotificationSettings` Pydantic model. `NotificationDispatcher.dispatch()` sends to Slack webhook, Teams webhook, and/or SMTP email based on configured settings. Returns `list[DeliveryResult]`. | Working |
 | `src/settings_store.py` | File-backed JSON settings store (Phase 9 prototype). Thread-safe load/save/update of `NotificationSettings` to `config/notification_settings.json`. Uses Pydantic v2 `.model_dump_json()` and `.model_fields`. | Working |
 | `src/scheduler.py` | APScheduler-backed calendar polling and briefing auto-trigger. Reads `data/calendar/meetings.json` (mock), schedules jobs at T-24h and T-2h before each meeting, and dispatches notifications via `NotificationDispatcher` after briefing generation. | Working |
 | `src/vendor_store.py` | File-backed vendor registry (`config/vendors.json`). CRUD for `VendorRecord` (Pydantic model: vendor_id, name, category, tier, status, created_at). Thread-safe read/write. | Working |
 | `src/onboarding_packager.py` | Generates a downloadable `.zip` with blank CSV templates (headers only) derived from `data/schemas/*.schema.yaml`, plus `instructions.md`. Uses `column_types` keys as the canonical column list. | Working |
 | `api/schemas.py` | Pydantic `VendorCreate` / `VendorResponse` models for the vendor onboarding API. | Working |
+| `frontend/lib/api.ts` | Frontend API client. Includes briefing/history/settings helpers plus vendor onboarding helpers: `listRegisteredVendors`, `registerVendor`, and `downloadOnboardingPack`. | Working |
+| `frontend/components/VendorRegisterForm.tsx` | Controlled vendor onboarding registration form with required vendor_id/vendor_name/category/tier fields, duplicate/error display, loading state, and `onRegistered` callback. | Working |
 | `src/inventory_insights.py` | Inventory coverage rollups: low-days-of-supply SKUs, aggregate inventory totals, and promo-at-risk context from current inventory vs. commitments. | Working |
 | `src/forecast_insights.py` | Forecast rollups: accuracy, bias, underforecast counts, and largest shortfall SKUs for demand-side context. | Working |
 | `src/asn_insights.py` | ASN/receipt execution rollups: overdue shipment counts, receipt lag, on-time receipt %, fill-in accuracy, and top overdue ASN lines. | Working |
@@ -222,8 +224,9 @@ Current test coverage:
 - Onboarding packager: 6 tests in `tests/test_onboarding_packager.py` — returns BytesIO, instructions content, CSV templates present, header-only rows, buffer seeked to zero, graceful missing schemas dir.
 - Delivery DOCX attachment: 5 tests in `tests/test_delivery_docx.py` — attaches docx when file exists, skips attachment when file missing, sends cleanly with no output_files, `automation_enabled` defaults True, dispatch fires regardless of automation flag.
 - Vendor onboarding API: 7 tests in `tests/test_vendor_api.py` — list empty, list all, register success, duplicate 409, invalid 400, onboarding-pack zip download, 404 for unknown vendor.
+- Frontend vendor onboarding (in progress): 3 helper tests in `frontend/lib/api.test.ts` for registered-vendor list, registration POST, and onboarding-pack download; 5 tests in `frontend/components/VendorRegisterForm.test.tsx` for field rendering, submit callback, duplicate/error display, loading state, and successful form clear.
 
-Full backend suite: run `.venv/bin/pytest tests/ -q` (**314 tests**). Frontend: `cd frontend && npm test` (**67 tests**). **Total: 381 tests, 0 failures.**
+Full backend suite: run `.venv/bin/pytest tests/ -q` (**314 tests** as last recorded). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**22 tests**). Note: the full frontend suite currently has a known unrelated label mismatch in `app/briefings/[id]/page.test.tsx` (`Phase 8 Insights` expected vs. `Insights` rendered).
 
 ---
 
