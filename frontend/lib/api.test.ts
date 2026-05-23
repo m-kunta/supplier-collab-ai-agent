@@ -237,6 +237,25 @@ describe("frontend api client", () => {
     );
   });
 
+  it("registerVendor surfaces duplicate vendor errors with context", async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: "Vendor already exists" }), {
+        status: 409,
+        statusText: "Conflict"
+      })
+    );
+
+    await expect(
+      registerVendor({
+        vendor_id: "VEN002",
+        vendor_name: "Apex",
+        category: "Grocery",
+        tier: "Tier 2"
+      })
+    ).rejects.toThrow("Failed to register vendor: Vendor already exists");
+  });
+
   it("downloadOnboardingPack fetches zip and triggers download", async () => {
     const mockFetch = vi.mocked(fetch);
     mockFetch.mockResolvedValueOnce(
@@ -265,6 +284,22 @@ describe("frontend api client", () => {
     expect(clickMock).toHaveBeenCalledOnce();
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:fake-url");
     createElementSpy.mockRestore();
+  });
+
+  it("downloadOnboardingPack throws without creating a blob url on HTTP error", async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce(
+      new Response("missing vendor", { status: 404 })
+    );
+    const createObjectURL = vi.fn();
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("URL", { createObjectURL, revokeObjectURL });
+
+    await expect(downloadOnboardingPack("NOPE")).rejects.toThrow(
+      "Failed to download onboarding pack: HTTP 404"
+    );
+    expect(createObjectURL).not.toHaveBeenCalled();
+    expect(revokeObjectURL).not.toHaveBeenCalled();
   });
 
   // -------------------------------------------------------------------

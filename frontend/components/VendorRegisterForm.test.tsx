@@ -54,6 +54,12 @@ describe("VendorRegisterForm", () => {
     fillRequiredFields();
     fireEvent.click(screen.getByRole("button", { name: /register/i }));
 
+    expect(registerVendor).toHaveBeenCalledWith({
+      vendor_id: "VEN001",
+      vendor_name: "Northstar",
+      category: "Grocery",
+      tier: "Tier 1"
+    });
     await waitFor(() =>
       expect(mockOnRegistered).toHaveBeenCalledWith(
         expect.objectContaining({ vendor_id: "VEN001" })
@@ -71,6 +77,20 @@ describe("VendorRegisterForm", () => {
     await waitFor(() =>
       expect(screen.getByText(/already exists/i)).toBeInTheDocument()
     );
+    expect(mockOnRegistered).not.toHaveBeenCalled();
+  });
+
+  it("shows fallback error when registration rejects without an Error object", async () => {
+    vi.mocked(registerVendor).mockRejectedValueOnce("network down");
+
+    render(<VendorRegisterForm onRegistered={mockOnRegistered} />);
+    fillRequiredFields();
+    fireEvent.click(screen.getByRole("button", { name: /register/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent("Registration failed")
+    );
+    expect(mockOnRegistered).not.toHaveBeenCalled();
   });
 
   it("disables submit button while submitting", () => {

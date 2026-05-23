@@ -243,9 +243,9 @@ Current test coverage:
 - Onboarding packager (Phase 9): 6 tests in `tests/test_onboarding_packager.py` — returns BytesIO, instructions content, CSV templates present, header-only rows, buffer seeked to zero, missing schemas dir.
 - Vendor API (Phase 9): 7 tests in `tests/test_vendor_api.py` — list empty, list all, register success/409/400, onboarding-pack zip, 404 for unknown vendor.
 - Frontend settings (Phase 9): 3 tests in `frontend/lib/api.test.ts` for `getSettings`/`updateSettings`/`getSchedule`. 5 tests in `NotificationSettingsForm.test.tsx`. 3 tests in `settings/page.test.tsx`.
-- Frontend vendor onboarding (in progress): 3 tests in `frontend/lib/api.test.ts` for registered-vendor list, registration POST, and onboarding-pack download. 5 tests in `frontend/components/VendorRegisterForm.test.tsx` for field rendering, submit callback, duplicate/error display, submitting state, and successful form clear.
+- Frontend vendor onboarding (in progress): 5 tests in `frontend/lib/api.test.ts` for registered-vendor list, registration POST, duplicate registration error context, onboarding-pack download, and failed-download cleanup. 6 tests in `frontend/components/VendorRegisterForm.test.tsx` for field rendering, exact submit payload, duplicate/error display, fallback error display, submitting state, and successful form clear.
 
-Full backend suite: `.venv/bin/pytest tests/ -q` (**314 tests** as last recorded). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**22 tests**). Known unrelated frontend full-suite issue: `app/briefings/[id]/page.test.tsx` still expects `Phase 8 Insights` while the UI renders `Insights`.
+Full backend suite: `.venv/bin/pytest tests/ -q` (**314 tests** as last recorded). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**25 tests**). Known unrelated frontend full-suite issue: `app/briefings/[id]/page.test.tsx` still expects `Phase 8 Insights` while the UI renders `Insights`.
 
 ---
 

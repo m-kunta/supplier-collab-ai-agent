@@ -224,9 +224,9 @@ Current test coverage:
 - Onboarding packager: 6 tests in `tests/test_onboarding_packager.py` — returns BytesIO, instructions content, CSV templates present, header-only rows, buffer seeked to zero, graceful missing schemas dir.
 - Delivery DOCX attachment: 5 tests in `tests/test_delivery_docx.py` — attaches docx when file exists, skips attachment when file missing, sends cleanly with no output_files, `automation_enabled` defaults True, dispatch fires regardless of automation flag.
 - Vendor onboarding API: 7 tests in `tests/test_vendor_api.py` — list empty, list all, register success, duplicate 409, invalid 400, onboarding-pack zip download, 404 for unknown vendor.
-- Frontend vendor onboarding (in progress): 3 helper tests in `frontend/lib/api.test.ts` for registered-vendor list, registration POST, and onboarding-pack download; 5 tests in `frontend/components/VendorRegisterForm.test.tsx` for field rendering, submit callback, duplicate/error display, loading state, and successful form clear.
+- Frontend vendor onboarding (in progress): 5 helper tests in `frontend/lib/api.test.ts` for registered-vendor list, registration POST, duplicate registration error context, onboarding-pack download, and failed-download cleanup; 6 tests in `frontend/components/VendorRegisterForm.test.tsx` for field rendering, exact submit payload, duplicate/error display, fallback error display, loading state, and successful form clear.
 
-Full backend suite: run `.venv/bin/pytest tests/ -q` (**314 tests** as last recorded). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**22 tests**). Note: the full frontend suite currently has a known unrelated label mismatch in `app/briefings/[id]/page.test.tsx` (`Phase 8 Insights` expected vs. `Insights` rendered).
+Full backend suite: run `.venv/bin/pytest tests/ -q` (**314 tests** as last recorded). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**25 tests**). Note: the full frontend suite currently has a known unrelated label mismatch in `app/briefings/[id]/page.test.tsx` (`Phase 8 Insights` expected vs. `Insights` rendered).
 
 ---
 
