@@ -449,3 +449,60 @@ export async function getSchedule(): Promise<ScheduleResponse> {
   if (!res.ok) throw new Error(`Failed to load schedule: ${res.status}`);
   return res.json();
 }
+
+// ---------------------------------------------------------------------------
+// Vendor Onboarding
+// ---------------------------------------------------------------------------
+
+export interface RegisteredVendor {
+  id: string;
+  vendor_id: string;
+  vendor_name: string;
+  category: string;
+  tier: string;
+  status: string;
+  created_at: string;
+}
+
+export interface RegisteredVendorsResponse {
+  vendors: RegisteredVendor[];
+  total: number;
+}
+
+export interface VendorCreatePayload {
+  vendor_id: string;
+  vendor_name: string;
+  category: string;
+  tier: string;
+}
+
+export async function listRegisteredVendors(): Promise<RegisteredVendorsResponse> {
+  const res = await fetch(`${API_BASE}/api/vendors/registered`);
+  return readJson<RegisteredVendorsResponse>(res, "Failed to list registered vendors");
+}
+
+export async function registerVendor(
+  payload: VendorCreatePayload
+): Promise<RegisteredVendor> {
+  const res = await fetch(`${API_BASE}/api/vendors`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  return readJson<RegisteredVendor>(res, "Failed to register vendor");
+}
+
+export async function downloadOnboardingPack(vendorId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/vendors/${vendorId}/onboarding-pack`);
+  if (!res.ok) {
+    throw new Error(`Failed to download onboarding pack: HTTP ${res.status}`);
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `${vendorId}_onboarding_pack.zip`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}

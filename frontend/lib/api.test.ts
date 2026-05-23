@@ -2,11 +2,14 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
   createBriefing,
   createBriefingStreaming,
+  downloadOnboardingPack,
   getBriefing,
   getBriefingDownloadUrl,
   getBriefingStreamUrl,
+  listRegisteredVendors,
   listBriefings,
-  listVendors
+  listVendors,
+  registerVendor
 } from "./api";
 
 describe("frontend api client", () => {
@@ -165,6 +168,103 @@ describe("frontend api client", () => {
     await expect(listBriefings(10)).rejects.toThrow(
       "Failed to list briefings: 500 Internal Server Error"
     );
+  });
+
+  it("listRegisteredVendors returns registered vendors and total", async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          vendors: [
+            {
+              id: "u1",
+              vendor_id: "VEN001",
+              vendor_name: "Northstar",
+              category: "Grocery",
+              tier: "Tier 1",
+              status: "pending_data",
+              created_at: "2026-05-11T00:00:00Z"
+            }
+          ],
+          total: 1
+        }),
+        { status: 200 }
+      )
+    );
+
+    const result = await listRegisteredVendors();
+
+    expect(mockFetch).toHaveBeenCalledOnce();
+    expect(String(mockFetch.mock.calls[0][0])).toContain("/api/vendors/registered");
+    expect(result.total).toBe(1);
+    expect(result.vendors[0].vendor_id).toBe("VEN001");
+  });
+
+  it("registerVendor posts payload and returns saved record", async () => {
+    const mockFetch = vi.mocked(fetch);
+    const record = {
+      id: "u1",
+      vendor_id: "VEN002",
+      vendor_name: "Apex",
+      category: "Grocery",
+      tier: "Tier 2",
+      status: "pending_data",
+      created_at: "2026-05-11T00:00:00Z"
+    };
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify(record), { status: 200 })
+    );
+
+    const result = await registerVendor({
+      vendor_id: "VEN002",
+      vendor_name: "Apex",
+      category: "Grocery",
+      tier: "Tier 2"
+    });
+
+    expect(result.vendor_id).toBe("VEN002");
+    expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+    expect(mockFetch.mock.calls[0][1]?.headers).toEqual({
+      "Content-Type": "application/json"
+    });
+    expect(mockFetch.mock.calls[0][1]?.body).toBe(
+      JSON.stringify({
+        vendor_id: "VEN002",
+        vendor_name: "Apex",
+        category: "Grocery",
+        tier: "Tier 2"
+      })
+    );
+  });
+
+  it("downloadOnboardingPack fetches zip and triggers download", async () => {
+    const mockFetch = vi.mocked(fetch);
+    mockFetch.mockResolvedValueOnce(
+      new Response(new Blob(["PK fake"], { type: "application/zip" }), {
+        status: 200
+      })
+    );
+    const createObjectURL = vi.fn(() => "blob:fake-url");
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("URL", { createObjectURL, revokeObjectURL });
+    const clickMock = vi.fn();
+    const createElementSpy = vi
+      .spyOn(document, "createElement")
+      .mockReturnValueOnce({
+        href: "",
+        download: "",
+        click: clickMock
+      } as unknown as HTMLAnchorElement);
+
+    await downloadOnboardingPack("VEN001");
+
+    expect(String(mockFetch.mock.calls[0][0])).toContain(
+      "/api/vendors/VEN001/onboarding-pack"
+    );
+    expect(createObjectURL).toHaveBeenCalledOnce();
+    expect(clickMock).toHaveBeenCalledOnce();
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:fake-url");
+    createElementSpy.mockRestore();
   });
 
   // -------------------------------------------------------------------
