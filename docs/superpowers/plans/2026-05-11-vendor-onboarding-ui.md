@@ -632,7 +632,7 @@ Expected: 314 passing (no regressions).
 
 Mark vendor onboarding UI TODO items as complete; update frontend table and test counts.
 
-- [ ] **Step 5: Final commit and push**
+- [x] **Step 5: Final commit and push**
 
 ```bash
 git add frontend/components/AppHeader.tsx CLAUDE.md AGENTS.md README.md TODO.md
@@ -640,15 +640,17 @@ git commit -m "feat(vendors): add Vendors nav link and update docs"
 git push
 ```
 
+Completed with commits `04193a1 feat(vendors): add onboarding page` and `63ee763 docs(vendors): finalize onboarding UI status`, pushed to `origin/master`.
+
 ---
 
 ## Summary
 
 | Task | Files | Tests |
 |---|---|---|
-| 1 — API helpers | `frontend/lib/api.ts` + test | 3 new |
-| 2 — Register form | `VendorRegisterForm.tsx` + test | 5 new |
-| 3 — `/vendors` page | `app/vendors/page.tsx` + test | 4–5 new |
+| 1 — API helpers | `frontend/lib/api.ts` + test | 5 covered cases |
+| 2 — Register form | `VendorRegisterForm.tsx` + test | 6 covered cases |
+| 3 — `/vendors` page | `app/vendors/page.tsx` + test | 6 covered cases |
 | 4 — Nav + docs | `AppHeader.tsx`, docs | 0 new |
 
-**Total new tests: ~13 frontend.** Backend: no changes needed (already covered by `test_vendor_api.py`).
+**Targeted vendor onboarding frontend slice: 31 passing tests.** Backend vendor API coverage remains in `tests/test_vendor_api.py`, and the full backend suite is 314 passing tests.

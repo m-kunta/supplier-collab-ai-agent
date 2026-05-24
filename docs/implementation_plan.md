@@ -98,7 +98,7 @@ Completed after scaffold. Implemented two compute engines with TDD.
 
 ### Phase 5 (complete)
 
-- **FastAPI (`api/`):** All REST endpoints complete — `GET /api/health`, `POST /api/briefings` (async, thread-pool executor, `llm_provider`/`llm_model` overrides, broad exception handling), `GET /api/briefings` (paginated list), `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay), `GET /api/briefings/{id}/download` (FileResponse, 410 on missing file), `GET /api/vendors` (reads `vendor_master.csv` from any landing zone). CORS configurable via `CORS_ORIGINS` env var. In-memory `BriefingStore` (process-local).
+- **FastAPI (`api/`):** Core briefing REST endpoints complete — `GET /api/health`, `POST /api/briefings` (async, thread-pool executor, `llm_provider`/`llm_model` overrides, broad exception handling), `GET /api/briefings` (paginated list), `GET /api/briefings/{id}`, `GET /api/briefings/{id}/stream` (SSE replay), `GET /api/briefings/{id}/download` (FileResponse, 410 on missing file), `GET /api/vendors` (reads `vendor_master.csv` from any landing zone). CORS configurable via `CORS_ORIGINS` env var. In-memory `BriefingStore` (process-local).
 - Next.js frontend dashboard/history/detail views are complete. Combined dev launcher is available via `make dev`; `frontend/npm run dev` runs UI-only.
 
 ### Phase 6 (complete)
@@ -129,9 +129,26 @@ Completed after scaffold. Implemented two compute engines with TDD.
   - `trade_funds` → `src/trade_fund_insights.py`
 - Prompt payload and briefing generation now incorporate all five optional domain outputs.
 - Briefing detail UI now includes a consolidated `Phase 8 Insights` tab for these optional-domain summaries.
-- Calendar polling / scheduled kickoff exists, but delivery notifications remain future work.
+- Calendar polling / scheduled kickoff existed as a scaffold here; delivery notifications were completed in Phase 9.
+
+### Phase 9 (complete)
+
+- Calendar ingestion layer uses mock JSON schedule data from `data/calendar/meetings.json` with APScheduler-backed T-24h/T-2h briefing jobs in `src/scheduler.py`.
+- Notification delivery in `src/delivery.py` dispatches Slack webhook, Teams webhook, and SMTP email notifications, with optional DOCX attachment support.
+- File-backed notification settings live in `src/settings_store.py`, with FastAPI routes `GET /api/settings`, `PUT /api/settings`, and `GET /api/schedule`.
+- Next.js `/settings` page lets users manage webhook URLs, SMTP config, automation toggle, and scheduled job status.
+- Vendor onboarding scaffold includes `src/vendor_store.py`, `src/onboarding_packager.py`, `POST /api/vendors`, `GET /api/vendors/registered`, and `GET /api/vendors/{vendor_id}/onboarding-pack`.
+- Vendor onboarding UI is complete at `frontend/app/vendors/page.tsx`: register vendors, view registered vendors, download per-vendor onboarding packs, and navigate via the Vendors header link.
+
+### Phase 10 (planned)
+
+- Replace mock calendar ingestion with real Google Calendar / Outlook OAuth.
+- Replace file-backed settings/vendor stores with production persistence.
+- Add retry/dead-letter handling for notification delivery.
+- Expand supplier onboarding beyond the prototype UI into richer supplier/category workflows.
 
 ### Verification Snapshot
 
-- Backend: `.venv/bin/pytest tests/ -q` → `270 passed`
-- Frontend: `cd frontend && npm test` → `59 passed`
+- Backend: `.venv/bin/pytest tests/ -q` → `314 passed`
+- Vendor onboarding frontend slice: `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` → `31 passed`
+- Full frontend suite: `cd frontend && npm test -- --no-cache` currently has a known unrelated `app/briefings/[id]/page.test.tsx` tab-label mismatch (`Phase 8 Insights` expected vs. `Insights` rendered).
