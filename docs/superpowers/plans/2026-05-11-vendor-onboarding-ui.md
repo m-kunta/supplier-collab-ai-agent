@@ -373,7 +373,7 @@ git commit -m "feat(vendors): add VendorRegisterForm component"
 - Create: `frontend/app/vendors/page.tsx`
 - Test: `frontend/app/vendors/page.test.tsx`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Create `frontend/app/vendors/page.test.tsx`:
 
@@ -451,14 +451,14 @@ describe("VendorsPage", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests and confirm they fail**
+- [x] **Step 2: Run tests and confirm they fail**
 
 ```bash
 cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx
 ```
 Expected: FAIL (page doesn't exist yet).
 
-- [ ] **Step 3: Implement `frontend/app/vendors/page.tsx`**
+- [x] **Step 3: Implement `frontend/app/vendors/page.tsx`**
 
 ```typescript
 "use client";
@@ -581,14 +581,14 @@ export default function VendorsPage() {
 }
 ```
 
-- [ ] **Step 4: Run tests and confirm they pass**
+- [x] **Step 4: Run tests and confirm they pass**
 
 ```bash
 cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx
 ```
 Expected: 4/4 (or 5/5) pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/app/vendors/page.tsx frontend/app/vendors/page.test.tsx
@@ -603,7 +603,7 @@ git commit -m "feat(vendors): add /vendors onboarding page"
 - Modify: `frontend/components/AppHeader.tsx`
 - Modify: `CLAUDE.md`, `AGENTS.md`, `README.md`, `TODO.md`
 
-- [ ] **Step 1: Add Vendors nav link to `AppHeader.tsx`**
+- [x] **Step 1: Add Vendors nav link to `AppHeader.tsx`**
 
 ```typescript
 <Link href="/vendors" className={styles.link}>
@@ -619,14 +619,16 @@ cd frontend && npm test
 ```
 Expected: all existing tests pass + new vendor tests.
 
-- [ ] **Step 3: Run full backend test suite**
+Status: targeted vendor onboarding slice passes (31 tests). Full frontend suite was run, but remains blocked by the known unrelated `app/briefings/[id]/page.test.tsx` label mismatch (`Phase 8 Insights` expected vs. `Insights` rendered).
+
+- [x] **Step 3: Run full backend test suite**
 
 ```bash
 .venv/bin/pytest tests/ -q
 ```
 Expected: 314 passing (no regressions).
 
-- [ ] **Step 4: Update CLAUDE.md, AGENTS.md, README.md, TODO.md**
+- [x] **Step 4: Update CLAUDE.md, AGENTS.md, README.md, TODO.md**
 
 Mark vendor onboarding UI TODO items as complete; update frontend table and test counts.
 

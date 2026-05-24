@@ -21,6 +21,9 @@ export function AppHeader() {
         <Link href="/settings" className={styles.link}>
           Settings
         </Link>
+        <Link href="/vendors" className={styles.link}>
+          Vendors
+        </Link>
       </nav>
     </header>
   );
