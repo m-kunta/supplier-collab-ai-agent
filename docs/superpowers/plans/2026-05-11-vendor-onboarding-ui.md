@@ -619,7 +619,7 @@ cd frontend && npm test
 ```
 Expected: all existing tests pass + new vendor tests.
 
-Status: targeted vendor onboarding slice passes (31 tests). Full frontend suite was run, but remains blocked by the known unrelated `app/briefings/[id]/page.test.tsx` label mismatch (`Phase 8 Insights` expected vs. `Insights` rendered).
+Status: targeted vendor onboarding slice passes (31 tests). The full frontend suite now passes after restoring the `Phase 8 Insights` tab label in `frontend/app/briefings/[id]/page.tsx`.
 
 - [x] **Step 3: Run full backend test suite**
 

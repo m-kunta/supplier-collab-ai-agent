@@ -151,4 +151,4 @@ Completed after scaffold. Implemented two compute engines with TDD.
 
 - Backend: `.venv/bin/pytest tests/ -q` → `314 passed`
 - Vendor onboarding frontend slice: `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` → `31 passed`
-- Full frontend suite: `cd frontend && npm test -- --no-cache` currently has a known unrelated `app/briefings/[id]/page.test.tsx` tab-label mismatch (`Phase 8 Insights` expected vs. `Insights` rendered).
+- Full frontend suite: `cd frontend && npm test -- --no-cache` → `88 passed`

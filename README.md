@@ -350,9 +350,8 @@ python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir data/
 | Layer | Runner | Count |
 |---|---|---|
 | Backend (Python) | `.venv/bin/pytest tests/ -q` | **314 tests as last recorded** |
+| Frontend (Next.js/Vitest) | `cd frontend && npm test -- --no-cache` | **88 tests** |
 | Vendor onboarding frontend slice | `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` | **31 tests** |
-
-Known frontend full-suite note: `app/briefings/[id]/page.test.tsx` currently has an unrelated tab-label expectation mismatch (`Phase 8 Insights` expected vs. `Insights` rendered).
 
 ---
 

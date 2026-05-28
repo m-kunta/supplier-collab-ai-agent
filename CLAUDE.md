@@ -227,7 +227,7 @@ Current test coverage:
 - Vendor onboarding API: 7 tests in `tests/test_vendor_api.py` — list empty, list all, register success, duplicate 409, invalid 400, onboarding-pack zip download, 404 for unknown vendor.
 - Frontend vendor onboarding: 5 helper tests in `frontend/lib/api.test.ts` for registered-vendor list, registration POST, duplicate registration error context, onboarding-pack download, and failed-download cleanup; 6 tests in `frontend/components/VendorRegisterForm.test.tsx` for field rendering, exact submit payload, duplicate/error display, fallback error display, loading state, and successful form clear; 6 tests in `frontend/app/vendors/page.test.tsx` for heading, empty state, populated table, download action, registration append, and load error.
 
-Full backend suite: run `.venv/bin/pytest tests/ -q` (**314 tests** as last recorded). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**31 tests**). Note: the full frontend suite currently has a known unrelated label mismatch in `app/briefings/[id]/page.test.tsx` (`Phase 8 Insights` expected vs. `Insights` rendered).
+Full backend suite: run `.venv/bin/pytest tests/ -q` (**314 tests** as last recorded). Full frontend suite: `cd frontend && npm test -- --no-cache` (**88 tests**). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**31 tests**).
 
 ---
 

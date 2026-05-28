@@ -247,7 +247,7 @@ Current test coverage:
 - Frontend settings (Phase 9): 3 tests in `frontend/lib/api.test.ts` for `getSettings`/`updateSettings`/`getSchedule`. 5 tests in `NotificationSettingsForm.test.tsx`. 3 tests in `settings/page.test.tsx`.
 - Frontend vendor onboarding: 5 tests in `frontend/lib/api.test.ts` for registered-vendor list, registration POST, duplicate registration error context, onboarding-pack download, and failed-download cleanup. 6 tests in `frontend/components/VendorRegisterForm.test.tsx` for field rendering, exact submit payload, duplicate/error display, fallback error display, submitting state, and successful form clear. 6 tests in `frontend/app/vendors/page.test.tsx` for heading, empty state, populated table, download action, registration append, and load error.
 
-Full backend suite: `.venv/bin/pytest tests/ -q` (**314 tests** as last recorded). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**31 tests**). Known unrelated frontend full-suite issue: `app/briefings/[id]/page.test.tsx` still expects `Phase 8 Insights` while the UI renders `Insights`.
+Full backend suite: `.venv/bin/pytest tests/ -q` (**314 tests** as last recorded). Full frontend suite: `cd frontend && npm test -- --no-cache` (**88 tests**). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**31 tests**).
 
 ---
 
