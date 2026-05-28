@@ -98,8 +98,8 @@ class BriefingScheduler:
             logger.error(f"Error polling calendar: {e}")
             
     def _trigger_briefing(self, meeting: dict, phase: str):
-        from src.settings_store import SettingsStore
-        settings = SettingsStore().load()
+        from src.store_factory import create_settings_store
+        settings = create_settings_store().load()
         if not settings.automation_enabled:
             logger.info(f"*** AUTO-TRIGGER ABORTED *** Automation disabled for {meeting.get('summary', 'Unknown')} ({phase})")
             return
@@ -133,8 +133,8 @@ class BriefingScheduler:
             logger.info(f"Successfully generated briefing! Saved to: {saved_path}")
 
             from src.delivery import NotificationDispatcher
-            from src.settings_store import SettingsStore
-            settings = SettingsStore().load()
+            from src.store_factory import create_settings_store
+            settings = create_settings_store().load()
             dispatcher = NotificationDispatcher(settings)
             briefing_payload = {
                 "vendor": vendor_name,

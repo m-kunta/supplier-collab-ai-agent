@@ -39,8 +39,8 @@ from api.store import BriefingStore
 from src.agent import AgentPipelineError, summarize_request, summarize_request_stream
 from src.data_loader import load_manifest
 from src.delivery import NotificationSettings
-from src.settings_store import SettingsStore
-from src.vendor_store import VendorStore, VendorRecord
+from src.store_factory import create_settings_store, create_vendor_store
+from src.vendor_store import VendorRecord
 from src.onboarding_packager import generate_onboarding_pack
 
 app = FastAPI(
@@ -51,8 +51,8 @@ app = FastAPI(
 )
 
 briefing_store = BriefingStore()
-settings_store = SettingsStore()
-vendor_store = VendorStore()
+settings_store = create_settings_store()
+vendor_store = create_vendor_store()
 
 _cors_origins = [
     o.strip()
