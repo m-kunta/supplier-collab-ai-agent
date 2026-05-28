@@ -140,15 +140,15 @@ Completed after scaffold. Implemented two compute engines with TDD.
 - Vendor onboarding scaffold includes `src/vendor_store.py`, `src/onboarding_packager.py`, `POST /api/vendors`, `GET /api/vendors/registered`, and `GET /api/vendors/{vendor_id}/onboarding-pack`.
 - Vendor onboarding UI is complete at `frontend/app/vendors/page.tsx`: register vendors, view registered vendors, download per-vendor onboarding packs, and navigate via the Vendors header link.
 
-### Phase 10 (planned)
+### Phase 10 (in progress)
 
 - Replace mock calendar ingestion with real Google Calendar / Outlook OAuth.
-- Replace file-backed settings/vendor stores with production persistence.
+- Selectable JSON/SQLite persistence for notification settings and registered vendor onboarding records is implemented. Default remains JSON for compatibility; set `SUPPLIER_COLLAB_STORE_BACKEND=sqlite` and optionally `SUPPLIER_COLLAB_DB_PATH=config/supplier_collab.db` to use SQLite.
 - Add retry/dead-letter handling for notification delivery.
 - Expand supplier onboarding beyond the prototype UI into richer supplier/category workflows.
 
 ### Verification Snapshot
 
-- Backend: `.venv/bin/pytest tests/ -q` → `314 passed`
+- Backend: `.venv/bin/pytest tests/ -q` → `331 passed`
 - Vendor onboarding frontend slice: `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` → `31 passed`
 - Full frontend suite: `cd frontend && npm test -- --no-cache` → `88 passed`

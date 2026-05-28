@@ -45,9 +45,9 @@ Interactive docs: `http://127.0.0.1:8000/docs`
 
 **Phase 8 (complete):** Optional domain expansion (Inventory, Forecasts, ASNs, Chargebacks, Trade Funds). Refinements applied including frontend visual polish (progress bars/badges), robust backend aggregations (excess stock, ASN volumes), dynamic DOCX table styling, and LLM prompt integration.
 
-**Phase 9 (complete — prototype):** Calendar ingestion layer with mock JSON schedule + APScheduler-backed auto-trigger (T-24h / T-2h before meeting). `src/delivery.py` dispatches Slack webhook, Teams webhook, and SMTP email notifications. `src/settings_store.py` provides file-backed JSON settings CRUD (thread-safe). FastAPI exposes `GET /api/settings`, `PUT /api/settings`, `GET /api/schedule`. Next.js `/settings` page lets users manage webhook URLs, SMTP config, and view scheduled jobs. All components are prototype-grade and designed to be swapped for production backends (real calendar OAuth, DB-backed settings, retry queues).
+**Phase 9 (complete — prototype):** Calendar ingestion layer with mock JSON schedule + APScheduler-backed auto-trigger (T-24h / T-2h before meeting). `src/delivery.py` dispatches Slack webhook, Teams webhook, and SMTP email notifications. `src/settings_store.py` provides file-backed JSON settings CRUD (thread-safe). FastAPI exposes `GET /api/settings`, `PUT /api/settings`, `GET /api/schedule`. Next.js `/settings` page lets users manage webhook URLs, SMTP config, and view scheduled jobs.
 
-**Next work:** Phase 10 production hardening: real Google Calendar / Outlook OAuth, DB-backed settings store, retry/dead-letter queue for notification delivery, and richer supplier onboarding workflows beyond the completed prototype UI.
+**Phase 10 (in progress):** Selectable JSON/SQLite persistence is implemented for notification settings and registered vendor onboarding records. Default remains JSON for local compatibility; set `SUPPLIER_COLLAB_STORE_BACKEND=sqlite` and optionally `SUPPLIER_COLLAB_DB_PATH=config/supplier_collab.db` to use SQLite. Remaining Phase 10 work: real Google Calendar / Outlook OAuth, retry/dead-letter queue for notification delivery, and richer supplier onboarding workflows beyond the completed prototype UI.
 
 ---
 
@@ -99,8 +99,11 @@ data_validator  benchmark_engine       ↓
 | `frontend/` | **[Phase 5–9 + Vendor Onboarding UI complete]** Next.js web app. App shell, briefings history, briefing detail with SSE replay + tab dashboards, validation banner, download/history flows, live streaming preview, `Phase 8 Insights` tab, `/settings` page for notification config and scheduled job status, `/vendors` onboarding page, and Vendors nav link. | Working |
 | `src/delivery.py` | Notification dispatcher (Phase 9 prototype). `NotificationSettings` Pydantic model. `NotificationDispatcher.dispatch()` sends to Slack webhook, Teams webhook, and/or SMTP email based on configured settings. Returns `list[DeliveryResult]`. | Working |
 | `src/settings_store.py` | File-backed JSON settings store (Phase 9 prototype). Thread-safe load/save/update of `NotificationSettings` to `config/notification_settings.json`. Uses Pydantic v2 `.model_dump_json()` and `.model_fields`. | Working |
+| `src/sqlite_settings_store.py` | SQLite-backed notification settings store. Persists one `NotificationSettings` JSON payload in `notification_settings` table. | Working |
+| `src/store_factory.py` | Persistence backend selector. Uses `SUPPLIER_COLLAB_STORE_BACKEND=json|sqlite` and `SUPPLIER_COLLAB_DB_PATH` to construct settings/vendor stores. | Working |
 | `src/scheduler.py` | APScheduler-backed calendar polling and briefing auto-trigger. Reads `data/calendar/meetings.json` (mock), schedules jobs at T-24h and T-2h before each meeting, and dispatches notifications via `NotificationDispatcher` after briefing generation. | Working |
 | `src/vendor_store.py` | File-backed vendor registry (`config/vendors.json`). CRUD for `VendorRecord` (Pydantic model: vendor_id, name, category, tier, status, created_at). Thread-safe read/write. | Working |
+| `src/sqlite_vendor_store.py` | SQLite-backed registered vendor store with unique `vendor_id`, lookup by UUID/vendor_id, and persisted status updates. | Working |
 | `src/onboarding_packager.py` | Generates a downloadable `.zip` with blank CSV templates (headers only) derived from `data/schemas/*.schema.yaml`, plus `instructions.md`. Uses `column_types` keys as the canonical column list. | Working |
 | `api/schemas.py` | Pydantic `VendorCreate` / `VendorResponse` models for the vendor onboarding API. | Working |
 | `frontend/lib/api.ts` | Frontend API client. Includes briefing/history/settings helpers plus vendor onboarding helpers: `listRegisteredVendors`, `registerVendor`, and `downloadOnboardingPack`. | Working |
@@ -225,9 +228,10 @@ Current test coverage:
 - Onboarding packager: 6 tests in `tests/test_onboarding_packager.py` — returns BytesIO, instructions content, CSV templates present, header-only rows, buffer seeked to zero, graceful missing schemas dir.
 - Delivery DOCX attachment: 5 tests in `tests/test_delivery_docx.py` — attaches docx when file exists, skips attachment when file missing, sends cleanly with no output_files, `automation_enabled` defaults True, dispatch fires regardless of automation flag.
 - Vendor onboarding API: 7 tests in `tests/test_vendor_api.py` — list empty, list all, register success, duplicate 409, invalid 400, onboarding-pack zip download, 404 for unknown vendor.
+- SQLite persistence: 17 tests across `tests/test_sqlite_settings_store.py`, `tests/test_sqlite_vendor_store.py`, and `tests/test_store_factory.py` — settings defaults/save/update, vendor persistence/duplicates/status updates, and backend selection.
 - Frontend vendor onboarding: 5 helper tests in `frontend/lib/api.test.ts` for registered-vendor list, registration POST, duplicate registration error context, onboarding-pack download, and failed-download cleanup; 6 tests in `frontend/components/VendorRegisterForm.test.tsx` for field rendering, exact submit payload, duplicate/error display, fallback error display, loading state, and successful form clear; 6 tests in `frontend/app/vendors/page.test.tsx` for heading, empty state, populated table, download action, registration append, and load error.
 
-Full backend suite: run `.venv/bin/pytest tests/ -q` (**314 tests** as last recorded). Full frontend suite: `cd frontend && npm test -- --no-cache` (**88 tests**). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**31 tests**).
+Full backend suite: run `.venv/bin/pytest tests/ -q` (**331 tests** as last recorded). Full frontend suite: `cd frontend && npm test -- --no-cache` (**88 tests**). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**31 tests**).
 
 ---
 
