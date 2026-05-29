@@ -62,6 +62,21 @@ class NotificationDispatcher:
 
         return results
 
+    def dispatch_channel(self, channel: str, briefing: dict[str, Any]) -> DeliveryResult:
+        if channel == "slack":
+            if not self.settings.slack_webhook_url:
+                return DeliveryResult("slack", False, "slack channel not configured")
+            return self._send_slack(briefing)
+        if channel == "teams":
+            if not self.settings.teams_webhook_url:
+                return DeliveryResult("teams", False, "teams channel not configured")
+            return self._send_teams(briefing)
+        if channel == "email":
+            if not (self.settings.email_enabled and self.settings.email_to):
+                return DeliveryResult("email", False, "email channel not configured")
+            return self._send_email(briefing)
+        return DeliveryResult(channel, False, f"unknown channel: {channel}")
+
     # ------------------------------------------------------------------
 
     def _send_slack(self, briefing: dict[str, Any]) -> DeliveryResult:

@@ -105,3 +105,30 @@ def test_multiple_channels_dispatched():
     assert len(results) == 2
     channels = {r.channel for r in results}
     assert channels == {"slack", "teams"}
+
+
+def test_dispatch_channel_sends_only_requested_channel():
+    settings = make_settings(
+        slack_webhook_url="https://hooks.slack.com/fake",
+        teams_webhook_url="https://teams.webhook.fake/url",
+    )
+    dispatcher = NotificationDispatcher(settings)
+
+    with patch("httpx.post") as mock_post:
+        mock_post.return_value = MagicMock(status_code=200, text="ok")
+        result = dispatcher.dispatch_channel("slack", make_briefing())
+
+    assert result.channel == "slack"
+    assert result.success is True
+    assert mock_post.call_count == 1
+    assert mock_post.call_args.args[0] == "https://hooks.slack.com/fake"
+
+
+def test_dispatch_channel_returns_failure_for_unconfigured_channel():
+    dispatcher = NotificationDispatcher(make_settings())
+
+    result = dispatcher.dispatch_channel("slack", make_briefing())
+
+    assert result.channel == "slack"
+    assert result.success is False
+    assert "not configured" in result.error
