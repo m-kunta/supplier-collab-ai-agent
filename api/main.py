@@ -6,7 +6,7 @@ import os
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -39,6 +39,7 @@ from api.store import BriefingStore
 from src.agent import AgentPipelineError, summarize_request, summarize_request_stream
 from src.data_loader import load_manifest
 from src.delivery import NotificationSettings
+from src.delivery_attempt_store import DeliveryAttemptStore
 from src.store_factory import create_settings_store, create_vendor_store
 from src.vendor_store import VendorRecord
 from src.onboarding_packager import generate_onboarding_pack
@@ -53,6 +54,7 @@ app = FastAPI(
 briefing_store = BriefingStore()
 settings_store = create_settings_store()
 vendor_store = create_vendor_store()
+delivery_attempt_store: DeliveryAttemptStore | None = None
 
 _cors_origins = [
     o.strip()
@@ -414,3 +416,15 @@ def get_schedule() -> dict:
             "next_run": job.next_run_time.isoformat() if job.next_run_time else None,
         })
     return {"jobs": jobs}
+
+
+@app.get("/api/deliveries")
+def list_delivery_attempts(
+    briefing_id: Optional[str] = None,
+    limit: int = Query(default=50, ge=1, le=200),
+) -> dict[str, Any]:
+    """Return recent scheduled-notification delivery attempts."""
+    store = delivery_attempt_store or DeliveryAttemptStore()
+    attempts = store.list_attempts(briefing_id=briefing_id)
+    limited = attempts[:limit]
+    return {"attempts": limited, "total": len(limited)}
