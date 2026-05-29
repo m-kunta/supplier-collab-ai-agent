@@ -55,7 +55,7 @@ make dev
 
 **Phase 9 (complete — prototype):** Calendar ingestion layer with mock JSON schedule + APScheduler-backed auto-trigger (T-24h / T-2h before meeting). `src/delivery.py` dispatches Slack webhook, Teams webhook, and SMTP email (with optional DOCX attachment). `src/settings_store.py` provides file-backed JSON settings CRUD (thread-safe, Pydantic v2). FastAPI exposes `GET /api/settings`, `PUT /api/settings`, `GET /api/schedule`. Next.js `/settings` page lets users manage webhook URLs, SMTP config, automation toggle, and view scheduled jobs. Vendor onboarding scaffold: `src/vendor_store.py`, `src/onboarding_packager.py`, and three new API routes.
 
-**Phase 10 (in progress):** Selectable JSON/SQLite persistence is implemented for notification settings and registered vendor onboarding records. Default remains JSON for local compatibility; set `SUPPLIER_COLLAB_STORE_BACKEND=sqlite` and optionally `SUPPLIER_COLLAB_DB_PATH=config/supplier_collab.db` to use SQLite. Scheduled notification delivery now runs through `NotificationRetryService`, which records attempts in SQLite and marks exhausted failures as `dead_letter`. Remaining Phase 10 work: real Google Calendar / Outlook OAuth, richer supplier onboarding workflows and production-grade frontend vendor management.
+**Phase 10 (in progress):** Selectable JSON/SQLite persistence is implemented for notification settings and registered vendor onboarding records. Default remains JSON for local compatibility; set `SUPPLIER_COLLAB_STORE_BACKEND=sqlite` and optionally `SUPPLIER_COLLAB_DB_PATH=config/supplier_collab.db` to use SQLite. Scheduled notification delivery now runs through `NotificationRetryService`, which records attempts in SQLite and marks exhausted failures as `dead_letter`; `GET /api/deliveries` and the `/settings` page expose recent delivery attempts. Remaining Phase 10 work: real Google Calendar / Outlook OAuth, richer supplier onboarding workflows and production-grade frontend vendor management.
 
 **Current to-do list:**
 - [x] Fix calendar auto-trigger path so scheduled T-24h/T-2h briefings call the current pipeline API correctly.
@@ -71,6 +71,7 @@ make dev
 - [x] Build `/vendors` onboarding page with registered-vendor table, onboarding-pack download action, and Vendors nav link.
 - [x] Add selectable JSON/SQLite persistence for notification settings and registered vendors.
 - [x] Add backend retry/dead-letter handling for scheduled notification delivery.
+- [x] Add delivery-attempt API and `/settings` visibility panel.
 
 **Reference:** `docs/implementation_plan.md`, `docs/supplier-collab-ai-scope-v1.0.md` section 13.
 
@@ -108,8 +109,8 @@ data_validator  benchmark_engine       ↓
 | File | Role | Status |
 |---|---|---|
 | `cli.py` | CLI entry point. Parses `--vendor`, `--date`, `--data-dir`, `--lookback-weeks`, `--persona-emphasis`, `--include-benchmarks`, `--output-format`, `--category-filter`. | Working |
-| `api/` | FastAPI: health, `POST /api/briefings` (blocking), **`POST /api/briefings/stream`** (true SSE via `asyncio.Queue`), list/get briefings, `GET /api/briefings/{id}/stream` (SSE replay), download, `GET /api/vendors`, `GET /api/settings`, `PUT /api/settings`, `GET /api/schedule`, `GET /api/vendors/registered`, `POST /api/vendors`, `GET /api/vendors/{id}/onboarding-pack`. Background scheduler starts with the app; scheduled notification delivery is wired via `NotificationRetryService`. | Working |
-| `frontend/` | **[Phase 5–9 + Vendor Onboarding UI complete]** Next.js UI. App shell, history, briefing detail with SSE replay + tab dashboards, `Phase 8 Insights` tab, live token preview, validation banner, download/history flows, `/settings` page for notification config (Slack/Teams/email/automation toggle) and scheduled job status, `/vendors` onboarding page, and Vendors nav link. | Working |
+| `api/` | FastAPI: health, `POST /api/briefings` (blocking), **`POST /api/briefings/stream`** (true SSE via `asyncio.Queue`), list/get briefings, `GET /api/briefings/{id}/stream` (SSE replay), download, `GET /api/vendors`, `GET /api/settings`, `PUT /api/settings`, `GET /api/schedule`, `GET /api/deliveries`, `GET /api/vendors/registered`, `POST /api/vendors`, `GET /api/vendors/{id}/onboarding-pack`. Background scheduler starts with the app; scheduled notification delivery is wired via `NotificationRetryService`. | Working |
+| `frontend/` | **[Phase 5–9 + Vendor Onboarding UI complete]** Next.js UI. App shell, history, briefing detail with SSE replay + tab dashboards, `Phase 8 Insights` tab, live token preview, validation banner, download/history flows, `/settings` page for notification config (Slack/Teams/email/automation toggle), scheduled job status, and recent delivery attempts, `/vendors` onboarding page, and Vendors nav link. | Working |
 | `src/delivery.py` | Notification dispatcher (Phase 9 prototype). `NotificationSettings` Pydantic model (incl. `automation_enabled`). `NotificationDispatcher.dispatch()` — Slack webhook, Teams webhook, SMTP email with optional DOCX attachment. Returns `list[DeliveryResult]`. | Working |
 | `src/delivery_attempt_store.py` | SQLite-backed audit log for notification delivery attempts. Stores channel, status, attempt count, payload JSON, error, and timestamps. | Working |
 | `src/notification_retry.py` | Retry/dead-letter orchestration for scheduled notifications. Retries configured channels and records `sent`, `failed`, and `dead_letter` attempts. | Working |
@@ -256,7 +257,7 @@ Current test coverage:
 - Frontend settings (Phase 9): 3 tests in `frontend/lib/api.test.ts` for `getSettings`/`updateSettings`/`getSchedule`. 5 tests in `NotificationSettingsForm.test.tsx`. 3 tests in `settings/page.test.tsx`.
 - Frontend vendor onboarding: 5 tests in `frontend/lib/api.test.ts` for registered-vendor list, registration POST, duplicate registration error context, onboarding-pack download, and failed-download cleanup. 6 tests in `frontend/components/VendorRegisterForm.test.tsx` for field rendering, exact submit payload, duplicate/error display, fallback error display, submitting state, and successful form clear. 6 tests in `frontend/app/vendors/page.test.tsx` for heading, empty state, populated table, download action, registration append, and load error.
 
-Full backend suite: `.venv/bin/pytest tests/ -q` (**341 tests** as last recorded). Full frontend suite: `cd frontend && npm test -- --no-cache` (**88 tests**). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**31 tests**).
+Full backend suite: `.venv/bin/pytest tests/ -q` (**343 tests** as last recorded). Full frontend suite: `cd frontend && npm test -- --no-cache` (**92 tests**). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**31 tests**).
 
 ---
 

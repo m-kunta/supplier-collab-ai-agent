@@ -13,7 +13,7 @@
 
 The **Supplier Collaboration Briefing Agent** is an intelligence tool that automates pre-meeting preparation for category buyers and supply planners. It ingests exported vendor performance data (standardized CSV files declared in a `manifest.yaml`), runs a suite of deterministic compute engines, and synthesizes everything into a structured, role-specific briefing document via an LLM — in under 60 seconds instead of the 30–60 minutes of manual spreadsheet work the meeting would otherwise require.
 
-*Current capabilities: the full pipeline (compute engines + LLM briefing + `.md`/`.docx` output to `output/`) runs from the CLI and from a **FastAPI** layer in `api/`. The API supports true token-level SSE streaming during generation, downloads, vendor listing, validation-report responses, `llm_provider`/`llm_model` overrides, notification settings management, and vendor onboarding. A **Next.js web UI** in `frontend/` provides a live token-by-token streaming preview, briefing history, downloads, validation banners, replayable narrative output, a consolidated `Phase 8 Insights` experience spanning scorecard, PO risk, OOS, promo, inventory, forecast, ASN, chargeback, and trade-fund signals, a `/settings` page for managing Slack/Teams/email notification config and viewing scheduled jobs, and a `/vendors` onboarding page for registering suppliers and downloading onboarding packs. Phases 1–9 and the prototype Vendor Onboarding UI are complete; Phase 10 production hardening has started with selectable JSON/SQLite persistence plus retry/dead-letter tracking for scheduled notifications.*
+*Current capabilities: the full pipeline (compute engines + LLM briefing + `.md`/`.docx` output to `output/`) runs from the CLI and from a **FastAPI** layer in `api/`. The API supports true token-level SSE streaming during generation, downloads, vendor listing, validation-report responses, `llm_provider`/`llm_model` overrides, notification settings management, vendor onboarding, and delivery-attempt visibility. A **Next.js web UI** in `frontend/` provides a live token-by-token streaming preview, briefing history, downloads, validation banners, replayable narrative output, a consolidated `Phase 8 Insights` experience spanning scorecard, PO risk, OOS, promo, inventory, forecast, ASN, chargeback, and trade-fund signals, a `/settings` page for managing Slack/Teams/email notification config, viewing scheduled jobs, and reviewing recent delivery attempts, plus a `/vendors` onboarding page for registering suppliers and downloading onboarding packs. Phases 1–9 and the prototype Vendor Onboarding UI are complete; Phase 10 production hardening has started with selectable JSON/SQLite persistence plus retry/dead-letter tracking for scheduled notifications.*
 
 ## 🖼️ UI Screenshots
 
@@ -291,6 +291,7 @@ Phase 1 completion notes:
 - [ ] Real Google Calendar / Outlook OAuth integration (replace mock JSON schedule).
 - [x] Selectable JSON/SQLite persistence for notification settings and registered vendor onboarding records.
 - [x] Backend retry/dead-letter handling for scheduled notification delivery.
+- [x] Delivery-attempt API and `/settings` visibility panel.
 - [ ] Add richer supplier onboarding workflows and production-grade frontend vendor management UI.
 
 ## 🛠️ Key modules
@@ -363,8 +364,8 @@ python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir data/
 
 | Layer | Runner | Count |
 |---|---|---|
-| Backend (Python) | `.venv/bin/pytest tests/ -q` | **341 tests as last recorded** |
-| Frontend (Next.js/Vitest) | `cd frontend && npm test -- --no-cache` | **88 tests** |
+| Backend (Python) | `.venv/bin/pytest tests/ -q` | **343 tests as last recorded** |
+| Frontend (Next.js/Vitest) | `cd frontend && npm test -- --no-cache` | **92 tests** |
 | Vendor onboarding frontend slice | `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` | **31 tests** |
 
 ---
