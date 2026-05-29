@@ -426,6 +426,23 @@ export interface ScheduleResponse {
   jobs: ScheduledJob[];
 }
 
+export interface DeliveryAttempt {
+  id: string;
+  briefing_id: string;
+  channel: string;
+  status: "pending" | "sent" | "failed" | "dead_letter" | string;
+  attempt_count: number;
+  payload: Record<string, unknown>;
+  last_error: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DeliveryAttemptsResponse {
+  attempts: DeliveryAttempt[];
+  total: number;
+}
+
 export async function getSettings(): Promise<NotificationSettings> {
   const res = await fetch(`${API_BASE}/api/settings`);
   if (!res.ok) throw new Error(`Failed to load settings: ${res.status}`);
@@ -448,6 +465,18 @@ export async function getSchedule(): Promise<ScheduleResponse> {
   const res = await fetch(`${API_BASE}/api/schedule`);
   if (!res.ok) throw new Error(`Failed to load schedule: ${res.status}`);
   return res.json();
+}
+
+export async function getDeliveryAttempts(
+  params: { briefing_id?: string; limit?: number } = {}
+): Promise<DeliveryAttemptsResponse> {
+  const url = new URL(`${API_BASE}/api/deliveries`);
+  url.searchParams.set("limit", String(params.limit ?? 50));
+  if (params.briefing_id) {
+    url.searchParams.set("briefing_id", params.briefing_id);
+  }
+  const res = await fetch(url.toString());
+  return readJson<DeliveryAttemptsResponse>(res, "Failed to load delivery attempts");
 }
 
 // ---------------------------------------------------------------------------

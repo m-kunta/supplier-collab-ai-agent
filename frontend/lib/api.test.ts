@@ -6,6 +6,7 @@ import {
   getBriefing,
   getBriefingDownloadUrl,
   getBriefingStreamUrl,
+  getDeliveryAttempts,
   listRegisteredVendors,
   listBriefings,
   listVendors,
@@ -486,5 +487,47 @@ describe("getSchedule", () => {
     const schedule = await getSchedule();
     expect(schedule.jobs).toHaveLength(1);
     expect(schedule.jobs[0].id).toBe("poll_calendar");
+  });
+});
+
+describe("getDeliveryAttempts", () => {
+  beforeEach(() => { vi.stubGlobal("fetch", vi.fn()); });
+  afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });
+
+  it("returns delivery attempts from /api/deliveries", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({
+        attempts: [{
+          id: "attempt-1",
+          briefing_id: "brief-123",
+          channel: "slack",
+          status: "dead_letter",
+          attempt_count: 3,
+          payload: { vendor: "Northstar Foods Co" },
+          last_error: "timeout",
+          created_at: "2026-05-29T00:00:00Z",
+          updated_at: "2026-05-29T00:01:00Z"
+        }],
+        total: 1
+      }), { status: 200 })
+    );
+
+    const result = await getDeliveryAttempts();
+
+    expect(result.total).toBe(1);
+    expect(result.attempts[0].status).toBe("dead_letter");
+    expect(String(vi.mocked(fetch).mock.calls[0][0])).toContain("/api/deliveries?limit=50");
+  });
+
+  it("passes briefing_id and limit query params", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ attempts: [], total: 0 }), { status: 200 })
+    );
+
+    await getDeliveryAttempts({ briefing_id: "brief-123", limit: 10 });
+
+    const url = String(vi.mocked(fetch).mock.calls[0][0]);
+    expect(url).toContain("briefing_id=brief-123");
+    expect(url).toContain("limit=10");
   });
 });
