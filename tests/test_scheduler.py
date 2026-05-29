@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
+from src.delivery import NotificationSettings
 from src.scheduler import BriefingScheduler
 
 
@@ -37,3 +38,33 @@ class SchedulerTriggerTests(unittest.TestCase):
         scheduler = BriefingScheduler()
         self.assertTrue(scheduler.prod_data_dir.is_absolute())
         self.assertTrue(str(scheduler.prod_data_dir).endswith("data/inbound/prod"))
+
+    def test_trigger_briefing_uses_notification_retry_service(self) -> None:
+        scheduler = BriefingScheduler()
+        meeting = {
+            "id": "meeting-1",
+            "summary": "Vendor Review: Northstar Foods Co",
+            "start_time": "2026-04-03T15:00:00Z",
+        }
+
+        with patch("src.scheduler.summarize_request") as mock_summarize, \
+             patch("src.store_factory.create_settings_store") as mock_settings_factory, \
+             patch("src.notification_retry.NotificationRetryService") as mock_retry_cls:
+            mock_summarize.return_value = {
+                "briefing_id": "brief-123",
+                "briefing_text": "Executive summary",
+                "output_files": {"docx_path": "output/brief.docx"},
+            }
+            mock_settings_factory.return_value.load.return_value = NotificationSettings(
+                slack_webhook_url="https://hooks.slack.com/fake"
+            )
+
+            scheduler._trigger_briefing(meeting, "Draft (T-24h)")
+
+        mock_retry_cls.assert_called_once()
+        payload = mock_retry_cls.return_value.dispatch_with_retries.call_args.args[0]
+        self.assertEqual(payload["vendor"], "Northstar Foods Co")
+        self.assertEqual(payload["meeting_date"], "2026-04-03")
+        self.assertEqual(payload["briefing_id"], "brief-123")
+        self.assertEqual(payload["briefing_text"], "Executive summary")
+        self.assertEqual(payload["output_files"], {"docx_path": "output/brief.docx"})

@@ -132,10 +132,10 @@ class BriefingScheduler:
             saved_path = output_files.get("md_path") or output_files.get("docx_path")
             logger.info(f"Successfully generated briefing! Saved to: {saved_path}")
 
-            from src.delivery import NotificationDispatcher
+            from src.notification_retry import NotificationRetryService
             from src.store_factory import create_settings_store
             settings = create_settings_store().load()
-            dispatcher = NotificationDispatcher(settings)
+            dispatcher = NotificationRetryService(settings)
             briefing_payload = {
                 "vendor": vendor_name,
                 "meeting_date": meeting_date,
@@ -143,7 +143,7 @@ class BriefingScheduler:
                 "briefing_text": result.get("briefing_text", ""),
                 "output_files": output_files,
             }
-            delivery_results = dispatcher.dispatch(briefing_payload)
+            delivery_results = dispatcher.dispatch_with_retries(briefing_payload)
             for dr in delivery_results:
                 if dr.success:
                     logger.info(f"Notified [{dr.channel}] successfully.")

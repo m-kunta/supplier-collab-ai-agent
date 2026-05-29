@@ -13,7 +13,7 @@
 
 The **Supplier Collaboration Briefing Agent** is an intelligence tool that automates pre-meeting preparation for category buyers and supply planners. It ingests exported vendor performance data (standardized CSV files declared in a `manifest.yaml`), runs a suite of deterministic compute engines, and synthesizes everything into a structured, role-specific briefing document via an LLM — in under 60 seconds instead of the 30–60 minutes of manual spreadsheet work the meeting would otherwise require.
 
-*Current capabilities: the full pipeline (compute engines + LLM briefing + `.md`/`.docx` output to `output/`) runs from the CLI and from a **FastAPI** layer in `api/`. The API supports true token-level SSE streaming during generation, downloads, vendor listing, validation-report responses, `llm_provider`/`llm_model` overrides, notification settings management, and vendor onboarding. A **Next.js web UI** in `frontend/` provides a live token-by-token streaming preview, briefing history, downloads, validation banners, replayable narrative output, a consolidated `Phase 8 Insights` experience spanning scorecard, PO risk, OOS, promo, inventory, forecast, ASN, chargeback, and trade-fund signals, a `/settings` page for managing Slack/Teams/email notification config and viewing scheduled jobs, and a `/vendors` onboarding page for registering suppliers and downloading onboarding packs. Phases 1–9 and the prototype Vendor Onboarding UI are complete; Phase 10 production hardening has started with selectable JSON/SQLite persistence for settings and registered vendors.*
+*Current capabilities: the full pipeline (compute engines + LLM briefing + `.md`/`.docx` output to `output/`) runs from the CLI and from a **FastAPI** layer in `api/`. The API supports true token-level SSE streaming during generation, downloads, vendor listing, validation-report responses, `llm_provider`/`llm_model` overrides, notification settings management, and vendor onboarding. A **Next.js web UI** in `frontend/` provides a live token-by-token streaming preview, briefing history, downloads, validation banners, replayable narrative output, a consolidated `Phase 8 Insights` experience spanning scorecard, PO risk, OOS, promo, inventory, forecast, ASN, chargeback, and trade-fund signals, a `/settings` page for managing Slack/Teams/email notification config and viewing scheduled jobs, and a `/vendors` onboarding page for registering suppliers and downloading onboarding packs. Phases 1–9 and the prototype Vendor Onboarding UI are complete; Phase 10 production hardening has started with selectable JSON/SQLite persistence plus retry/dead-letter tracking for scheduled notifications.*
 
 ## 🖼️ UI Screenshots
 
@@ -290,7 +290,7 @@ Phase 1 completion notes:
 ### Phase 10: Production Hardening (In Progress)
 - [ ] Real Google Calendar / Outlook OAuth integration (replace mock JSON schedule).
 - [x] Selectable JSON/SQLite persistence for notification settings and registered vendor onboarding records.
-- [ ] Retry / dead-letter queue for notification delivery.
+- [x] Backend retry/dead-letter handling for scheduled notification delivery.
 - [ ] Add richer supplier onboarding workflows and production-grade frontend vendor management UI.
 
 ## 🛠️ Key modules
@@ -312,6 +312,8 @@ Phase 1 completion notes:
 - `src/trade_fund_insights.py`: Trade fund execution and at-risk funding insights.
 - `src/llm_providers.py`: Model wrappers — `generate_text()` (blocking) and `generate_text_stream()` (true token streaming, Anthropic; fallback for others).
 - `src/delivery.py`: Notification dispatcher — Slack webhook, Teams webhook, SMTP email with DOCX attachment support.
+- `src/delivery_attempt_store.py`: SQLite-backed audit log for scheduled notification delivery attempts.
+- `src/notification_retry.py`: Channel-level retry/dead-letter orchestration around `NotificationDispatcher`.
 - `src/settings_store.py`: File-backed JSON settings CRUD for `NotificationSettings` (thread-safe).
 - `src/sqlite_settings_store.py`: SQLite-backed `NotificationSettings` persistence.
 - `src/store_factory.py`: Selects JSON or SQLite stores via `SUPPLIER_COLLAB_STORE_BACKEND`.
@@ -361,7 +363,7 @@ python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir data/
 
 | Layer | Runner | Count |
 |---|---|---|
-| Backend (Python) | `.venv/bin/pytest tests/ -q` | **331 tests as last recorded** |
+| Backend (Python) | `.venv/bin/pytest tests/ -q` | **341 tests as last recorded** |
 | Frontend (Next.js/Vitest) | `cd frontend && npm test -- --no-cache` | **88 tests** |
 | Vendor onboarding frontend slice | `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` | **31 tests** |
 

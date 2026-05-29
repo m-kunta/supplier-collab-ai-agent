@@ -49,5 +49,5 @@
 5. [x] **Docs update** — update `CLAUDE.md`, `AGENTS.md`, `README.md`, `TODO.md` when the full onboarding UI is complete
 
 ## Next Roadmap Items
-- **Phase 10 — Production Hardening**: Selectable JSON/SQLite persistence is complete for notification settings and registered vendors. Remaining: real Google Calendar / Outlook OAuth and retry/dead-letter queue for notification delivery.
+- **Phase 10 — Production Hardening**: Selectable JSON/SQLite persistence and backend retry/dead-letter handling are complete for scheduled notifications. Remaining: real Google Calendar / Outlook OAuth.
 - **Production Onboarding**: Add richer supplier/category onboarding features beyond the completed prototype UI.
