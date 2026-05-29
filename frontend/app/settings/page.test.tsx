@@ -22,6 +22,7 @@ beforeEach(() => {
   vi.mocked(api.getSettings).mockResolvedValue(mockSettings);
   vi.mocked(api.updateSettings).mockResolvedValue(mockSettings);
   vi.mocked(api.getSchedule).mockResolvedValue({ jobs: [] });
+  vi.mocked(api.getDeliveryAttempts).mockResolvedValue({ attempts: [], total: 0 });
 });
 
 it("renders page heading", async () => {
@@ -40,4 +41,34 @@ it("renders schedule section with a job", async () => {
 it("shows no scheduled jobs message when list is empty", async () => {
   render(<SettingsPage />);
   await waitFor(() => expect(screen.getByText(/no scheduled jobs/i)).toBeInTheDocument());
+});
+
+it("renders recent delivery attempts", async () => {
+  vi.mocked(api.getDeliveryAttempts).mockResolvedValue({
+    attempts: [{
+      id: "attempt-1",
+      briefing_id: "brief-123",
+      channel: "slack",
+      status: "dead_letter",
+      attempt_count: 3,
+      payload: { vendor: "Northstar Foods Co" },
+      last_error: "timeout",
+      created_at: "2026-05-29T00:00:00Z",
+      updated_at: "2026-05-29T00:01:00Z"
+    }],
+    total: 1
+  });
+
+  render(<SettingsPage />);
+
+  await waitFor(() => expect(screen.getByText(/recent delivery attempts/i)).toBeInTheDocument());
+  expect(screen.getByText("dead_letter")).toBeInTheDocument();
+  expect(screen.getByText("slack")).toBeInTheDocument();
+  expect(screen.getByText("brief-123")).toBeInTheDocument();
+  expect(screen.getByText("timeout")).toBeInTheDocument();
+});
+
+it("shows no delivery attempts message when list is empty", async () => {
+  render(<SettingsPage />);
+  await waitFor(() => expect(screen.getByText(/no delivery attempts recorded yet/i)).toBeInTheDocument());
 });

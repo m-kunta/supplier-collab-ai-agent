@@ -5,6 +5,8 @@ import {
   getSettings,
   updateSettings,
   getSchedule,
+  getDeliveryAttempts,
+  DeliveryAttempt,
   NotificationSettings,
   ScheduledJob,
 } from "../../lib/api";
@@ -13,6 +15,7 @@ import { NotificationSettingsForm } from "../../components/NotificationSettingsF
 export default function SettingsPage() {
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
   const [jobs, setJobs] = useState<ScheduledJob[]>([]);
+  const [deliveryAttempts, setDeliveryAttempts] = useState<DeliveryAttempt[]>([]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,6 +23,7 @@ export default function SettingsPage() {
   useEffect(() => {
     getSettings().then(setSettings).catch((e: Error) => setError(e.message));
     getSchedule().then((r) => setJobs(r.jobs)).catch(() => {});
+    getDeliveryAttempts().then((r) => setDeliveryAttempts(r.attempts)).catch(() => {});
   }, []);
 
   const handleSave = async (updated: NotificationSettings) => {
@@ -83,6 +87,42 @@ export default function SettingsPage() {
                 <td style={{ padding: "0.5rem" }}>{job.name}</td>
                 <td style={{ padding: "0.5rem", color: "#888" }}>
                   {job.next_run ? new Date(job.next_run).toLocaleString() : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      <hr style={{ margin: "2rem 0" }} />
+
+      <h2>Recent Delivery Attempts</h2>
+      {deliveryAttempts.length === 0 ? (
+        <p style={{ color: "#888" }}>No delivery attempts recorded yet.</p>
+      ) : (
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: "left", padding: "0.5rem", borderBottom: "1px solid #e5e7eb" }}>Status</th>
+              <th style={{ textAlign: "left", padding: "0.5rem", borderBottom: "1px solid #e5e7eb" }}>Channel</th>
+              <th style={{ textAlign: "left", padding: "0.5rem", borderBottom: "1px solid #e5e7eb" }}>Briefing</th>
+              <th style={{ textAlign: "left", padding: "0.5rem", borderBottom: "1px solid #e5e7eb" }}>Attempts</th>
+              <th style={{ textAlign: "left", padding: "0.5rem", borderBottom: "1px solid #e5e7eb" }}>Last Error</th>
+              <th style={{ textAlign: "left", padding: "0.5rem", borderBottom: "1px solid #e5e7eb" }}>Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            {deliveryAttempts.map((attempt) => (
+              <tr key={attempt.id}>
+                <td style={{ padding: "0.5rem" }}>{attempt.status}</td>
+                <td style={{ padding: "0.5rem" }}>{attempt.channel}</td>
+                <td style={{ padding: "0.5rem" }}>{attempt.briefing_id}</td>
+                <td style={{ padding: "0.5rem" }}>{attempt.attempt_count}</td>
+                <td style={{ padding: "0.5rem", color: attempt.last_error ? "#b91c1c" : "#888" }}>
+                  {attempt.last_error || "—"}
+                </td>
+                <td style={{ padding: "0.5rem", color: "#888" }}>
+                  {attempt.updated_at ? new Date(attempt.updated_at).toLocaleString() : "—"}
                 </td>
               </tr>
             ))}
