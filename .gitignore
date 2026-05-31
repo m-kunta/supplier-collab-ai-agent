@@ -19,3 +19,4 @@ config/token.json
 frontend/.next/
 frontend/node_modules/
 frontend/package-lock.json
+config/supplier_collab.db
