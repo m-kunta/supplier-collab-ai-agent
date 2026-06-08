@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class BriefingScheduler:
     def __init__(self):
         self.scheduler = BackgroundScheduler()
-        self.calendar = GoogleCalendarClient()
+        self.calendar = GoogleCalendarClient.from_config()
         self.processed_jobs = set()
         config = load_config()
         defaults = config.get("defaults", {})

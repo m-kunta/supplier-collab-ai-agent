@@ -12,6 +12,17 @@ llm:
   max_tokens: 4096
   retry_count: 3
 
+calendar:
+  provider: google
+  credentials_path: config/credentials.json
+  token_path: config/token.json
+  calendar_id: primary
+  vendor_keywords:
+    - vendor
+    - supplier
+    - review
+  allow_mock_fallback: true
+
 thresholds:
   # PO risk tiering — days until requested_delivery_date
   po_risk_days_late_red: 3

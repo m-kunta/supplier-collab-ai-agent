@@ -142,7 +142,8 @@ Completed after scaffold. Implemented two compute engines with TDD.
 
 ### Phase 10 (in progress)
 
-- Replace mock calendar ingestion with real Google Calendar / Outlook OAuth.
+- Configurable Google Calendar OAuth is implemented with YAML/env settings for credentials path, token path, calendar ID, vendor keywords, and safe mock fallback.
+- Outlook / Microsoft Graph OAuth remains the next calendar hardening task.
 - Selectable JSON/SQLite persistence for notification settings and registered vendor onboarding records is implemented. Default remains JSON for compatibility; set `SUPPLIER_COLLAB_STORE_BACKEND=sqlite` and optionally `SUPPLIER_COLLAB_DB_PATH=config/supplier_collab.db` to use SQLite.
 - Backend retry/dead-letter handling for scheduled notification delivery is implemented. `NotificationRetryService` retries channel sends, records attempts in SQLite `delivery_attempts`, and marks exhausted failures as `dead_letter`.
 - Delivery-attempt visibility is implemented via `GET /api/deliveries` and the `/settings` page's recent delivery attempts panel.
@@ -150,6 +151,6 @@ Completed after scaffold. Implemented two compute engines with TDD.
 
 ### Verification Snapshot
 
-- Backend: `.venv/bin/pytest tests/ -q` → `343 passed`
+- Backend: `.venv/bin/pytest tests/ -q` → `347 passed`
 - Vendor onboarding frontend slice: `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` → `31 passed`
 - Full frontend suite: `cd frontend && npm test -- --no-cache` → `92 passed`
