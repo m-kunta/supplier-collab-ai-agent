@@ -289,7 +289,7 @@ Phase 1 completion notes:
 
 ### Phase 10: Production Hardening (In Progress)
 - [x] Configurable Google Calendar OAuth integration — scheduler reads `calendar` config/env overrides for credentials path, token path, calendar ID, vendor keywords, and mock fallback behavior.
-- [ ] Outlook / Microsoft Graph OAuth integration.
+- [x] Outlook / Microsoft Graph OAuth integration — selectable `outlook` calendar provider using MSAL device-code auth and Graph `calendarView` polling.
 - [x] Selectable JSON/SQLite persistence for notification settings and registered vendor onboarding records.
 - [x] Backend retry/dead-letter handling for scheduled notification delivery.
 - [x] Delivery-attempt API and `/settings` visibility panel.
@@ -319,7 +319,7 @@ Phase 1 completion notes:
 - `src/settings_store.py`: File-backed JSON settings CRUD for `NotificationSettings` (thread-safe).
 - `src/sqlite_settings_store.py`: SQLite-backed `NotificationSettings` persistence.
 - `src/store_factory.py`: Selects JSON or SQLite stores via `SUPPLIER_COLLAB_STORE_BACKEND`.
-- `src/scheduler.py`: APScheduler calendar polling and T-24h/T-2h briefing auto-trigger.
+- `src/scheduler.py`: APScheduler calendar polling and T-24h/T-2h briefing auto-trigger using the configured Google or Outlook calendar provider.
 - `src/vendor_store.py`: File-backed vendor registry (`config/vendors.json`) — CRUD for `VendorRecord`.
 - `src/sqlite_vendor_store.py`: SQLite-backed registered vendor persistence with unique `vendor_id`.
 - `src/onboarding_packager.py`: Generates a downloadable zip with blank CSV templates derived from `data/schemas/*.schema.yaml`.
@@ -353,9 +353,9 @@ SUPPLIER_COLLAB_STORE_BACKEND=sqlite
 SUPPLIER_COLLAB_DB_PATH=config/supplier_collab.db
 ```
 
-### Optional Google Calendar OAuth
+### Optional Calendar OAuth
 
-The scheduler reads Google Calendar settings from `config/agent_config.yaml` and supports environment overrides for deployments:
+The scheduler reads calendar settings from `config/agent_config.yaml` and supports environment overrides for deployments. Use Google Calendar:
 
 ```bash
 SUPPLIER_COLLAB_CALENDAR_PROVIDER=google
@@ -363,6 +363,17 @@ GOOGLE_CALENDAR_CREDENTIALS_PATH=config/credentials.json
 GOOGLE_CALENDAR_TOKEN_PATH=config/token.json
 GOOGLE_CALENDAR_ID=primary
 GOOGLE_CALENDAR_VENDOR_KEYWORDS=vendor,supplier,review
+GOOGLE_CALENDAR_ALLOW_MOCK_FALLBACK=true
+```
+
+Or use Outlook / Microsoft Graph:
+
+```bash
+SUPPLIER_COLLAB_CALENDAR_PROVIDER=outlook
+OUTLOOK_CALENDAR_CLIENT_ID=<azure-app-client-id>
+OUTLOOK_CALENDAR_TENANT_ID=common
+OUTLOOK_CALENDAR_TOKEN_CACHE_PATH=config/outlook_token_cache.json
+OUTLOOK_CALENDAR_SCOPES=Calendars.Read
 GOOGLE_CALENDAR_ALLOW_MOCK_FALLBACK=true
 ```
 
@@ -380,7 +391,7 @@ python cli.py --vendor "Northstar Foods Co" --date "2026-04-03" --data-dir data/
 
 | Layer | Runner | Count |
 |---|---|---|
-| Backend (Python) | `.venv/bin/pytest tests/ -q` | **347 tests as last recorded** |
+| Backend (Python) | `.venv/bin/pytest tests/ -q` | **353 tests as last recorded** |
 | Frontend (Next.js/Vitest) | `cd frontend && npm test -- --no-cache` | **92 tests** |
 | Vendor onboarding frontend slice | `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` | **31 tests** |
 

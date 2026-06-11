@@ -17,6 +17,11 @@ calendar:
   credentials_path: config/credentials.json
   token_path: config/token.json
   calendar_id: primary
+  outlook_client_id: ""
+  outlook_tenant_id: common
+  outlook_token_cache_path: config/outlook_token_cache.json
+  outlook_scopes:
+    - Calendars.Read
   vendor_keywords:
     - vendor
     - supplier

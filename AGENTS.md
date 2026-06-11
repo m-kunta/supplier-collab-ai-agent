@@ -55,7 +55,7 @@ make dev
 
 **Phase 9 (complete — prototype):** Calendar ingestion layer with mock JSON schedule + APScheduler-backed auto-trigger (T-24h / T-2h before meeting). `src/delivery.py` dispatches Slack webhook, Teams webhook, and SMTP email (with optional DOCX attachment). `src/settings_store.py` provides file-backed JSON settings CRUD (thread-safe, Pydantic v2). FastAPI exposes `GET /api/settings`, `PUT /api/settings`, `GET /api/schedule`. Next.js `/settings` page lets users manage webhook URLs, SMTP config, automation toggle, and view scheduled jobs. Vendor onboarding scaffold: `src/vendor_store.py`, `src/onboarding_packager.py`, and three new API routes.
 
-**Phase 10 (in progress):** Selectable JSON/SQLite persistence is implemented for notification settings and registered vendor onboarding records. Default remains JSON for local compatibility; set `SUPPLIER_COLLAB_STORE_BACKEND=sqlite` and optionally `SUPPLIER_COLLAB_DB_PATH=config/supplier_collab.db` to use SQLite. Scheduled notification delivery now runs through `NotificationRetryService`, which records attempts in SQLite and marks exhausted failures as `dead_letter`; `GET /api/deliveries` and the `/settings` page expose recent delivery attempts. Google Calendar OAuth is configurable via YAML/env with safe mock fallback. Remaining Phase 10 work: Outlook / Microsoft Graph OAuth, richer supplier onboarding workflows and production-grade frontend vendor management.
+**Phase 10 (in progress):** Selectable JSON/SQLite persistence is implemented for notification settings and registered vendor onboarding records. Default remains JSON for local compatibility; set `SUPPLIER_COLLAB_STORE_BACKEND=sqlite` and optionally `SUPPLIER_COLLAB_DB_PATH=config/supplier_collab.db` to use SQLite. Scheduled notification delivery now runs through `NotificationRetryService`, which records attempts in SQLite and marks exhausted failures as `dead_letter`; `GET /api/deliveries` and the `/settings` page expose recent delivery attempts. Google Calendar and Outlook / Microsoft Graph OAuth are configurable via YAML/env with safe mock fallback. Remaining Phase 10 work: richer supplier onboarding workflows and production-grade frontend vendor management.
 
 **Current to-do list:**
 - [x] Fix calendar auto-trigger path so scheduled T-24h/T-2h briefings call the current pipeline API correctly.
@@ -139,7 +139,7 @@ data_validator  benchmark_engine       ↓
 | `src/chargeback_insights.py` | Chargeback rollups: total/open/disputed dollars, top chargeback types, and recent unresolved compliance items. | Working |
 | `src/trade_fund_insights.py` | Trade fund rollups: committed/spend/balance totals, compliance %, expiring funds, and at-risk fund summaries. | Working |
 | `src/llm_providers.py` | Provider-agnostic LLM wrapper. `generate_text()` (blocking, retry) and `generate_text_stream()` (true Anthropic token streaming; single-chunk fallback for OpenAI/Google/Groq). All four providers wired. | All four live |
-| `src/scheduler.py` | APScheduler-backed calendar polling and briefing auto-trigger. Uses configurable Google Calendar OAuth via `GoogleCalendarClient.from_config()` with mock fallback, schedules T-24h and T-2h jobs per meeting, dispatches notifications via `NotificationRetryService` post-generation. | Working |
+| `src/scheduler.py` | APScheduler-backed calendar polling and briefing auto-trigger. Uses the configured Google or Outlook calendar provider with mock fallback, schedules T-24h and T-2h jobs per meeting, dispatches notifications via `NotificationRetryService` post-generation. | Working |
 
 ### Key implementation details
 
@@ -257,7 +257,7 @@ Current test coverage:
 - Frontend settings (Phase 9): 3 tests in `frontend/lib/api.test.ts` for `getSettings`/`updateSettings`/`getSchedule`. 5 tests in `NotificationSettingsForm.test.tsx`. 3 tests in `settings/page.test.tsx`.
 - Frontend vendor onboarding: 5 tests in `frontend/lib/api.test.ts` for registered-vendor list, registration POST, duplicate registration error context, onboarding-pack download, and failed-download cleanup. 6 tests in `frontend/components/VendorRegisterForm.test.tsx` for field rendering, exact submit payload, duplicate/error display, fallback error display, submitting state, and successful form clear. 6 tests in `frontend/app/vendors/page.test.tsx` for heading, empty state, populated table, download action, registration append, and load error.
 
-Full backend suite: `.venv/bin/pytest tests/ -q` (**347 tests** as last recorded). Full frontend suite: `cd frontend && npm test -- --no-cache` (**92 tests**). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**31 tests**).
+Full backend suite: `.venv/bin/pytest tests/ -q` (**353 tests** as last recorded). Full frontend suite: `cd frontend && npm test -- --no-cache` (**92 tests**). Targeted vendor onboarding frontend check: `cd frontend && npx vitest run --config vitest.config.ts app/vendors/page.test.tsx components/VendorRegisterForm.test.tsx lib/api.test.ts --no-cache` (**31 tests**).
 
 ---
 

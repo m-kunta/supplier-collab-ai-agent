@@ -6,7 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from src.agent import summarize_request
-from src.calendar_trigger import GoogleCalendarClient
+from src.calendar_trigger import build_calendar_client
 from src.config import load_config
 
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class BriefingScheduler:
     def __init__(self):
         self.scheduler = BackgroundScheduler()
-        self.calendar = GoogleCalendarClient.from_config()
+        self.calendar = build_calendar_client()
         self.processed_jobs = set()
         config = load_config()
         defaults = config.get("defaults", {})
