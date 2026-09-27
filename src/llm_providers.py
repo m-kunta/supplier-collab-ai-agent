@@ -111,8 +111,6 @@ def _retry_loop(
             return result
 
         except Exception as exc:  # noqa: BLE001
-            exc_type = type(exc)
-
             # Server-error branch (e.g. APIStatusError with status >= 500)
             if server_error_exc_type and isinstance(exc, server_error_exc_type):
                 status = get_status_code(exc) if get_status_code else None

@@ -1,8 +1,7 @@
 import re
 from pathlib import Path
 from docx import Document
-from docx.shared import RGBColor, Pt
-from docx.enum.text import WD_COLOR_INDEX
+from docx.shared import RGBColor
 
 def markdown_to_docx(md_text, output_path):
     doc = Document()
@@ -11,7 +10,8 @@ def markdown_to_docx(md_text, output_path):
     table_data = []
     
     def process_table():
-        if not table_data: return
+        if not table_data:
+            return
         # First row is header, second is separator
         if len(table_data) > 1 and all(c.replace('-', '').strip() == '' for c in table_data[1]):
             table_data.pop(1)
@@ -97,6 +97,5 @@ def markdown_to_docx(md_text, output_path):
     print(f"Saved to {output_path}")
 
 md_content = Path("output/V1001_2026-04-18.md").read_text()
-import re
 md_content = re.sub(r'^---[\s\S]*?---\n', '', md_content)
 markdown_to_docx(md_content, "output/test.docx")

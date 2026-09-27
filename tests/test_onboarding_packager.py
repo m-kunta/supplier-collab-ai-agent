@@ -1,8 +1,5 @@
 import io
 import zipfile
-import yaml
-import pytest
-from unittest.mock import patch
 from pathlib import Path
 
 from src.onboarding_packager import generate_onboarding_pack
@@ -47,7 +44,7 @@ def test_csv_templates_have_header_row(tmp_path, monkeypatch):
     for name, content in files.items():
         if name.startswith("templates/") and name.endswith(".csv"):
             text = content.decode()
-            lines = [l for l in text.splitlines() if l.strip()]
+            lines = [line for line in text.splitlines() if line.strip()]
             assert len(lines) == 1, f"{name} should have exactly 1 header row"
             assert "," in text or len(text.strip()) > 0
 

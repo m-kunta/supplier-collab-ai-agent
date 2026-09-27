@@ -1,6 +1,5 @@
 import json
 import pytest
-from pathlib import Path
 from src.settings_store import SettingsStore
 from src.delivery import NotificationSettings
 

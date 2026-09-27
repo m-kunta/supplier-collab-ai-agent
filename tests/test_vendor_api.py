@@ -5,8 +5,7 @@
 """
 import io
 import zipfile
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from api.main import app
 

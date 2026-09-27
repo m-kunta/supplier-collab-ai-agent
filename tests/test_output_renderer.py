@@ -1,7 +1,5 @@
-import os
 import json
 from pathlib import Path
-from unittest.mock import MagicMock
 import pytest
 
 from src.output_renderer import render_markdown, render_docx, write_output

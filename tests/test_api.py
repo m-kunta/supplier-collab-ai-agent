@@ -103,7 +103,7 @@ class ApiBriefingsTests(unittest.TestCase):
         self.assertEqual(r.status_code, 404)
 
     def test_list_briefings_after_create(self) -> None:
-        payload = self._create_briefing()
+        self._create_briefing()
         lst = self.client.get("/api/briefings")
         self.assertEqual(lst.status_code, 200)
         body = lst.json()

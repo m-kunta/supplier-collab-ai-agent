@@ -115,7 +115,8 @@ def render_docx(ctx: BriefingContext, output_path: Path) -> Path:  # type: ignor
     table_data = []
     
     def process_table():
-        if not table_data: return
+        if not table_data:
+            return
         # Remove markdown separator row if present
         if len(table_data) > 1 and all(c.replace('-', '').strip() == '' for c in table_data[1]):
             table_data.pop(1)

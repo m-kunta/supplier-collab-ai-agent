@@ -8,6 +8,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Optional
 
+import pandas as pd
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
@@ -27,22 +29,18 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down FastAPI application...")
     scheduler.stop()
 
-import pandas as pd
-from dotenv import load_dotenv
-
 # Load .env before importing the agent stack (LLM provider env vars).
 load_dotenv(override=True)
 
-from api.deps import resolve_data_dir
-from api.schemas import BriefingCreate
-from api.store import BriefingStore
-from src.agent import AgentPipelineError, summarize_request, summarize_request_stream
-from src.data_loader import load_manifest
-from src.delivery import NotificationSettings
-from src.delivery_attempt_store import DeliveryAttemptStore
-from src.store_factory import create_settings_store, create_vendor_store
-from src.vendor_store import VendorRecord
-from src.onboarding_packager import generate_onboarding_pack
+from api.deps import resolve_data_dir  # noqa: E402
+from api.schemas import BriefingCreate  # noqa: E402
+from api.store import BriefingStore  # noqa: E402
+from src.agent import AgentPipelineError, summarize_request, summarize_request_stream  # noqa: E402
+from src.data_loader import load_manifest  # noqa: E402
+from src.delivery_attempt_store import DeliveryAttemptStore  # noqa: E402
+from src.store_factory import create_settings_store, create_vendor_store  # noqa: E402
+from src.vendor_store import VendorRecord  # noqa: E402
+from src.onboarding_packager import generate_onboarding_pack  # noqa: E402
 
 app = FastAPI(
     title="Supplier Collab AI API",

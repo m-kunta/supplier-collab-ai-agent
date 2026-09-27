@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from src.calendar_trigger import GoogleCalendarClient
 from src.scheduler import BriefingScheduler

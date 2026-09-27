@@ -1,6 +1,5 @@
-import pytest
 from unittest.mock import patch, MagicMock
-from src.delivery import NotificationDispatcher, NotificationSettings, DeliveryResult
+from src.delivery import NotificationDispatcher, NotificationSettings
 
 
 def make_settings(**overrides):

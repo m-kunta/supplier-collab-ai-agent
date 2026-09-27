@@ -1,5 +1,4 @@
 """Tests for the DOCX email attachment added in Phase 9 (today)."""
-import pytest
 from unittest.mock import patch, MagicMock
 from src.delivery import NotificationDispatcher, NotificationSettings
 
@@ -79,7 +78,7 @@ def test_email_sends_without_attachment_when_no_output_files():
 
     dispatcher = NotificationDispatcher(make_email_settings())
     with patch("smtplib.SMTP") as mock_smtp_cls:
-        smtp = _smtp_ctx(mock_smtp_cls)
+        _smtp_ctx(mock_smtp_cls)
         result = dispatcher.dispatch(briefing)
 
     assert result[0].success is True
